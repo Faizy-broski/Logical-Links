@@ -81,7 +81,7 @@ function ProgressBar() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none"
+      className="fixed top-0 left-0 right-0 z-9999 pointer-events-none"
       style={{ height: 3, opacity: fading ? 0 : 1, transition: fading ? 'opacity 400ms ease' : 'none' }}
     >
       <div

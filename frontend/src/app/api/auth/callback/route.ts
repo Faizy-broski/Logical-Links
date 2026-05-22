@@ -31,8 +31,8 @@ export async function GET(request: Request) {
       const { data: profile } = await supabase
         .from('profiles').select('role').eq('id', user.id).single()
       const role = (profile as { role?: string } | null)?.role
-      if (role === 'super_admin') return NextResponse.redirect(`${origin}/admin/dashboard`)
-      if (role === 'fitter')      return NextResponse.redirect(`${origin}/fitter/dashboard`)
+      if (role === 'admin') return NextResponse.redirect(`${origin}/admin/dashboard`)
+      if (role === 'shipper')      return NextResponse.redirect(`${origin}/shipper/dashboard`)
     }
     return NextResponse.redirect(`${origin}${next}`)
   }

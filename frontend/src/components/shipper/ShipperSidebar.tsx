@@ -94,7 +94,7 @@ interface Props {
   onClose?: () => void;
 }
 
-export default function AdminSidebar({
+export default function ShipperSidebar({
   isOpen = false,
   onClose,
 }: Props) {

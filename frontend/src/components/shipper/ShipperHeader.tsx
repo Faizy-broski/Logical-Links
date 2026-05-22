@@ -11,9 +11,8 @@ import {
   Settings,
   User,
   LogOut,
+  PackageCheck,
 } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
 
 import {
   DropdownMenu,
@@ -30,8 +29,8 @@ interface Props {
   onMenuToggle?: () => void
 }
 
-export default function AdminHeader({
-  notificationCount = 4,
+export default function ShipperHeader({
+  notificationCount = 2,
   onMenuToggle,
 }: Props) {
   const router = useRouter()
@@ -47,14 +46,14 @@ export default function AdminHeader({
     <header
       className="
         sticky top-0 z-30
-        flex h-18.5 items-center
+        flex h-17 items-center
         justify-between
 
         border-b border-card-border
         bg-card/95 px-4
         backdrop-blur-xl
 
-        sm:px-6
+        sm:px-5
       "
     >
       {/* Left */}
@@ -65,8 +64,8 @@ export default function AdminHeader({
           onClick={onMenuToggle}
           aria-label="Open Menu"
           className="
-            flex h-11 w-11 items-center
-            justify-center rounded-2xl
+            flex h-10 w-10 items-center
+            justify-center rounded-xl
 
             border border-card-border
             bg-background
@@ -88,12 +87,12 @@ export default function AdminHeader({
         <div>
           <h1
             className="
-              text-lg font-semibold
+              text-base font-semibold
               tracking-tight text-foreground
-              sm:text-xl
+              sm:text-lg
             "
           >
-            Admin Dashboard
+            Shipper Dashboard
           </h1>
 
           <p
@@ -102,31 +101,31 @@ export default function AdminHeader({
               sm:block
             "
           >
-            Manage shipments, customers & loads
+            Track shipments & manage bookings
           </p>
         </div>
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {/* Search */}
         <div
           className="
             hidden items-center gap-2
-            rounded-2xl border
+            rounded-xl border
             border-card-border
 
-            bg-background px-4
-            sm:flex
+            bg-background px-3
+            lg:flex
           "
         >
           <Search className="h-4 w-4 text-muted" />
 
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search shipments..."
             className="
-              h-11 w-55
+              h-10 w-47.5
               bg-transparent text-sm
               text-foreground outline-none
 
@@ -138,9 +137,9 @@ export default function AdminHeader({
         {/* Notifications */}
         <button
           className="
-            relative flex h-11 w-11
+            relative flex h-10 w-10
             items-center justify-center
-            rounded-2xl
+            rounded-xl
 
             border border-card-border
             bg-background
@@ -153,17 +152,17 @@ export default function AdminHeader({
             hover:text-primary
           "
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="h-4.5 w-4.5" />
 
           {notificationCount > 0 && (
             <span
               className="
                 absolute -right-1 -top-1
-                flex h-5 min-w-5
+                flex h-4.5 min-w-4.5
                 items-center justify-center
 
                 rounded-full bg-primary
-                px-1 text-[10px]
+                px-1 text-[9px]
                 font-bold text-sidebar
               "
             >
@@ -179,11 +178,11 @@ export default function AdminHeader({
           <DropdownMenuTrigger asChild>
             <button
               className="
-                flex items-center gap-3
-                rounded-2xl border
+                flex items-center gap-2.5
+                rounded-xl border
                 border-card-border
 
-                bg-background px-3 py-2
+                bg-background px-2.5 py-1.5
 
                 transition-all duration-200
 
@@ -194,17 +193,17 @@ export default function AdminHeader({
               {/* Avatar */}
               <div
                 className="
-                  flex h-10 w-10
+                  flex h-9 w-9
                   items-center justify-center
-                  rounded-2xl
+                  rounded-xl
 
                   bg-primary
 
-                  text-sm font-bold
+                  text-xs font-bold
                   text-sidebar
                 "
               >
-                AD
+                SH
               </div>
 
               {/* User */}
@@ -215,15 +214,15 @@ export default function AdminHeader({
                     text-foreground
                   "
                 >
-                  Admin User
+                  Shipper User
                 </p>
 
                 <p
                   className="
-                    text-xs text-muted
+                    text-[11px] text-muted
                   "
                 >
-                  Super Admin
+                  Customer Account
                 </p>
               </div>
 
@@ -239,32 +238,32 @@ export default function AdminHeader({
           <DropdownMenuContent
             align="end"
             className="
-              w-64 rounded-2xl
+              w-60 rounded-2xl
               border border-card-border
               bg-card p-2 shadow-lg
             "
           >
-            {/* Profile Header */}
+            {/* User Info */}
             <div
               className="
                 mb-2 flex items-center
-                gap-3 rounded-2xl
+                gap-3 rounded-xl
                 bg-background p-3
               "
             >
               <div
                 className="
-                  flex h-11 w-11
+                  flex h-10 w-10
                   items-center justify-center
-                  rounded-2xl
+                  rounded-xl
 
                   bg-primary
 
-                  text-sm font-bold
+                  text-xs font-bold
                   text-sidebar
                 "
               >
-                AD
+                SH
               </div>
 
               <div className="min-w-0">
@@ -274,7 +273,7 @@ export default function AdminHeader({
                     font-semibold text-foreground
                   "
                 >
-                  Admin User
+                  Shipper User
                 </p>
 
                 <p
@@ -283,14 +282,15 @@ export default function AdminHeader({
                     text-muted
                   "
                 >
-                  admin@logicallinks.com
+                  shipper@logicallinks.com
                 </p>
               </div>
             </div>
 
+            {/* Menu */}
             <DropdownMenuItem asChild>
               <Link
-                href="/admin/profile"
+                href="/shipper/profile"
                 className="
                   flex cursor-pointer
                   items-center gap-2
@@ -304,7 +304,21 @@ export default function AdminHeader({
 
             <DropdownMenuItem asChild>
               <Link
-                href="/admin/settings"
+                href="/shipper/shipments"
+                className="
+                  flex cursor-pointer
+                  items-center gap-2
+                  rounded-xl
+                "
+              >
+                <PackageCheck className="h-4 w-4" />
+                My Shipments
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem asChild>
+              <Link
+                href="/shipper/settings"
                 className="
                   flex cursor-pointer
                   items-center gap-2
@@ -318,6 +332,7 @@ export default function AdminHeader({
 
             <DropdownMenuSeparator />
 
+            {/* Logout */}
             <DropdownMenuItem
               onSelect={handleSignOut}
               className="

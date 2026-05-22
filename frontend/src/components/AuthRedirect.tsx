@@ -19,8 +19,8 @@ export default function AuthRedirect() {
         .from('profiles').select('role').eq('id', session.user.id).single()
 
       const role = (profile as { role?: string } | null)?.role
-      if (role === 'super_admin') router.push('/admin/dashboard')
-      else if (role === 'fitter') router.push('/fitter/dashboard')
+      if (role === 'admin') router.push('/admin/dashboard')
+      else if (role === 'shipper') router.push('/shipper/dashboard')
     })
   }, [router])
 

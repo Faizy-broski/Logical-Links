@@ -23,8 +23,8 @@ const oswald = Oswald({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Tyre Vault',
-    template: '%s | Tyre Vault',
+    default: 'Logical Links',
+    template: '%s | Logical Links',
   },
   description: 'Premium tyres and autoparts — shop, compare, and book fitting online.',
 }

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .single()
 
-    if ((profile as any)?.role === 'super_admin') {
+    if ((profile as any)?.role === 'admin') {
       return NextResponse.json(
         { error: 'Password reset is not available for admin accounts. Contact your system administrator.' },
         { status: 403 }
