@@ -9,15 +9,10 @@ import {
   PackageCheck,
   Truck,
   Users,
-  FileText,
   Settings,
   ChevronDown,
   ChevronRight,
-  LogOut,
   X,
-  CreditCard,
-  MapPinned,
-  Building2,
   BellRing,
 } from "lucide-react";
 
@@ -33,52 +28,22 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    label: "Shipments",
-    href: "/admin/shipments",
-    icon: PackageCheck,
-  },
-  {
-    label: "Loads",
-    href: "/admin/loads",
-    icon: Truck,
-  },
-  {
-    label: "Customers",
-    href: "/admin/customers",
+    label: "Shippers",
+    href: "/admin/shipper-details",
     icon: Users,
   },
   {
-    label: "Invoices",
-    href: "/admin/invoices",
-    icon: CreditCard,
-  },
-  {
-    label: "Tracking",
-    href: "/admin/tracking",
-    icon: MapPinned,
-  },
-  {
-    label: "Couriers",
-    href: "/admin/couriers",
-    icon: Building2,
-  },
-  {
-    label: "Reports",
-    href: "/admin/reports",
-    icon: FileText,
-  },
-  {
-    label: "Management",
-    href: "/admin/management",
+    label: "Loads",
+    href: "/admin/load-details",
     icon: BellRing,
     children: [
       {
-        label: "Lead Status",
-        href: "/admin/management/lead-status",
+        label: "Loads",
+        href: "/admin/load-details",
       },
       {
-        label: "Transport Modes",
-        href: "/admin/management/transport-modes",
+        label: "Create Loads",
+        href: "/admin/loads/create",
       },
     ],
   },
@@ -258,7 +223,7 @@ export default function AdminSidebar({
                     font-medium transition-all
                   `,
                   active
-                    ? "bg-primary text-sidebar"
+                    ? "bg-primary text-white"
                     : `
                       text-zinc-300
                       hover:bg-sidebar-secondary

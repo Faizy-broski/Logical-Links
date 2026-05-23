@@ -89,8 +89,7 @@ export default function DashboardShell({
     )
   }
 
-  const isAdmin =
-    role === 'admin'
+  const isAdmin = role === 'admin'
 
   return (
     <div

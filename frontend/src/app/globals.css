@@ -11,9 +11,9 @@
   --sidebar-border: rgba(255, 255, 255, 0.06);
 
   /* Brand */
-  --primary: #c89b3c;
-  --primary-light: #e0b75d;
-  --primary-dark: #8a6824;
+  --primary: oklch(70.509% 0.11237 80.678);
+  --primary-light: oklch(79.808% 0.11829 85.006);
+  --primary-dark: oklch(56.051% 0.11986 72.186);
 
   /* Cards */
   --card: #ffffff;
@@ -81,4 +81,14 @@
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
+}
+
+body {
+  font-family: var(--font-inter);
+}
+
+h1,
+h3,
+.display-font {
+  font-family: var(--font-cormorant);
 }

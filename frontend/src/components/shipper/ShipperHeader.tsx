@@ -108,31 +108,6 @@ export default function ShipperHeader({
 
       {/* Right */}
       <div className="flex items-center gap-2.5">
-        {/* Search */}
-        <div
-          className="
-            hidden items-center gap-2
-            rounded-xl border
-            border-card-border
-
-            bg-background px-3
-            lg:flex
-          "
-        >
-          <Search className="h-4 w-4 text-muted" />
-
-          <input
-            type="text"
-            placeholder="Search shipments..."
-            className="
-              h-10 w-47.5
-              bg-transparent text-sm
-              text-foreground outline-none
-
-              placeholder:text-muted-light
-            "
-          />
-        </div>
 
         {/* Notifications */}
         <button
@@ -299,34 +274,6 @@ export default function ShipperHeader({
               >
                 <User className="h-4 w-4" />
                 Profile
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem asChild>
-              <Link
-                href="/shipper/shipments"
-                className="
-                  flex cursor-pointer
-                  items-center gap-2
-                  rounded-xl
-                "
-              >
-                <PackageCheck className="h-4 w-4" />
-                My Shipments
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem asChild>
-              <Link
-                href="/shipper/settings"
-                className="
-                  flex cursor-pointer
-                  items-center gap-2
-                  rounded-xl
-                "
-              >
-                <Settings className="h-4 w-4" />
-                Settings
               </Link>
             </DropdownMenuItem>
 

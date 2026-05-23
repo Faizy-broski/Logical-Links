@@ -109,31 +109,6 @@ export default function AdminHeader({
 
       {/* Right */}
       <div className="flex items-center gap-3">
-        {/* Search */}
-        <div
-          className="
-            hidden items-center gap-2
-            rounded-2xl border
-            border-card-border
-
-            bg-background px-4
-            sm:flex
-          "
-        >
-          <Search className="h-4 w-4 text-muted" />
-
-          <input
-            type="text"
-            placeholder="Search..."
-            className="
-              h-11 w-55
-              bg-transparent text-sm
-              text-foreground outline-none
-
-              placeholder:text-muted-light
-            "
-          />
-        </div>
 
         {/* Notifications */}
         <button
@@ -299,20 +274,6 @@ export default function AdminHeader({
               >
                 <User className="h-4 w-4" />
                 Profile
-              </Link>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem asChild>
-              <Link
-                href="/admin/settings"
-                className="
-                  flex cursor-pointer
-                  items-center gap-2
-                  rounded-xl
-                "
-              >
-                <Settings className="h-4 w-4" />
-                Settings
               </Link>
             </DropdownMenuItem>
 

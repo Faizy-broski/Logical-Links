@@ -6,19 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 
 import {
   LayoutDashboard,
-  PackageCheck,
   Truck,
-  Users,
-  FileText,
-  Settings,
   ChevronDown,
   ChevronRight,
-  LogOut,
   X,
-  CreditCard,
-  MapPinned,
-  Building2,
-  BellRing,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -29,63 +20,23 @@ import { createClient } from "@/lib/supabase/client";
 const navigation = [
   {
     label: "Dashboard",
-    href: "/admin/dashboard",
+    href: "/shipper/dashboard",
     icon: LayoutDashboard,
   },
   {
-    label: "Shipments",
-    href: "/admin/shipments",
-    icon: PackageCheck,
-  },
-  {
     label: "Loads",
-    href: "/admin/loads",
+    href: "/shipper/loads",
     icon: Truck,
-  },
-  {
-    label: "Customers",
-    href: "/admin/customers",
-    icon: Users,
-  },
-  {
-    label: "Invoices",
-    href: "/admin/invoices",
-    icon: CreditCard,
-  },
-  {
-    label: "Tracking",
-    href: "/admin/tracking",
-    icon: MapPinned,
-  },
-  {
-    label: "Couriers",
-    href: "/admin/couriers",
-    icon: Building2,
-  },
-  {
-    label: "Reports",
-    href: "/admin/reports",
-    icon: FileText,
-  },
-  {
-    label: "Management",
-    href: "/admin/management",
-    icon: BellRing,
     children: [
       {
-        label: "Lead Status",
-        href: "/admin/management/lead-status",
+        label: "Loads",
+        href: "/shipper/loads",
       },
       {
-        label: "Transport Modes",
-        href: "/admin/management/transport-modes",
+        label: "Create Loads",
+        href: "/shipper/loads/create",
       },
     ],
-  },
-  {
-    label: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
   },
 ];
 
@@ -94,32 +45,18 @@ interface Props {
   onClose?: () => void;
 }
 
-export default function ShipperSidebar({
-  isOpen = false,
-  onClose,
-}: Props) {
+export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [openMenus, setOpenMenus] = useState<
-    string[]
-  >(["Management"]);
+  const [openMenus, setOpenMenus] = useState<string[]>(["Management"]);
 
   function toggleMenu(label: string) {
     setOpenMenus((prev) =>
       prev.includes(label)
         ? prev.filter((item) => item !== label)
-        : [...prev, label]
+        : [...prev, label],
     );
-  }
-
-  async function signOut() {
-    const supabase = createClient();
-
-    await supabase.auth.signOut();
-
-    router.push("/login");
-    router.refresh();
   }
 
   return (
@@ -137,9 +74,9 @@ export default function ShipperSidebar({
       )}
 
       {/* Sidebar */}
-     <aside
-  className={cn(
-    `
+      <aside
+        className={cn(
+          `
       fixed inset-y-0 left-0 z-50
       flex w-62 flex-col
 
@@ -150,62 +87,57 @@ export default function ShipperSidebar({
 
       lg:relative lg:translate-x-0
     `,
-    isOpen
-      ? "translate-x-0"
-      : "-translate-x-full lg:translate-x-0"
-  )}
->
-  {/* Top */}
-  <div
-    className="
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+        )}
+      >
+        {/* Top */}
+        <div
+          className="
       flex h-16 items-center
       justify-between border-b
       border-sidebar-border px-4
     "
-  >
-    <Link
-      href="/admin/dashboard"
-      className="flex items-center gap-2.5"
-    >
-      <div
-        className="
+        >
+          <Link href="/admin/dashboard" className="flex items-center gap-2.5">
+            <div
+              className="
           flex h-9 w-9 items-center
           justify-center rounded-xl
           bg-primary/10
         "
-      >
-        <Image
-          src="/logical-links-logo.png"
-          alt="Logical Links"
-          width={22}
-          height={22}
-          className="object-contain"
-        />
-      </div>
+            >
+              <Image
+                src="/logical-links-logo.png"
+                alt="Logical Links"
+                width={22}
+                height={22}
+                className="object-contain"
+              />
+            </div>
 
-      <div>
-        <h2
-          className="
+            <div>
+              <h2
+                className="
             text-[13px] font-semibold
             tracking-wide text-white
           "
-        >
-          Logical Links
-        </h2>
+              >
+                Logical Links
+              </h2>
 
-        <p
-          className="
+              <p
+                className="
             text-[11px] text-zinc-500
           "
-        >
-          Shipping CMS
-        </p>
-      </div>
-    </Link>
+              >
+                Shipping CMS
+              </p>
+            </div>
+          </Link>
 
-    <button
-      onClick={onClose}
-      className="
+          <button
+            onClick={onClose}
+            className="
         flex h-8 w-8 items-center
         justify-center rounded-lg
         text-zinc-400 transition-colors
@@ -215,14 +147,14 @@ export default function ShipperSidebar({
 
         lg:hidden
       "
-    >
-      <X className="h-4 w-4" />
-    </button>
-  </div>
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-  {/* Navigation */}
-  <div
-    className="
+        {/* Navigation */}
+        <div
+          className="
       flex-1 overflow-y-auto
       px-2.5 py-3
 
@@ -231,137 +163,132 @@ export default function ShipperSidebar({
 
       [&::-webkit-scrollbar]:hidden
     "
-  >
-    <div className="space-y-1">
-      {navigation.map((item) => {
-        const Icon = item.icon;
+        >
+          <div className="space-y-1">
+            {navigation.map((item) => {
+              const Icon = item.icon;
 
-        const active =
-          pathname === item.href ||
-          pathname.startsWith(`${item.href}/`);
+              const active =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-        const isExpanded =
-          openMenus.includes(item.label);
+              const isExpanded = openMenus.includes(item.label);
 
-        if (item.children) {
-          return (
-            <div key={item.label}>
-              <button
-                onClick={() =>
-                  toggleMenu(item.label)
-                }
-                className={cn(
-                  `
+              if (item.children) {
+                return (
+                  <div key={item.label}>
+                    <button
+                      onClick={() => toggleMenu(item.label)}
+                      className={cn(
+                        `
                     flex w-full items-center
                     justify-between rounded-xl
                     px-3 py-2.5 text-[13px]
                     font-medium transition-all
                   `,
-                  active
-                    ? "bg-primary text-sidebar"
-                    : `
+                        active
+                          ? "bg-primary text-sidebar"
+                          : `
                       text-zinc-300
                       hover:bg-sidebar-secondary
                       hover:text-white
-                    `
-                )}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className="h-4 w-4 shrink-0" />
+                    `,
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="h-4 w-4 shrink-0" />
 
-                  <span>{item.label}</span>
-                </div>
+                        <span>{item.label}</span>
+                      </div>
 
-                {isExpanded ? (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5" />
-                )}
-              </button>
+                      {isExpanded ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                    </button>
 
-              {isExpanded && (
-                <div className="mt-1 ml-4 space-y-1 border-l border-white/5 pl-3">
-                  {item.children.map((child) => {
-                    const childActive =
-                      pathname === child.href;
+                    {isExpanded && (
+                      <div className="mt-1 ml-4 space-y-1 border-l border-white/5 pl-3">
+                        {item.children.map((child) => {
+                          const childActive = pathname === child.href;
 
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={onClose}
-                        className={cn(
-                          `
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={onClose}
+                              className={cn(
+                                `
                             block rounded-lg
                             px-3 py-2 text-[12px]
                             transition-all
                           `,
-                          childActive
-                            ? `
+                                childActive
+                                  ? `
                               bg-primary/15
                               font-medium
                               text-primary
                             `
-                            : `
+                                  : `
                               text-zinc-400
                               hover:bg-sidebar-secondary
                               hover:text-white
-                            `
-                        )}
-                      >
-                        {child.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        }
+                            `,
+                              )}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onClose}
-            className={cn(
-              `
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    `
                 group flex items-center
-                gap-2.5 rounded-xl
+                gap-2.5 rounded
                 px-3 py-2.5 text-[13px]
                 font-medium transition-all
               `,
-              active
-                ? `
-                  bg-primary
-                  text-sidebar
+                    active
+                      ? `
+                  bg-primary/30
+                  text-primary
                   shadow-md
                 `
-                : `
+                      : `
                   text-zinc-300
                   hover:bg-sidebar-secondary
                   hover:text-white
-                `
-            )}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
+                `,
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
 
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </div>
-  </div>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
-  {/* Bottom */}
-  <div
-    className="
+        {/* Bottom */}
+        <div
+          className="
       border-t border-sidebar-border
       p-3
     "
-  >
-    {/* User */}
-    <div
+        >
+          {/* User */}
+          {/* <div
       className="
         mb-3 flex items-center gap-2.5
         rounded-xl border
@@ -399,19 +326,19 @@ export default function ShipperSidebar({
           admin@logicallinks.com
         </p>
       </div>
-    </div>
+    </div> */}
 
-    {/* Footer */}
-    <p
-      className="
+          {/* Footer */}
+          <p
+            className="
         mt-3 text-center text-[10px]
         text-zinc-500
       "
-    >
-      © 2026 Logical Links CMS
-    </p>
-  </div>
-</aside>
+          >
+            © 2026 Logical Links CMS
+          </p>
+        </div>
+      </aside>
     </>
   );
 }

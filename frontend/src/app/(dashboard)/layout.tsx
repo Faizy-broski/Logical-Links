@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import AdminShell from "@/components/layout/DashboardShell";
+import DashboardShell from "@/components/layout/DashboardShell";
 
 export const metadata: Metadata = {
-  title: "Admin",
+  title: "Dashboard",
 };
 
-export default async function AdminLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -29,6 +29,6 @@ export default async function AdminLayout({
   //   redirect("/");
 
   return (
-    <AdminShell>{children}</AdminShell>
+    <DashboardShell>{children}</DashboardShell>
   );
 }
