@@ -111,7 +111,7 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
                 alt="Logical Links"
                 width={22}
                 height={22}
-                className="object-contain"
+                className="object-contain w-auto h-auto"
               />
             </div>
 

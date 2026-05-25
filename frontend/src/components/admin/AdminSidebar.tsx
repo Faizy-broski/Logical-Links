@@ -47,11 +47,6 @@ const navigation = [
       },
     ],
   },
-  {
-    label: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
 ];
 
 interface Props {
@@ -144,7 +139,7 @@ export default function AdminSidebar({
           alt="Logical Links"
           width={22}
           height={22}
-          className="object-contain"
+          className="object-contain w-10 h-auto"
         />
       </div>
 
