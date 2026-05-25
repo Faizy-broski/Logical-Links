@@ -1,46 +1,35 @@
 import { Request, Response, NextFunction } from 'express'
-import { supabase } from '../services/supabase.service'
+import { verifyAccessToken } from '../lib/jwt'
+import { AppError } from '../lib/errors'
 
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string
-    email: string
-    role: 'super_admin' | 'fitter' | 'customer'
-  }
-}
+// ── Role type ─────────────────────────────────────────────────────────────────
+// Defined here so every module that imports AuthenticatedRequest gets it
+// from one canonical location.
+export type UserRole = 'admin' | 'shipper'
 
-export async function authMiddleware(
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+// ── Auth middleware ───────────────────────────────────────────────────────────
+// Previous implementation: supabase.auth.getUser(token) — 1 network call per request.
+// This implementation: jwt.verify(token, secret) — pure cryptography, <1 ms, no I/O.
+//
+// The role is embedded in the JWT payload at login time, so RBAC decisions
+// require zero DB lookups during the lifetime of the access token.
+// If a user's role changes, it takes effect on their next login (15 min max).
+// For immediate revocation use cases, add a token blocklist (Redis).
+export function authMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const authHeader = req.headers.authorization
 
   if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid authorization header' })
-    return
+    return void next(AppError.unauthorized('Authorization header missing or malformed'))
   }
 
   const token = authHeader.split(' ')[1]
 
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-
-  if (error || !user) {
-    res.status(401).json({ error: 'Invalid or expired token' })
-    return
-  }
-
-  // Fetch role from profiles table
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
+  // verifyAccessToken throws AppError — caught by the global error handler
+  const payload = verifyAccessToken(token!)
   req.user = {
-    id: user.id,
-    email: user.email ?? '',
-    role: profile?.role ?? 'customer',
+    id: payload.sub,
+    email: payload.email,
+    role: payload.role,
   }
 
   next()

@@ -1,57 +1,48 @@
-import 'dotenv/config'
-import express from 'express'
-import cors from 'cors'
-import helmet from 'helmet'
-import compression from 'compression'
-import { errorMiddleware } from './middleware/error.middleware'
+import './lib/env' // validate env at startup before anything else
+import { createApp } from './app'
+import { env } from './lib/env'
+import { logger } from './lib/logger'
 
-const app = express()
-const PORT = process.env.PORT || 3001
+const app = createApp()
 
-// --- Security & compression ---
-app.use(helmet())
-app.use(compression())
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}))
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true }))
-
-// --- Health check ---
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+const server = app.listen(env.PORT, () => {
+  logger.info(`Logical Links CMS backend started`, {
+    port: env.PORT,
+    env: env.NODE_ENV,
+    url: `http://localhost:${env.PORT}`,
+  })
 })
 
-// --- Routes ---
-import adminProductsRoutes      from './routes/admin.products.routes'
-import adminCustomersRoutes     from './routes/admin.customers.routes'
-import adminOrdersRoutes        from './routes/admin.orders.routes'
-import adminFitmentCentresRoutes from './routes/admin.fitment-centres.routes'
-import adminSuppliersRoutes     from './routes/admin.suppliers.routes'
-import fitterRoutes             from './routes/fitter.routes'
-import fitterPortalRoutes       from './routes/fitter-portal.routes'
-import storefrontProductsRoutes from './routes/storefront.products.routes'
-import cartRoutes               from './routes/cart.routes'
-app.use('/api/admin/products',         adminProductsRoutes)
-app.use('/api/admin/customers',        adminCustomersRoutes)
-app.use('/api/admin/orders',           adminOrdersRoutes)
-app.use('/api/admin/fitment-centres',  adminFitmentCentresRoutes)
-app.use('/api/admin/suppliers',        adminSuppliersRoutes)
-app.use('/api/fitter',                 fitterRoutes)
-app.use('/api/fitter/portal',          fitterPortalRoutes)
-app.use('/api/products',               storefrontProductsRoutes)
-app.use('/api/cart',                   cartRoutes)
-// app.use('/api/orders', orderRoutes)
-// app.use('/api/shipping', shippingRoutes)
-// app.use('/api/stripe', stripeRoutes)
-// app.use('/api/make-model', makeModelRoutes)
+// ── Graceful shutdown ──────────────────────────────────────────────────────
 
-// --- Error handler (must be last) ---
-app.use(errorMiddleware)
+function shutdown(signal: string): void {
+  logger.info(`${signal} received — shutting down gracefully`)
+  server.close((err) => {
+    if (err) {
+      logger.error('Error during shutdown', { error: err.message })
+      process.exit(1)
+    }
+    logger.info('Server closed')
+    process.exit(0)
+  })
 
-app.listen(PORT, () => {
-  console.log(`Onyx backend running on port ${PORT}`)
+  // Force-exit if shutdown takes longer than 10 s
+  setTimeout(() => {
+    logger.error('Graceful shutdown timeout — forcing exit')
+    process.exit(1)
+  }, 10_000)
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection', { reason })
+})
+
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception — exiting', { message: err.message, stack: err.stack })
+  process.exit(1)
 })
 
 export default app
