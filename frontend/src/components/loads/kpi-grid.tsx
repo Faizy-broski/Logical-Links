@@ -5,28 +5,28 @@ const kpiItems = [
   {
     title: "Total Loads",
     key: "total",
-    icon: <Truck className="h-5 w-5" />,
+    icon: Truck,
   },
   {
     title: "In Transit",
     key: "transit",
-    icon: <Clock3 className="h-5 w-5" />,
+    icon: Clock3,
   },
   {
     title: "Delivered",
     key: "delivered",
-    icon: <CheckCircle2 className="h-5 w-5" />,
+    icon: CheckCircle2,
   },
   {
     title: "Exceptions",
     key: "exceptions",
-    icon: <AlertTriangle className="h-5 w-5" />,
+    icon: AlertTriangle,
   },
 ];
 
 export default function KpiGrid({ stats }: { stats: any }) {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-5 sm:grid-cols-4 xl:grid-cols-4">
       {kpiItems.map((item) => (
         <KpiCard
           key={item.key}

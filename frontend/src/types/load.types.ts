@@ -27,6 +27,7 @@ export type Load = {
   mode: Mode;
   origin: string;
   destination: string;
+  createdBy: string;
   createdAt: string;
   isPrivate: boolean;
 };

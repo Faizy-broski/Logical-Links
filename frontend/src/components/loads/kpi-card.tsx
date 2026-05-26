@@ -1,157 +1,182 @@
 "use client";
 
-import * as React from "react";
+import { Truck, type LucideIcon } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
   Tooltip,
+  type TooltipProps,
 } from "recharts";
-
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-interface KpiCardProps {
-  title: string;
-  value: number | string;
-  icon: React.ReactNode;
-  growth?: string;
-  subtitle?: string;
-  chartColor?: string;
-  data?: { value: number }[];
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface KpiDataPoint {
+  value: number;
 }
 
-const defaultData = [
-  { value: 12 },
-  { value: 18 },
-  { value: 15 },
-  { value: 24 },
+export interface KpiCardProps {
+  /** Card label shown above the value */
+  title: string;
+  /** Primary metric — number or pre-formatted string (e.g. "98.6%") */
+  value: number | string;
+  /** Lucide icon component */
+  icon: LucideIcon;
+  /** Growth percentage string, e.g. "12.5%" */
+  growth?: string;
+  /** "up" renders green ↑, "down" renders red ↓ */
+  trend?: "up" | "down";
+  /** Supporting label below the value, e.g. "vs May 13 – May 19, 2024" */
+  subtitle?: string;
+  /** Tailwind arbitrary hex or a CSS color string for the chart & icon accent */
+  chartColor?: string;
+  /** Sparkline data — array of { value: number } objects */
+  data?: KpiDataPoint[];
+  /** Extra classes on the root card element */
+  className?: string;
+}
+
+// ─── Default sparkline data ───────────────────────────────────────────────────
+
+const DEFAULT_DATA: KpiDataPoint[] = [
+  { value: 14 },
   { value: 20 },
-  { value: 32 },
-  { value: 28 },
-  { value: 36 },
+  { value: 13 },
+  { value: 24 },
+  { value: 18 },
+  { value: 30 },
+  { value: 25 },
+  { value: 34 },
 ];
+
+// ─── Custom recharts tooltip ──────────────────────────────────────────────────
+
+function SparkTooltip({
+  active,
+  payload,
+}: TooltipProps<number, string> & {
+  payload?: Array<{ value?: number | string }>;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-[#EAE7E1] bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 shadow-md">
+      {payload[0].value}
+    </div>
+  );
+}
+
+// ─── KpiCard ──────────────────────────────────────────────────────────────────
 
 export function KpiCard({
   title,
   value,
-  icon,
-  growth = "+12.5%",
+  icon: Icon,
+  growth = "12.5%",
+  trend = "up",
   subtitle = "vs last week",
   chartColor = "#C89B3C",
-  data = defaultData,
+  data = DEFAULT_DATA,
+  className,
 }: KpiCardProps) {
+  const isUp = trend === "up";
+  const gradientId = `kpi-grad-${title.replace(/\s+/g, "-").toLowerCase()}`;
+
   return (
-    <Card
+    <div
       className={cn(
-        "group relative overflow-hidden border border-[#EAE7E1]",
-        "bg-white shadow-sm transition-all duration-300",
-        "hover:-translate-y-1 hover:shadow-xl"
+        // Base
+        "group relative overflow-hidden rounded-[22px] border border-[#EAE7E1] bg-white",
+        // Spacing
+        "px-6 pt-6 pb-5",
+        // Shadow + lift transition
+        "shadow-[0_2px_8px_rgba(0,0,0,0.05)] transition-all duration-300",
+        "hover:-translate-y-0.75 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]",
+        className,
       )}
-      style={{
-        borderRadius: "22px",
-      }}
     >
-      {/* glow */}
-      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#C89B3C]/10 blur-3xl transition-all duration-500 group-hover:bg-[#C89B3C]/20" />
+      {/* ── Ambient glow blob ── */}
+      <div
+        className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full opacity-60 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+        style={{ background: `${chartColor}1a` }}
+      />
 
-      <CardContent className="relative p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-neutral-500">
-              {title}
-            </p>
+      {/* ── Header row ── */}
+      <div className="relative flex items-start justify-between">
+        {/* Left: label + value + trend */}
+        <div className="flex flex-col">
+          <p className="text-[13px] font-medium tracking-wide text-neutral-400">
+            {title}
+          </p>
 
-            <div className="mt-3 flex items-end gap-3">
-              <h2
-                className="font-semibold tracking-tight text-[#171717]"
-                style={{
-                  fontSize: "2.3rem",
-                  lineHeight: 1,
-                  fontFamily: "var(--font-cormorant, serif)",
-                }}
-              >
-                {typeof value === "number"
-                  ? value.toLocaleString()
-                  : value}
-              </h2>
+          <div className="mt-3 flex items-end gap-2.5">
+            <span
+              className="text-[2.25rem] font-semibold leading-none tracking-tight text-neutral-900"
+              style={{ fontFamily: "'Cormorant Garamond', Georgia, serif" }}
+            >
+              {typeof value === "number" ? value.toLocaleString() : value}
+            </span>
 
-              <span className="mb-1 text-sm font-semibold text-emerald-600">
-                ↑ {growth}
-              </span>
-            </div>
-
-            <p className="mt-2 text-xs text-neutral-400">
-              {subtitle}
-            </p>
+            <span
+              className={cn(
+                "mb-0.5 text-xs font-bold tracking-wide",
+                isUp ? "text-emerald-500" : "text-red-500",
+              )}
+            >
+              {isUp ? "↑" : "↓"} {growth}
+            </span>
           </div>
 
-          {/* Icon */}
-          <div
-            className={cn(
-              "flex h-14 w-14 items-center justify-center",
-              "rounded-2xl border border-[#C89B3C]/10",
-              "bg-[#C89B3C]/5 text-[#C89B3C]",
-              "shadow-sm backdrop-blur-sm"
-            )}
+          <p className="mt-1.5 text-[11px] text-neutral-400">{subtitle}</p>
+        </div>
+
+        {/* Right: icon badge */}
+        <div
+          className="flex size-13 shrink-0 items-center justify-center rounded-2xl"
+          style={{
+            background: `${chartColor}0d`,
+            border: `1px solid ${chartColor}22`,
+            color: chartColor,
+            boxShadow: `0 2px 8px ${chartColor}18`,
+          }}
+        >
+          <Icon className="h-6 w-6" size={22} />
+        </div>
+      </div>
+
+      {/* ── Sparkline ── */}
+      <div className="relative mt-5 h-14 w-full min-w-0">
+        <ResponsiveContainer width="100%" height={56}>
+          <AreaChart
+            data={data}
+            margin={{ top: 2, right: 2, bottom: 2, left: 2 }}
           >
-            {icon}
-          </div>
-        </div>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
 
-        {/* Chart */}
-        <div className="mt-6 h-17.5 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient
-                  id={`gradient-${title}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor={chartColor}
-                    stopOpacity={0.35}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor={chartColor}
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
+            <Tooltip content={<SparkTooltip />} cursor={false} />
 
-              <Tooltip
-                cursor={false}
-                contentStyle={{
-                  borderRadius: 12,
-                  border: "1px solid #eee",
-                  fontSize: 12,
-                }}
-              />
-
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke={chartColor}
-                strokeWidth={3}
-                fill={`url(#gradient-${title})`}
-                dot={false}
-                activeDot={{
-                  r: 5,
-                  fill: chartColor,
-                  stroke: "#fff",
-                  strokeWidth: 2,
-                }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke={chartColor}
+              strokeWidth={2.5}
+              fill={`url(#${gradientId})`}
+              dot={false}
+              activeDot={{
+                r: 4,
+                fill: chartColor,
+                stroke: "#fff",
+                strokeWidth: 2,
+              }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }
