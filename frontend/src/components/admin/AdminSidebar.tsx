@@ -34,19 +34,24 @@ const navigation = [
   },
   {
     label: "Loads",
-    href: "/admin/load-details",
-    icon: BellRing,
-    children: [
-      {
-        label: "Loads",
-        href: "/admin/load-details",
-      },
-      {
-        label: "Create Loads",
-        href: "/admin/loads/create",
-      },
-    ],
-  },
+    href: "/admin/loads",
+    icon: Truck,
+  }
+  // {
+  //   label: "Loads",
+  //   href: "/admin/load-details",
+  //   icon: BellRing,
+  //   children: [
+  //     {
+  //       label: "Loads",
+  //       href: "/admin/load-details",
+  //     },
+  //     {
+  //       label: "Create Loads",
+  //       href: "/admin/loads/create",
+  //     },
+  //   ],
+  // },
 ];
 
 interface Props {
@@ -203,81 +208,81 @@ export default function AdminSidebar({
         const isExpanded =
           openMenus.includes(item.label);
 
-        if (item.children) {
-          return (
-            <div key={item.label}>
-              <button
-                onClick={() =>
-                  toggleMenu(item.label)
-                }
-                className={cn(
-                  `
-                    flex w-full items-center
-                    justify-between rounded-xl
-                    px-3 py-2.5 text-[13px]
-                    font-medium transition-all
-                  `,
-                  active
-                    ? "bg-primary text-white"
-                    : `
-                      text-zinc-300
-                      hover:bg-sidebar-secondary
-                      hover:text-white
-                    `
-                )}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className="h-4 w-4 shrink-0" />
+        // if (item.children) {
+        //   return (
+        //     <div key={item.label}>
+        //       <button
+        //         onClick={() =>
+        //           toggleMenu(item.label)
+        //         }
+        //         className={cn(
+        //           `
+        //             flex w-full items-center
+        //             justify-between rounded-xl
+        //             px-3 py-2.5 text-[13px]
+        //             font-medium transition-all
+        //           `,
+        //           active
+        //             ? "bg-primary text-white"
+        //             : `
+        //               text-zinc-300
+        //               hover:bg-sidebar-secondary
+        //               hover:text-white
+        //             `
+        //         )}
+        //       >
+        //         <div className="flex items-center gap-2.5">
+        //           <Icon className="h-4 w-4 shrink-0" />
 
-                  <span>{item.label}</span>
-                </div>
+        //           <span>{item.label}</span>
+        //         </div>
 
-                {isExpanded ? (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5" />
-                )}
-              </button>
+        //         {isExpanded ? (
+        //           <ChevronDown className="h-3.5 w-3.5" />
+        //         ) : (
+        //           <ChevronRight className="h-3.5 w-3.5" />
+        //         )}
+        //       </button>
 
-              {isExpanded && (
-                <div className="mt-1 ml-4 space-y-1 border-l border-white/5 pl-3">
-                  {item.children.map((child) => {
-                    const childActive =
-                      pathname === child.href;
+        //       {isExpanded && (
+        //         <div className="mt-1 ml-4 space-y-1 border-l border-white/5 pl-3">
+        //           {item.children.map((child) => {
+        //             const childActive =
+        //               pathname === child.href;
 
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={onClose}
-                        className={cn(
-                          `
-                            block rounded-lg
-                            px-3 py-2 text-[12px]
-                            transition-all
-                          `,
-                          childActive
-                            ? `
-                              bg-primary/15
-                              font-medium
-                              text-primary
-                            `
-                            : `
-                              text-zinc-400
-                              hover:bg-sidebar-secondary
-                              hover:text-white
-                            `
-                        )}
-                      >
-                        {child.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        }
+        //             return (
+        //               <Link
+        //                 key={child.href}
+        //                 href={child.href}
+        //                 onClick={onClose}
+        //                 className={cn(
+        //                   `
+        //                     block rounded-lg
+        //                     px-3 py-2 text-[12px]
+        //                     transition-all
+        //                   `,
+        //                   childActive
+        //                     ? `
+        //                       bg-primary/15
+        //                       font-medium
+        //                       text-primary
+        //                     `
+        //                     : `
+        //                       text-zinc-400
+        //                       hover:bg-sidebar-secondary
+        //                       hover:text-white
+        //                     `
+        //                 )}
+        //               >
+        //                 {child.label}
+        //               </Link>
+        //             );
+        //           })}
+        //         </div>
+        //       )}
+        //     </div>
+        //   );
+        // }
 
         return (
           <Link
