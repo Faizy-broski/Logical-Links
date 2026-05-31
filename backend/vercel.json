@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.ts"
+    }
+  ],
+  "env": {
+    "ALLOWED_ORIGINS": "https://logical-links.vercel.app",
+    "TRUST_PROXY": "1",
+    "NODE_ENV": "production"
+  }
+}

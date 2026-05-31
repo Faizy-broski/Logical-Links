@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import type { CorsOptions } from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
 import { env, allowedOrigins } from './lib/env'
@@ -11,28 +12,38 @@ import { errorMiddleware } from './middleware/error.middleware'
 import { supabase } from './services/supabase.service'
 import { v1Router } from './routes/v1'
 
+// Defined outside createApp so error middleware can reuse the same origin check.
+export const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    // Allow server-to-server requests (no Origin header) and whitelisted origins.
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+    // Reject silently with false — no error thrown, no CORS headers set.
+    // The browser will block the response; no internal error is leaked.
+    callback(null, false)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+  exposedHeaders: ['X-Request-Id'],
+  // Cache preflight result for 24 h — avoids a round-trip OPTIONS before every
+  // credentialed request (Authorization header triggers preflight).
+  maxAge: 86_400,
+}
+
 export function createApp(): express.Application {
   const app = express()
 
   // ── Reverse-proxy trust ───────────────────────────────────────────────────
   // Required for rate-limiting to see the real client IP from X-Forwarded-For.
-  // Set TRUST_PROXY=1 in production (one hop: Nginx/ALB → app).
+  // Set TRUST_PROXY=1 in production (one hop: Vercel edge → function).
   app.set('trust proxy', env.TRUST_PROXY)
 
   // ── Security ──────────────────────────────────────────────────────────────
+  // cors must come before helmet so CORS headers are set on preflight responses.
+  // When cors sees an OPTIONS request it responds with 204 immediately and does
+  // NOT call next() — so OPTIONS never reaches the rate-limiter.
+  app.use(cors(corsOptions))
   app.use(helmet())
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        // Allow server-to-server requests (no origin) and whitelisted origins.
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
-        callback(new Error(`Origin '${origin}' not allowed by CORS`))
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
-    }),
-  )
 
   // ── Performance ───────────────────────────────────────────────────────────
   app.use(compression())
