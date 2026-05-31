@@ -23,32 +23,22 @@ export interface KpiCardProps {
   value: number | string;
   /** Lucide icon component */
   icon: LucideIcon;
-  /** Growth percentage string, e.g. "12.5%" */
+  /** Growth percentage string, e.g. "12.5%" — omit to hide growth badge */
   growth?: string;
   /** "up" renders green ↑, "down" renders red ↓ */
   trend?: "up" | "down";
-  /** Supporting label below the value, e.g. "vs May 13 – May 19, 2024" */
+  /** Supporting label below the value, e.g. "vs last 30 days" */
   subtitle?: string;
   /** Tailwind arbitrary hex or a CSS color string for the chart & icon accent */
   chartColor?: string;
-  /** Sparkline data — array of { value: number } objects */
+  /** Sparkline data — array of { value: number } objects; omit to hide chart */
   data?: KpiDataPoint[];
+  /** Show loading skeleton instead of content */
+  isLoading?: boolean;
   /** Extra classes on the root card element */
   className?: string;
 }
 
-// ─── Default sparkline data ───────────────────────────────────────────────────
-
-const DEFAULT_DATA: KpiDataPoint[] = [
-  { value: 14 },
-  { value: 20 },
-  { value: 13 },
-  { value: 24 },
-  { value: 18 },
-  { value: 30 },
-  { value: 25 },
-  { value: 34 },
-];
 
 // ─── Custom recharts tooltip ──────────────────────────────────────────────────
 
@@ -72,15 +62,36 @@ export function KpiCard({
   title,
   value,
   icon: Icon,
-  growth = "12.5%",
-  trend = "up",
-  subtitle = "vs last week",
+  growth,
+  trend,
+  subtitle = "vs last 30 days",
   chartColor = "#C89B3C",
-  data = DEFAULT_DATA,
+  data,
+  isLoading = false,
   className,
 }: KpiCardProps) {
-  const isUp = trend === "up";
+  const isUp = trend !== "down";
   const gradientId = `kpi-grad-${title.replace(/\s+/g, "-").toLowerCase()}`;
+
+  if (isLoading) {
+    return (
+      <div
+        className={cn(
+          "group relative overflow-hidden rounded-[22px] border border-[#EAE7E1] bg-white",
+          "px-6 pt-6 pb-5",
+          "shadow-[0_2px_8px_rgba(0,0,0,0.05)]",
+          className,
+        )}
+      >
+        <div className="animate-pulse space-y-3">
+          <div className="h-3 w-24 rounded-full bg-neutral-100" />
+          <div className="h-9 w-16 rounded-lg bg-neutral-100" />
+          <div className="h-2 w-20 rounded-full bg-neutral-100" />
+          <div className="mt-5 h-14 w-full rounded-lg bg-neutral-100" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -117,14 +128,16 @@ export function KpiCard({
               {typeof value === "number" ? value.toLocaleString() : value}
             </span>
 
-            <span
-              className={cn(
-                "mb-0.5 text-xs font-bold tracking-wide",
-                isUp ? "text-emerald-500" : "text-red-500",
-              )}
-            >
-              {isUp ? "↑" : "↓"} {growth}
-            </span>
+            {growth && (
+              <span
+                className={cn(
+                  "mb-0.5 text-xs font-bold tracking-wide",
+                  isUp ? "text-emerald-500" : "text-red-500",
+                )}
+              >
+                {isUp ? "↑" : "↓"} {growth}
+              </span>
+            )}
           </div>
 
           <p className="mt-1.5 text-[11px] text-neutral-400">{subtitle}</p>
@@ -145,38 +158,40 @@ export function KpiCard({
       </div>
 
       {/* ── Sparkline ── */}
-      <div className="relative mt-5 h-14 w-full min-w-0">
-        <ResponsiveContainer width="100%" height={56}>
-          <AreaChart
-            data={data}
-            margin={{ top: 2, right: 2, bottom: 2, left: 2 }}
-          >
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-              </linearGradient>
-            </defs>
+      {data && data.length > 0 && (
+        <div className="relative mt-5 h-14 w-full min-w-0">
+          <ResponsiveContainer width="100%" height={56}>
+            <AreaChart
+              data={data}
+              margin={{ top: 2, right: 2, bottom: 2, left: 2 }}
+            >
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
 
-            <Tooltip content={<SparkTooltip />} cursor={false} />
+              <Tooltip content={<SparkTooltip />} cursor={false} />
 
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke={chartColor}
-              strokeWidth={2.5}
-              fill={`url(#${gradientId})`}
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: chartColor,
-                stroke: "#fff",
-                strokeWidth: 2,
-              }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={chartColor}
+                strokeWidth={2.5}
+                fill={`url(#${gradientId})`}
+                dot={false}
+                activeDot={{
+                  r: 4,
+                  fill: chartColor,
+                  stroke: "#fff",
+                  strokeWidth: 2,
+                }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }

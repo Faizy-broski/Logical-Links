@@ -10,24 +10,34 @@ const LIST_SELECT = `
   shipment_type,
   status,
   account_id,
+  origin_address,
   origin_city,
   origin_state,
+  origin_postcode,
+  origin_country,
+  destination_address,
   destination_city,
   destination_state,
+  destination_postcode,
+  destination_country,
   cargo_description,
   weight_kg,
+  volume_m3,
+  pieces,
+  is_dangerous_goods,
+  requires_refrigeration,
   estimated_pickup_date,
   estimated_delivery_date,
   actual_delivery_date,
   quoted_price,
   confirmed_price,
   currency,
+  special_instructions,
   reference_number,
   created_by,
   created_at,
   updated_at,
-  accounts ( account_id, account_name, account_code ),
-  assignments ( assignment_id, is_current, status, driver_name, carriers ( carrier_name ) )
+  accounts ( account_id, account_name, account_code )
 `
 
 // DETAIL_SELECT: full projection for single-record fetch.
@@ -65,21 +75,7 @@ const DETAIL_SELECT = `
   created_by,
   created_at,
   updated_at,
-  accounts ( account_id, account_name, account_code, contact_name, contact_email ),
-  assignments (
-    assignment_id,
-    is_current,
-    status,
-    driver_name,
-    driver_phone,
-    vehicle_plate,
-    trailer_number,
-    pickup_date,
-    notes,
-    assigned_by,
-    created_at,
-    carriers ( carrier_id, carrier_name, phone, email )
-  )
+  accounts ( account_id, account_name, account_code, contact_name, contact_email )
 `
 
 // ── Shipments ─────────────────────────────────────────────────────────────────
@@ -93,9 +89,10 @@ export async function findById(id: string) {
 }
 
 export async function findAll(
-  query:   ListShipmentsQuery,
-  userId?: string,
-  isAdmin  = false,
+  query:     ListShipmentsQuery,
+  accountId?: string | null,
+  isAdmin    = false,
+  userId?:   string,
 ) {
   const offset = (query.page - 1) * query.limit
 
@@ -107,10 +104,17 @@ export async function findAll(
     .order('created_at', { ascending: false })
 
   // ── RBAC scoping ──────────────────────────────────────────────────────────
-  // Shippers only see their own shipments. Admins can optionally filter by
-  // account_id. These two branches are mutually exclusive.
-  if (!isAdmin && userId) {
-    q = q.eq('created_by', userId)
+  // Shippers see shipments belonging to their account OR created by them
+  // (covers pending loads they created before being assigned an account).
+  // Admins can optionally filter by account_id.
+  if (!isAdmin) {
+    if (accountId && userId) {
+      q = q.or(`account_id.eq.${accountId},created_by.eq.${userId}`)
+    } else if (accountId) {
+      q = q.eq('account_id', accountId)
+    } else if (userId) {
+      q = q.eq('created_by', userId)
+    }
   } else if (isAdmin && query.accountId) {
     q = q.eq('account_id', query.accountId)
   }
@@ -118,8 +122,6 @@ export async function findAll(
   // ── Filters ───────────────────────────────────────────────────────────────
   if (query.status)       q = q.eq('status', query.status)
   if (query.shipmentType) q = q.eq('shipment_type', query.shipmentType)
-  if (query.from)         q = q.gte('created_at', query.from)
-  if (query.to)           q = q.lte('created_at', query.to)
 
   // ── Search ────────────────────────────────────────────────────────────────
   // Covers load_number (trigram index), reference_number, origin and dest city.

@@ -6,6 +6,7 @@
 -- ── Extensions ───────────────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pg_trgm;         -- trigram fuzzy search
+CREATE EXTENSION IF NOT EXISTS pgcrypto;        -- crypt() / gen_salt() for seed
 
 -- ── Roles ─────────────────────────────────────────────────────────────────────
 CREATE TYPE user_role AS ENUM (

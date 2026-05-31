@@ -18,46 +18,51 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DataTableProps<TData> {
-  /** Column definitions built with @tanstack/react-table's ColumnDef */
   columns: ColumnDef<TData, unknown>[];
-  /** Rows to render */
   data: TData[];
-
-  // ── Header ──
-  /** Card title shown top-left */
   title?: string;
-  /** Controlled search value */
   searchValue?: string;
-  /** Called on every keystroke in the search box */
   onSearchChange?: (value: string) => void;
-  /** Placeholder text for the search input */
   searchPlaceholder?: string;
-
-  // ── Row interaction ──
-  /** Called when a row is clicked — receives the row's original data object */
   onRowClick?: (row: TData) => void;
-
-  // ── Pagination ──
-  /** Rows per page (default: 5) */
   pageSize?: number;
-
-  // ── Slots ──
-  /** Node rendered to the right of the title (e.g. a "Create" button) */
   headerActions?: React.ReactNode;
-  /** Replaces the default "No results" message */
   emptyState?: React.ReactNode;
-
-  // ── Style ──
+  isLoading?: boolean;
   className?: string;
-  /** Extra options forwarded directly to useReactTable */
   tableOptions?: Partial<TableOptions<TData>>;
+}
+
+// ─── Skeleton rows ────────────────────────────────────────────────────────────
+
+const SKELETON_WIDTHS = [
+  "w-1/3", "w-2/3", "w-5/12", "w-3/5", "w-5/12", "w-2/3", "w-1/3", "w-1/2",
+] as const;
+
+function SkeletonRows({ cols, rows }: { cols: number; rows: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, ri) => (
+        <TableRow key={ri} className="border-t border-card-border">
+          {Array.from({ length: cols }).map((_, ci) => (
+            <TableCell key={ci} className="px-5 py-4">
+              <div
+                className={`h-4 animate-pulse rounded-md bg-card-border ${
+                  SKELETON_WIDTHS[(ri + ci) % SKELETON_WIDTHS.length]
+                }`}
+              />
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
+    </>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -70,9 +75,10 @@ export function DataTable<TData>({
   onSearchChange,
   searchPlaceholder = "Search…",
   onRowClick,
-  pageSize = 5,
+  pageSize = 10,
   headerActions,
   emptyState,
+  isLoading = false,
   className,
   tableOptions,
 }: DataTableProps<TData>) {
@@ -85,25 +91,24 @@ export function DataTable<TData>({
     ...tableOptions,
   });
 
-  const pageIndex = table.getState().pagination.pageIndex;
-  const pageCount = Math.max(1, table.getPageCount());
+  const pageIndex  = table.getState().pagination.pageIndex;
+  const pageCount  = Math.max(1, table.getPageCount());
+  const totalRows  = table.getCoreRowModel().rows.length;
+  const rangeStart = isLoading ? 0 : pageIndex * pageSize + 1;
+  const rangeEnd   = isLoading ? 0 : Math.min((pageIndex + 1) * pageSize, totalRows);
 
   return (
-    <Card
+    <div
       className={cn(
-        "border border-card-border bg-card shadow-md",
+        "overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm",
         className,
       )}
-      style={{ borderRadius: "var(--radius-md, 16px)" }}
     >
       {/* ── Card header ── */}
-      <CardHeader className="flex flex-row items-center justify-between border-b border-card-border px-6 py-4">
-        <CardTitle className="text-lg font-semibold text-foreground">
-          {title}
-        </CardTitle>
+      <div className="flex flex-col gap-3 border-b border-card-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="text-base font-semibold text-foreground">{title}</h3>
 
-        <div className="flex items-center gap-3">
-          {/* Search input — only rendered when a handler is wired up */}
+        <div className="flex flex-wrap items-center gap-2">
           {onSearchChange && (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-light" />
@@ -114,104 +119,134 @@ export function DataTable<TData>({
                   table.setPageIndex(0);
                 }}
                 placeholder={searchPlaceholder}
-                className="h-9 w-52 rounded-[10px] border-card-border bg-background pl-9 text-sm placeholder:text-muted-light focus-visible:ring-primary/40"
+                className="h-9 w-full min-w-[180px] rounded-xl border-card-border bg-background pl-9 text-sm sm:w-56 focus-visible:ring-primary/30"
               />
             </div>
           )}
-
-          {/* Slot for buttons / filters passed by the parent */}
           {headerActions}
         </div>
-      </CardHeader>
+      </div>
 
       {/* ── Table ── */}
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            {/* Header */}
-            <TableHeader className="bg-primary">
-              {table.getHeaderGroups().map((hg) => (
-                <TableRow key={hg.id} className="border-0 hover:bg-primary">
-                  {hg.headers.map((h) => (
-                    <TableHead
-                      key={h.id}
-                      className="h-12 px-6 text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
-                    >
-                      {h.isPlaceholder
-                        ? null
-                        : flexRender(h.column.columnDef.header, h.getContext())}
-                    </TableHead>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader className="bg-primary">
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id} className="border-0 hover:bg-primary">
+                {hg.headers.map((h) => (
+                  <TableHead
+                    key={h.id}
+                    className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
+                  >
+                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+
+          <TableBody>
+            {isLoading ? (
+              <SkeletonRows cols={columns.length} rows={Math.min(pageSize, 6)} />
+            ) : table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="py-16 text-center">
+                  {emptyState ?? (
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm font-medium text-muted">No results found</p>
+                      <p className="text-xs text-muted-light">Try adjusting your search or filters</p>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={cn(
+                    "border-t border-card-border transition-colors",
+                    onRowClick && "cursor-pointer hover:bg-primary/5",
+                  )}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-5 py-4 text-sm text-foreground">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableHeader>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-            {/* Body */}
-            <TableBody>
-              {table.getRowModel().rows.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="py-12 text-center text-sm text-muted"
-                  >
-                    {emptyState ?? "No results found."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    onClick={() => onRowClick?.(row.original)}
-                    className={cn(
-                      "border-card-border transition-colors",
-                      onRowClick && "cursor-pointer hover:bg-primary/4",
-                    )}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="px-6 py-3 text-sm text-foreground"
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+      {/* ── Pagination ── */}
+      <div className="flex flex-col items-start gap-3 border-t border-card-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted">
+          {isLoading ? (
+            <span className="inline-block h-3.5 w-32 animate-pulse rounded bg-card-border" />
+          ) : totalRows === 0 ? (
+            "No records"
+          ) : (
+            <>
+              Showing{" "}
+              <span className="font-medium text-foreground">{rangeStart}–{rangeEnd}</span>
+              {" "}of{" "}
+              <span className="font-medium text-foreground">{totalRows}</span>
+            </>
+          )}
+        </p>
 
-        {/* ── Pagination footer ── */}
-        <div className="flex items-center justify-between border-t border-card-border px-6 py-4">
-          <p className="text-sm text-muted">
-            Page{" "}
-            <span className="font-medium text-foreground">{pageIndex + 1}</span>
-            {" "}of{" "}
-            <span className="font-medium text-foreground">{pageCount}</span>
-          </p>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage() || isLoading}
+            className="h-8 gap-1 rounded-xl border-card-border px-3 text-xs text-foreground hover:bg-primary/5 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Prev
+          </Button>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="rounded-[10px] border-card-border text-foreground hover:bg-background disabled:opacity-40"
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="rounded-[10px] bg-primary text-sidebar hover:bg-primary/85 disabled:opacity-40"
-            >
-              Next
-            </Button>
+          <div className="flex items-center gap-1 px-1">
+            {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
+              let page = i;
+              if (pageCount > 5) {
+                const mid = Math.min(Math.max(pageIndex, 2), pageCount - 3);
+                page = mid - 2 + i;
+              }
+              return (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => table.setPageIndex(page)}
+                  disabled={isLoading}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-lg text-xs font-medium transition-colors",
+                    page === pageIndex
+                      ? "bg-primary text-sidebar"
+                      : "text-muted hover:bg-card-border",
+                  )}
+                >
+                  {page + 1}
+                </button>
+              );
+            })}
           </div>
+
+          <Button
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage() || isLoading}
+            className="h-8 gap-1 rounded-xl bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 disabled:opacity-40"
+          >
+            Next
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

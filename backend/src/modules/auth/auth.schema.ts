@@ -33,6 +33,8 @@ export const registerSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  company: z.string().min(2, 'Company name is required').max(200),
+  phone: z.string().min(7).max(30).optional(),
 })
 
 // ── POST /auth/change-password ─────────────────────────────────────────────────

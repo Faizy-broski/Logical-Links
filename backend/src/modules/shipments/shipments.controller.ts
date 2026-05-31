@@ -18,8 +18,9 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
     const { page, limit } = parsePagination(req.query)
     const { shipments, total } = await shipmentsService.listShipments(
       req.query as unknown as ListShipmentsQuery,
-      req.user!.id,
       isAdmin(req),
+      req.user!.accountId,
+      req.user!.id,
     )
     paginated(res, shipments, { page, limit, total, totalPages: Math.ceil(total / limit) })
   } catch (err) {
@@ -31,8 +32,9 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
   try {
     const shipment = await shipmentsService.getShipment(
       param(req, 'id'),
-      req.user!.id,
       isAdmin(req),
+      req.user!.accountId,
+      req.user!.id,
     )
     ok(res, shipment)
   } catch (err) {
@@ -57,8 +59,9 @@ export async function update(req: Request, res: Response, next: NextFunction): P
     const shipment = await shipmentsService.updateShipment(
       param(req, 'id'),
       req.body as UpdateShipmentDto,
-      req.user!.id,
       isAdmin(req),
+      req.user!.accountId,
+      req.user!.id,
     )
     ok(res, shipment, 'Shipment updated')
   } catch (err) {
@@ -73,6 +76,7 @@ export async function updateStatus(req: Request, res: Response, next: NextFuncti
       req.body as UpdateShipmentStatusDto,
       req.user!.id,
       isAdmin(req),
+      req.user!.accountId,
     )
     ok(res, shipment, 'Status updated')
   } catch (err) {
@@ -82,12 +86,12 @@ export async function updateStatus(req: Request, res: Response, next: NextFuncti
 
 export async function assign(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await shipmentsService.assignCarrier(
+    const shipment = await shipmentsService.assignToShipper(
       param(req, 'id'),
       req.body as AssignShipmentDto,
       req.user!.id,
     )
-    created(res, result, 'Carrier assigned')
+    ok(res, shipment, 'Shipper assigned')
   } catch (err) {
     next(err)
   }
@@ -100,6 +104,7 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
       req.body as DeleteShipmentDto,
       req.user!.id,
       isAdmin(req),
+      req.user!.accountId,
     )
     noContent(res)
   } catch (err) {

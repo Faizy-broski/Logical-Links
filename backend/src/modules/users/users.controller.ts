@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import * as usersService from './users.service'
 import { ok, paginated, parsePagination } from '../../lib/response'
 import { param } from '../../lib/params'
-import type { UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto } from './users.schema'
+import type { UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
 
 export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -36,6 +36,15 @@ export async function updateUserRole(req: Request, res: Response, next: NextFunc
   try {
     const updated = await usersService.updateUserRole(param(req, 'id'), req.body as UpdateUserRoleDto)
     ok(res, updated, 'Role updated')
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function approveUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const updated = await usersService.approveUser(param(req, 'id'), req.body as ApproveUserDto)
+    ok(res, updated, 'Approval status updated')
   } catch (err) {
     next(err)
   }

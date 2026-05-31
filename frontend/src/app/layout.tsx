@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Inter } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import NavigationProgress from '@/components/NavigationProgress'
+import QueryProvider from '@/components/providers/query-provider'
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,7 +33,7 @@ export default function RootLayout({
     <html lang="en" className={cn("font-sans", inter.variable)}>
       <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} antialiased`}>
         <NavigationProgress />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   )

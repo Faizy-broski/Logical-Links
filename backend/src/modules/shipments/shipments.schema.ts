@@ -1,55 +1,52 @@
 import { z } from 'zod'
 
-// ── Status / Type enums ───────────────────────────────────────────────────────
-// Must exactly match the shipment_status and shipment_type DB ENUMs.
+// ── Status machine ────────────────────────────────────────────────────────────
+// pending → confirmed → assigned → picked_up → in_transit → out_for_delivery → delivered
+// Any pre-terminal state can be cancelled.
+
 export const SHIPMENT_STATUSES = [
   'pending',
-  'quoted',
   'confirmed',
   'assigned',
+  'picked_up',
   'in_transit',
+  'out_for_delivery',
   'delivered',
   'cancelled',
 ] as const
 
-export const SHIPMENT_TYPES = ['freight', 'last_mile'] as const
-
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number]
-export type ShipmentType   = (typeof SHIPMENT_TYPES)[number]
 
-// ── Status transition machine ─────────────────────────────────────────────────
-// Defines every legal "from → to" edge. Anything not listed is invalid.
-// Keeping this in the schema layer makes it importable by tests without pulling
-// in the full service.
 export const STATUS_TRANSITIONS: Record<ShipmentStatus, ShipmentStatus[]> = {
-  pending:    ['quoted', 'cancelled'],
-  quoted:     ['confirmed', 'cancelled'],
-  confirmed:  ['assigned', 'cancelled'],
-  assigned:   ['in_transit', 'cancelled'],
-  in_transit: ['delivered', 'cancelled'],
-  delivered:  [],
-  cancelled:  [],
+  pending:          ['confirmed',        'cancelled'],
+  confirmed:        ['assigned',         'cancelled'],
+  assigned:         ['picked_up',        'cancelled'],
+  picked_up:        ['in_transit',       'cancelled'],
+  in_transit:       ['out_for_delivery', 'cancelled'],
+  out_for_delivery: ['delivered',        'cancelled'],
+  delivered:        [],
+  cancelled:        [],
 }
 
-// Which statuses allow soft deletion (pre-commitment only)
-export const DELETABLE_STATUSES: ShipmentStatus[] = ['pending', 'quoted']
+export const DELETABLE_STATUSES: ShipmentStatus[] = ['pending', 'confirmed']
 
-// ── Create ────────────────────────────────────────────────────────────────────
+// ── Schemas ───────────────────────────────────────────────────────────────────
+
 export const createShipmentSchema = z.object({
-  shipmentType: z.enum(SHIPMENT_TYPES).default('freight'),
-  accountId:    z.string().uuid().optional(),
+  shipmentType: z.enum(['freight', 'last_mile']).default('freight'),
+  shipperId:    z.string().uuid('Invalid shipper user ID').optional(),
 
-  originAddress:   z.string().min(5),
-  originCity:      z.string().min(1),
-  originState:     z.string().min(1),
-  originPostcode:  z.string().min(3),
-  originCountry:   z.string().default('Australia'),
+  originAddress:  z.string().min(5),
+  originCity:     z.string().min(1),
+  originState:    z.string().min(1),
+  originPostcode: z.string().min(2),
+  originCountry:  z.string().default('Australia'),
 
-  destinationAddress:   z.string().min(5),
-  destinationCity:      z.string().min(1),
-  destinationState:     z.string().min(1),
-  destinationPostcode:  z.string().min(3),
-  destinationCountry:   z.string().default('Australia'),
+  destinationAddress:  z.string().min(5),
+  destinationCity:     z.string().min(1),
+  destinationState:    z.string().min(1),
+  destinationPostcode: z.string().min(2),
+  destinationCountry:  z.string().default('Australia'),
 
   cargoDescription:      z.string().min(3),
   weightKg:              z.number().positive().optional(),
@@ -58,96 +55,54 @@ export const createShipmentSchema = z.object({
   isDangerousGoods:      z.boolean().default(false),
   requiresRefrigeration: z.boolean().default(false),
 
-  estimatedPickupDate:    z.string().datetime().optional(),
-  estimatedDeliveryDate:  z.string().datetime().optional(),
+  estimatedPickupDate:   z.string().datetime({ offset: true }).optional(),
+  estimatedDeliveryDate: z.string().datetime({ offset: true }).optional(),
 
-  quotedPrice:   z.number().min(0).optional(),
-  currency:      z.string().length(3).default('AUD'),
+  quotedPrice: z.number().min(0).optional(),
+  currency:    z.string().length(3).default('AUD'),
 
   specialInstructions: z.string().optional(),
   referenceNumber:     z.string().optional(),
 })
 
-// ── Update ────────────────────────────────────────────────────────────────────
-// Excludes immutable fields (type, account, status).
-// Pricing fields allowed — admin may update quoted/confirmed price.
-// Actual dates allowed — admin records when pickups/deliveries physically happen.
-export const updateShipmentSchema = z
-  .object({
-    originAddress:   z.string().min(5),
-    originCity:      z.string().min(1),
-    originState:     z.string().min(1),
-    originPostcode:  z.string().min(3),
-    originCountry:   z.string(),
-
-    destinationAddress:   z.string().min(5),
-    destinationCity:      z.string().min(1),
-    destinationState:     z.string().min(1),
-    destinationPostcode:  z.string().min(3),
-    destinationCountry:   z.string(),
-
-    cargoDescription:      z.string().min(3),
-    weightKg:              z.number().positive(),
-    volumeM3:              z.number().positive(),
-    pieces:                z.number().int().positive(),
-    isDangerousGoods:      z.boolean(),
-    requiresRefrigeration: z.boolean(),
-
-    estimatedPickupDate:   z.string().datetime(),
-    estimatedDeliveryDate: z.string().datetime(),
-    actualPickupDate:      z.string().datetime(),
-    actualDeliveryDate:    z.string().datetime(),
-
-    quotedPrice:     z.number().min(0),
-    confirmedPrice:  z.number().min(0),
-    currency:        z.string().length(3),
-
-    specialInstructions: z.string(),
-    referenceNumber:     z.string(),
+export const updateShipmentSchema = createShipmentSchema
+  .omit({ shipmentType: true, shipperId: true })
+  .extend({
+    confirmedPrice:     z.number().min(0).optional(),
+    actualPickupDate:   z.string().datetime({ offset: true }).optional(),
+    actualDeliveryDate: z.string().datetime({ offset: true }).optional(),
   })
   .partial()
-  .refine((v) => Object.keys(v).length > 0, { message: 'At least one field is required' })
 
-// ── Status transition ─────────────────────────────────────────────────────────
 export const updateShipmentStatusSchema = z.object({
   status: z.enum(SHIPMENT_STATUSES),
   reason: z.string().optional(),
 })
 
-// ── Soft delete (reason required) ────────────────────────────────────────────
-export const deleteShipmentSchema = z.object({
-  reason: z.string().min(1, 'Deletion reason is required').max(500),
-})
-
-// ── Assign carrier ────────────────────────────────────────────────────────────
-// This drives the confirmed → assigned transition.
+// Admin assigns a load to a specific shipper user (identified by their user ID).
+// The service resolves the user's account_id from their profile.
 export const assignShipmentSchema = z.object({
-  carrierId:     z.string().uuid('Invalid carrier ID'),
-  driverName:    z.string().min(2),
-  driverPhone:   z.string().optional(),
-  vehiclePlate:  z.string().optional(),
-  trailerNumber: z.string().optional(),
-  pickupDate:    z.string().datetime().optional(),
-  notes:         z.string().optional(),
+  userId: z.string().uuid('Invalid shipper user ID'),
 })
 
-// ── List / filter ─────────────────────────────────────────────────────────────
-export const listShipmentsQuerySchema = z.object({
-  page:         z.coerce.number().int().min(1).default(1),
-  limit:        z.coerce.number().int().min(1).max(100).default(20),
+export const deleteShipmentSchema = z.object({
+  reason: z.string().min(3, 'Deletion reason required'),
+})
+
+export const listShipmentsSchema = z.object({
+  page:         z.coerce.number().int().positive().default(1),
+  limit:        z.coerce.number().int().positive().max(100).default(20),
   status:       z.enum(SHIPMENT_STATUSES).optional(),
-  shipmentType: z.enum(SHIPMENT_TYPES).optional(),
+  shipmentType: z.enum(['freight', 'last_mile']).optional(),
   accountId:    z.string().uuid().optional(),
-  carrierId:    z.string().uuid().optional(),
-  search:       z.string().optional(),    // load_number, ref_number, origin/dest city
-  from:         z.string().datetime().optional(),
-  to:           z.string().datetime().optional(),
+  search:       z.string().max(100).optional(),
 })
 
-// ── DTO types ─────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 export type CreateShipmentDto       = z.infer<typeof createShipmentSchema>
 export type UpdateShipmentDto       = z.infer<typeof updateShipmentSchema>
 export type UpdateShipmentStatusDto = z.infer<typeof updateShipmentStatusSchema>
-export type DeleteShipmentDto       = z.infer<typeof deleteShipmentSchema>
 export type AssignShipmentDto       = z.infer<typeof assignShipmentSchema>
-export type ListShipmentsQuery      = z.infer<typeof listShipmentsQuerySchema>
+export type DeleteShipmentDto       = z.infer<typeof deleteShipmentSchema>
+export type ListShipmentsQuery      = z.infer<typeof listShipmentsSchema>

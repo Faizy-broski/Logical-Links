@@ -29,16 +29,27 @@ CREATE TABLE profiles (
 );
 
 -- ── Auto-create profile when a new auth user signs up ─────────────────────────
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
-  INSERT INTO profiles (id, role, full_name)
+  INSERT INTO public.profiles (
+    id,
+    role,
+    full_name
+  )
   VALUES (
     NEW.id,
-    'shipper',
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email)
-  )
-  ON CONFLICT (id) DO NOTHING;
+    'shipper'::public.user_role,
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.email
+    )
+  );
+
   RETURN NEW;
 END;
 $$;

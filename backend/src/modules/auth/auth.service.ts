@@ -29,13 +29,14 @@ function parseExpiry(s: string): number {
 // ── Shared token-pair builder ─────────────────────────────────────────────────
 // Extracted so login + refresh produce identically-shaped responses.
 async function issueTokenPair(
-  userId: string,
-  email: string,
-  role: UserRole,
-  context: { ipAddress?: string; userAgent?: string },
+  userId:    string,
+  email:     string,
+  role:      UserRole,
+  accountId: string | null,
+  context:   { ipAddress?: string; userAgent?: string },
 ): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }> {
   // 1. Sign a short-lived JWT (15 min by default)
-  const accessToken = signAccessToken({ sub: userId, email, role })
+  const accessToken = signAccessToken({ sub: userId, email, role, accountId })
 
   // 2. Generate an opaque refresh token and store its SHA-256 hash
   const { rawToken, tokenHash } = generateRefreshToken()
@@ -99,7 +100,7 @@ export async function login(
     throw AppError.forbidden('Account has been deactivated')
   }
 
-  const tokens = await issueTokenPair(data.user.id, data.user.email!, profile.role as UserRole, context)
+  const tokens = await issueTokenPair(data.user.id, data.user.email!, profile.role as UserRole, profile.account_id, context)
 
   return {
     ...tokens,
@@ -167,7 +168,7 @@ export async function refresh(
   // Fetch fresh user data — role may have changed since last login
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('role, is_active')
+    .select('role, is_active, account_id')
     .eq('id', anyToken.user_id)
     .single()
 
@@ -177,7 +178,7 @@ export async function refresh(
   const { data: authUser } = await supabase.auth.admin.getUserById(anyToken.user_id)
   const email = authUser.user?.email ?? ''
 
-  return issueTokenPair(anyToken.user_id, email, profile.role as UserRole, context)
+  return issueTokenPair(anyToken.user_id, email, profile.role as UserRole, profile.account_id, context)
 }
 
 // ── POST /auth/logout ──────────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ export async function logout(userId: string, dto: LogoutDto) {
 export async function getMe(userId: string) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, role, full_name, phone, avatar_url, account_id, is_active, created_at')
+    .select('id, role, full_name, phone, avatar_url, account_id, is_active, is_approved, created_at')
     .eq('id', userId)
     .single()
 
@@ -220,39 +221,112 @@ export async function getMe(userId: string) {
   const { data: authUser } = await supabase.auth.admin.getUserById(userId)
 
   return {
-    id: data.id,
-    email: authUser.user?.email ?? '',
-    role: data.role,
-    fullName: data.full_name,
-    phone: data.phone,
-    avatarUrl: data.avatar_url,
-    accountId: data.account_id,
-    createdAt: data.created_at,
+    id:         data.id,
+    email:      authUser.user?.email ?? '',
+    role:       data.role,
+    fullName:   data.full_name,
+    phone:      data.phone,
+    avatarUrl:  data.avatar_url,
+    accountId:  data.account_id,
+    isApproved: data.is_approved ?? false,
+    createdAt:  data.created_at,
   }
 }
 
 // ── POST /auth/register ────────────────────────────────────────────────────────
-export async function register(dto: RegisterDto) {
-  const { data, error } = await supabase.auth.signUp({
+export async function register(
+  dto: RegisterDto,
+  context: { ipAddress?: string; userAgent?: string } = {},
+) {
+  // Use admin API to skip email confirmation — backend-managed registration flow
+  const { data, error } = await supabase.auth.admin.createUser({
     email: dto.email,
     password: dto.password,
-    options: {
-      data: { full_name: dto.fullName },
-      // emailRedirectTo omitted intentionally — backend-only flow
-    },
+    email_confirm: true,
+    user_metadata: { full_name: dto.fullName },
   })
 
   if (error) {
-    if (error.message.toLowerCase().includes('already registered')) {
+    const msg = error.message.toLowerCase()
+    if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('already exists')) {
       throw AppError.conflict('An account with this email already exists')
     }
     throw AppError.badRequest(error.message)
   }
 
+  const userId = data.user!.id
+
+  // Create an account (company) for the new shipper
+  const { data: account, error: accountError } = await supabase
+    .from('accounts')
+    .insert({ account_name: dto.company, created_by: userId })
+    .select('account_id')
+    .single()
+
+  if (accountError || !account) {
+    const pgCode    = (accountError as { code?: string } | null)?.code
+    const pgMessage = accountError?.message ?? 'unknown'
+    const pgHint    = (accountError as { hint?: string } | null)?.hint
+    const pgDetails = (accountError as { details?: string } | null)?.details
+
+    logger.error('Account insert failed during registration', {
+      userId,
+      pgCode,
+      pgMessage,
+      pgHint,
+      pgDetails,
+    })
+
+    await supabase.auth.admin.deleteUser(userId)
+
+    // Unique constraint violation — check which column/index triggered it
+    if (pgCode === '23505') {
+      const detail = pgDetails ?? pgMessage
+      if (detail.includes('account_name') || detail.includes('idx_accounts_name')) {
+        throw AppError.conflict('A company with this name already exists')
+      }
+      throw AppError.conflict('A company account with this name already exists')
+    }
+    // Foreign-key violation: created_by ref is somehow invalid
+    if (pgCode === '23503') {
+      throw AppError.internal('Failed to link company account to your user — please try again')
+    }
+    // Insufficient privilege (would only happen if service-role key is misconfigured)
+    if (pgCode === '42501') {
+      throw AppError.internal('Server configuration error: insufficient database permissions')
+    }
+    // Not-null violation: a required column is missing a value
+    if (pgCode === '23502') {
+      throw AppError.badRequest(`Company account is missing a required field: ${pgDetails ?? pgMessage}`)
+    }
+
+    throw AppError.internal('Failed to create company account — please try again or contact support')
+  }
+
+  // Link the profile to the new account and persist phone
+  const profileUpdates: Record<string, unknown> = { account_id: account.account_id }
+  if (dto.phone) profileUpdates.phone = dto.phone
+
+  await supabase.from('profiles').update(profileUpdates).eq('id', userId)
+
+  // Issue a token pair so the client can be logged in immediately after registration
+  const tokens = await issueTokenPair(
+    userId,
+    data.user!.email!,
+    'shipper',
+    account.account_id,
+    context,
+  )
+
   return {
-    userId: data.user?.id,
-    email: data.user?.email,
-    message: 'Account created. Check your email to verify.',
+    ...tokens,
+    user: {
+      id:        userId,
+      email:     data.user!.email!,
+      role:      'shipper' as const,
+      fullName:  dto.fullName,
+      accountId: account.account_id,
+    },
   }
 }
 

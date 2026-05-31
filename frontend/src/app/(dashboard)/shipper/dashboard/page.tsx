@@ -1,311 +1,185 @@
 'use client'
 
 import Link from 'next/link'
+import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, AlertTriangle } from 'lucide-react'
+import { useAuthStore } from '@/store/auth.store'
+import { useShipments } from '@/hooks/use-shipments'
+import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
+import { StatusBadge } from '@/components/loads/status-badge'
+import { KpiCard } from '@/components/loads/kpi-card'
 
-import {
-  ArrowUpRight,
-  Bell,
-  CircleDollarSign,
-  Clock3,
-  Package,
-  TrendingUp,
-  Truck,
-  Users,
-  MapPinned,
-  AlertTriangle,
-} from 'lucide-react'
+export default function ShipperDashboard() {
+  const user = useAuthStore((s) => s.user)
 
-const stats = [
-  {
-    title: 'Shipments',
-    value: '1,248',
-    growth: '+12%',
-    icon: Package,
-    color: 'bg-primary/10 text-primary',
-  },
-  {
-    title: 'Revenue',
-    value: '$284K',
-    growth: '+6%',
-    icon: CircleDollarSign,
-    color: 'bg-emerald-50 text-emerald-600',
-  },
-  {
-    title: 'Loads',
-    value: '312',
-    growth: '+8%',
-    icon: Truck,
-    color: 'bg-blue-50 text-blue-600',
-  },
-  {
-    title: 'Customers',
-    value: '94',
-    growth: '+4%',
-    icon: Users,
-    color: 'bg-violet-50 text-violet-600',
-  },
-]
+  const { data: statsRes, isLoading: statsLoading } = useDashboardStats()
+  const { data: recentRes, isLoading: recentLoading } = useShipments({
+    accountId: user?.accountId ?? undefined,
+    limit: 5,
+  })
 
-const recentShipments = [
-  {
-    id: 'LL12345678',
-    origin: 'Toronto',
-    destination: 'Chicago',
-    status: 'Transit',
-    eta: 'May 22',
-  },
-  {
-    id: 'LL12345679',
-    origin: 'Mississauga',
-    destination: 'New York',
-    status: 'Delivered',
-    eta: 'May 20',
-  },
-  {
-    id: 'LL12345680',
-    origin: 'Montreal',
-    destination: 'Dallas',
-    status: 'Pending',
-    eta: 'May 25',
-  },
-]
+  const stats   = statsRes?.data
+  const recent  = recentRes?.data ?? []
 
-const notifications = [
-  {
-    title: 'Shipment Delayed',
-    desc: 'Load delayed due to weather.',
-    color: 'bg-red-100 text-red-600',
-    icon: AlertTriangle,
-  },
-  {
-    title: 'New Booking',
-    desc: 'New shipment booking received.',
-    color: 'bg-blue-100 text-blue-600',
-    icon: Bell,
-  },
-  {
-    title: 'Load Delivered',
-    desc: 'Shipment delivered successfully.',
-    color: 'bg-green-100 text-green-600',
-    icon: Package,
-  },
-]
+  const byStatus    = stats?.byStatus
+  const totalLoads  = stats?.total      ?? 0
+  const activeLoads = stats?.activeLoads ?? 0
+  const delivered   = byStatus?.delivered ?? 0
+  const cancelled   = byStatus?.cancelled ?? 0
+  const trend       = stats?.trend ?? []
+  const sparkline   = trendToSparkline(trend)
+  const growth      = periodGrowth(stats?.total ?? 0, stats?.prevPeriodTotal ?? 0)
 
-export default function AdminDashboard() {
+  const kpis = [
+    {
+      title:      'Total Loads',
+      value:      totalLoads,
+      icon:       Package,
+      chartColor: '#C89B3C',
+      data:       sparkline,
+      growth:     growth.pct,
+      trend:      growth.direction,
+      subtitle:   'vs last 30 days',
+    },
+    {
+      title:      'Active',
+      value:      activeLoads,
+      icon:       Truck,
+      chartColor: '#3B82F6',
+    },
+    {
+      title:      'Delivered',
+      value:      delivered,
+      icon:       CheckCircle2,
+      chartColor: '#10B981',
+    },
+    {
+      title:      'Pending',
+      value:      byStatus?.pending ?? 0,
+      icon:       Clock3,
+      chartColor: '#F59E0B',
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-background p-4 lg:p-5">
-      <div className="mx-auto max-w-400 space-y-5">
+      <div className="mx-auto max-w-5xl space-y-6">
+
         {/* Header */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
-              Welcome back, Imtiaz
+              Welcome back, {user?.fullName ?? 'Shipper'}
             </h1>
-
             <p className="mt-1 text-sm text-muted">
-              Logistics overview & shipment performance.
+              Your shipments at a glance.
             </p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-3">
+        {/* KPI cards */}
+        <div className="grid grid-cols-2 gap-5 xl:grid-cols-4">
+          {kpis.map((kpi) => (
+            <KpiCard
+              key={kpi.title}
+              title={kpi.title}
+              value={kpi.value}
+              icon={kpi.icon}
+              chartColor={kpi.chartColor}
+              isLoading={statsLoading}
+              data={kpi.data}
+              growth={kpi.growth}
+              trend={kpi.trend}
+              subtitle={kpi.subtitle}
+            />
+          ))}
+        </div>
 
-            <div
-              className="
-                rounded-2xl border border-card-border
-                bg-card px-4 py-2.5
-              "
-            >
-              <p className="text-xs text-muted">
-                May 20 — May 26, 2026
-              </p>
+        {/* Recent Shipments */}
+        <div className="overflow-hidden rounded-3xl border border-card-border bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-card-border px-5 py-4">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Recent Shipments</h3>
+              <p className="mt-0.5 text-xs text-muted">Your latest freight activity</p>
             </div>
+            <Link
+              href="/shipper/loads"
+              className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80"
+            >
+              View All
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
-        </div>
 
-        {/* Stats */}
-        <div
-          className="
-            grid grid-cols-1 gap-4
-            sm:grid-cols-2
-            xl:grid-cols-4
-          "
-        >
-          {stats.map((item) => {
-            const Icon = item.icon
-
-            return (
-              <div
-                key={item.title}
-                className="
-                  rounded-3xl border border-card-border
-                  bg-card p-5 shadow-sm
-                "
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted">
-                      {item.title}
-                    </p>
-
-                    <h2
-                      className="
-                        mt-2 text-2xl
-                        font-bold text-foreground
-                      "
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-primary">
+                <tr>
+                  {['Load #', 'Origin', 'Destination', 'Status', 'Est. Delivery'].map((h) => (
+                    <th
+                      key={h}
+                      className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-[0.15em] text-sidebar"
                     >
-                      {item.value}
-                    </h2>
-
-                    <div
-                      className="
-                        mt-2 flex items-center gap-1
-                        text-xs text-emerald-600
-                      "
-                    >
-                      <TrendingUp className="h-3.5 w-3.5" />
-                      {item.growth}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`
-                      flex h-11 w-11 items-center
-                      justify-center rounded-2xl
-                      ${item.color}
-                    `}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Main Grid */}
-        <div
-          className="
-            grid grid-cols-1 gap-5
-            2xl:grid-cols-[1.6fr_0.8fr]
-          "
-        >
-          {/* Recent Shipments */}
-          <div
-            className="
-              overflow-hidden rounded-3xl
-              border border-card-border
-              bg-card shadow-sm
-            "
-          >
-            <div
-              className="
-                flex items-center justify-between
-                border-b border-card-border
-                px-5 py-4
-              "
-            >
-              <div>
-                <h3
-                  className="
-                    text-base font-semibold
-                    text-foreground
-                  "
-                >
-                  Recent Shipments
-                </h3>
-
-                <p className="mt-1 text-xs text-muted">
-                  Latest freight activity
-                </p>
-              </div>
-
-              <Link
-                href="/admin/shipments"
-                className="
-                  flex items-center gap-1
-                  text-sm font-medium text-primary
-                "
-              >
-                View All
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-zinc-50">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {recentLoading ? (
                   <tr>
-                    {[
-                      'Tracking',
-                      'Origin',
-                      'Destination',
-                      'Status',
-                      'ETA',
-                    ].map((head) => (
-                      <th
-                        key={head}
-                        className="
-                          px-5 py-3 text-left
-                          text-[11px] font-semibold
-                          uppercase tracking-wider
-                          text-muted
-                        "
-                      >
-                        {head}
-                      </th>
-                    ))}
+                    <td colSpan={5} className="py-10 text-center text-sm text-muted">
+                      Loading...
+                    </td>
                   </tr>
-                </thead>
-
-                <tbody>
-                  {recentShipments.map((shipment) => (
-                    <tr
-                      key={shipment.id}
-                      className="
-                        border-t border-card-border
-                        hover:bg-zinc-50/50
-                      "
-                    >
-                      <td
-                        className="
-                          px-5 py-4 text-sm
-                          font-semibold text-primary
-                        "
-                      >
-                        {shipment.id}
+                ) : recent.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-10 text-center text-sm text-muted">
+                      No shipments yet.
+                    </td>
+                  </tr>
+                ) : (
+                  recent.map((s) => (
+                    <tr key={s.shipment_id} className="border-t border-card-border transition-colors hover:bg-primary/5">
+                      <td className="px-5 py-4 text-sm font-semibold text-primary">
+                        {s.load_number}
                       </td>
-
                       <td className="px-5 py-4 text-sm text-foreground">
-                        {shipment.origin}
+                        {s.origin_city}, {s.origin_state}
                       </td>
-
                       <td className="px-5 py-4 text-sm text-foreground">
-                        {shipment.destination}
+                        {s.destination_city}, {s.destination_state}
                       </td>
-
                       <td className="px-5 py-4">
-                        <span
-                          className="
-                            inline-flex rounded-full
-                            bg-blue-50 px-2.5 py-1
-                            text-[11px] font-medium
-                            text-blue-700
-                          "
-                        >
-                          {shipment.status}
-                        </span>
+                        <StatusBadge status={s.status} />
                       </td>
-
                       <td className="px-5 py-4 text-sm text-muted">
-                        {shipment.eta}
+                        {s.estimated_delivery_date
+                          ? new Date(s.estimated_delivery_date).toLocaleDateString('en-AU', {
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : '—'}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+
+        {/* Cancelled alert */}
+        {!statsLoading && cancelled > 0 && (
+          <div className="flex items-center gap-3 rounded-2xl border border-danger/20 bg-danger/5 px-5 py-3">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-danger" />
+            <p className="text-sm text-danger">
+              You have <strong>{cancelled}</strong> cancelled shipment{cancelled !== 1 ? 's' : ''}.{' '}
+              <Link href="/shipper/loads" className="underline">
+                Review them
+              </Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

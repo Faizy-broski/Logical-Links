@@ -3,7 +3,9 @@ import { z } from 'zod'
 export const NOTIFICATION_TYPES = [
   'shipment_created',
   'shipment_assigned',
+  'shipment_picked_up',
   'shipment_in_transit',
+  'shipment_out_for_delivery',
   'shipment_delivered',
   'shipment_cancelled',
   'assignment_created',

@@ -1,175 +1,138 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, ShieldAlert, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import { DataTable } from "@/components/loads/loads-table";
-import { Load } from "@/types/load.types";
-import { LoadFormValues } from "@/lib/validations/load";
-import { useLoadStore } from "@/store/load.store";
-import { shipperName } from "@/lib/utils/shipper-name";
 import KpiGrid from "@/components/loads/kpi-grid";
 import { getLoadColumns } from "@/components/loads/columns";
-import { LoadDialog } from "@/components/loads/dialogs/load-dialog";
 import { DeleteConfirmDialog } from "@/components/loads/dialogs/delete-confirmation-dialog";
-import { ViewLoadDialog } from "@/components/loads/dialogs/view-load-dialog";
+import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dialog";
+import { AssignDialog } from "@/components/loads/dialogs/assign-dialog";
 
-// ─── Role config ──────────────────────────────────────────────────────────────
-//
-// All logic that differs between admin / shipper lives here.
-// The JSX below is completely role-agnostic.
-
-type Role = "admin" | "shipper";
-
-interface RoleConfig {
-  badge: {
-    icon: React.ReactNode;
-    text: string;
-    className: string;
-  };
-  createDescription: string;
-  /** Which loads are visible in the table */
-  filterLoads: (loads: Load[], currentShipperId: string) => Load[];
-  canEdit: (load: Load, currentShipperId: string) => boolean;
-  canDelete: (load: Load, currentShipperId: string) => boolean;
-  /** isPrivate value for newly created loads */
-  newLoadIsPrivate: boolean;
-}
-
-const ROLE_CONFIG: Record<Role, RoleConfig> = {
-  admin: {
-    badge: {
-      icon: <ShieldAlert className="h-4 w-4 shrink-0" />,
-      text: "Viewing as Admin — private shipper loads are hidden · delivered loads cannot be deleted",
-      className: "border-info/20 bg-info/5 text-blue-700",
-    },
-    createDescription: "Fill in the details to create a new shipment load.",
-    filterLoads: (loads) => loads.filter((l) => !l.isPrivate),
-    canEdit: (load) => !load.isPrivate,
-    canDelete: (load) => load.status !== "Delivered" && !load.isPrivate,
-    newLoadIsPrivate: false,
-  },
-  shipper: {
-    badge: {
-      icon: <User className="h-4 w-4 shrink-0" />,
-      text: "", // filled dynamically below
-      className: "border-warning/20 bg-warning/5 text-yellow-700",
-    },
-    createDescription: "Create a private load — visible only to you.",
-    filterLoads: (loads, id) =>
-      loads.filter((l) => l.shipperId === id || l.createdBy === id),
-    canEdit: (load, id) =>
-      load.shipperId === id || load.createdBy === id,
-    canDelete: (load, id) =>
-      load.status !== "Delivered" &&
-      (load.shipperId === id || load.createdBy === id),
-    newLoadIsPrivate: true,
-  },
-};
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+import { useAuthStore } from "@/store/auth.store";
+import {
+  useShipments,
+  useDeleteShipment,
+  useUpdateShipmentStatus,
+  useAssignShipment,
+} from "@/hooks/use-shipments";
+import { useUsers } from "@/hooks/use-users";
+import type { Shipment, ShipmentStatus, AssignShipmentDto } from "@/types/api.types";
 
 export default function LoadsPage() {
-  const { loads, addLoad, updateLoad, deleteLoad, currentRole, currentShipperId } =
-    useLoadStore();
+  const router  = useRouter();
+  const pathname = usePathname();
+  const user    = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "admin";
 
-  const role: Role = currentRole === "admin" ? "admin" : "shipper";
-  const config = ROLE_CONFIG[role];
+  // Base path for URL-modal navigation — derive from the current URL segment
+  const basePath = pathname.startsWith("/admin") ? "/admin/loads" : "/shipper/loads";
 
-  const [viewingLoad, setViewingLoad]   = useState<Load | null>(null);
-  const [editingLoad, setEditingLoad]   = useState<Load | null>(null);
-  const [deletingLoad, setDeletingLoad] = useState<Load | null>(null);
-  const [createOpen, setCreateOpen]     = useState(false);
-  const [search, setSearch]             = useState("");
+  // ── Local dialog state (only for quick-action dialogs without deep-link need) ──
+  const [deletingLoad, setDeletingLoad] = useState<Shipment | null>(null);
+  const [statusLoad,   setStatusLoad]   = useState<Shipment | null>(null);
+  const [assigningLoad, setAssigningLoad] = useState<Shipment | null>(null);
+  const [search, setSearch] = useState("");
 
-  // ── Visible rows ────────────────────────────────────────────────────────────
-  const visibleLoads = useMemo(
-    () => config.filterLoads(loads, currentShipperId),
-    [loads, role, currentShipperId],
+  // ── Data ─────────────────────────────────────────────────────────────────────
+  const query = isAdmin ? {} : { accountId: user?.accountId ?? undefined };
+
+  const { data: shipmentsRes, isLoading } = useShipments(query);
+  const { data: shippersRes }             = useUsers(
+    { role: "shipper", limit: 100 },
+    { enabled: isAdmin },
   );
 
-  // ── KPIs ────────────────────────────────────────────────────────────────────
-  const stats = useMemo(
-    () => ({
-      total:      visibleLoads.length,
-      transit:    visibleLoads.filter((l) => l.status === "In Transit").length,
-      delivered:  visibleLoads.filter((l) => l.status === "Delivered").length,
-      exceptions: visibleLoads.filter((l) => l.status === "Cancelled").length,
-    }),
-    [visibleLoads],
-  );
+  const shipments = shipmentsRes?.data ?? [];
+  const shippers  = shippersRes?.data  ?? [];
 
-  // ── Search filter ───────────────────────────────────────────────────────────
+  // ── Mutations (only for local-state dialogs) ──────────────────────────────────
+  const deleteMut = useDeleteShipment();
+  const statusMut = useUpdateShipmentStatus(statusLoad?.shipment_id ?? "");
+  const assignMut = useAssignShipment(assigningLoad?.shipment_id ?? "");
+
+  // ── Filter ───────────────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return visibleLoads;
-    return visibleLoads.filter(
-      (l) =>
-        l.loadNumber.toLowerCase().includes(q) ||
-        shipperName(l.shipperId).toLowerCase().includes(q) ||
-        l.origin.toLowerCase().includes(q) ||
-        l.destination.toLowerCase().includes(q),
+    if (!q) return shipments;
+    return shipments.filter((s) =>
+      s.load_number.toLowerCase().includes(q) ||
+      s.origin_city.toLowerCase().includes(q) ||
+      s.destination_city.toLowerCase().includes(q) ||
+      (s.accounts?.account_name ?? "").toLowerCase().includes(q) ||
+      (s.reference_number ?? "").toLowerCase().includes(q),
     );
-  }, [visibleLoads, search]);
+  }, [shipments, search]);
 
-  // ── Permissions (bound to current role + shipper) ───────────────────────────
-  const canEdit   = (l: Load) => config.canEdit(l, currentShipperId);
-  const canDelete = (l: Load) => config.canDelete(l, currentShipperId);
+  // ── KPIs ─────────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => ({
+    total:      shipments.length,
+    transit:    shipments.filter((s) => s.status === "in_transit").length,
+    delivered:  shipments.filter((s) => s.status === "delivered").length,
+    exceptions: shipments.filter((s) => s.status === "cancelled").length,
+  }), [shipments]);
 
-  // ── Columns ─────────────────────────────────────────────────────────────────
+  // ── Permissions ──────────────────────────────────────────────────────────────
+  const canEdit   = (s: Shipment) => !["delivered", "cancelled"].includes(s.status);
+  const canDelete = (s: Shipment) => isAdmin && ["pending", "confirmed"].includes(s.status);
+  const canAssign = (s: Shipment) => isAdmin && s.status === "confirmed";
+
+  // ── Columns ──────────────────────────────────────────────────────────────────
   const columns = useMemo(
     () =>
       getLoadColumns({
-        isAdmin: role === "admin",
+        isAdmin,
         canEdit,
         canDelete,
-        onEdit:   (load) => setEditingLoad(load),
-        onDelete: (load) => setDeletingLoad(load),
+        canAssign,
+        onEdit:         (s) => router.push(`${basePath}/${s.shipment_id}/edit`),
+        onDelete:       (s) => setDeletingLoad(s),
+        onAssign:       (s) => setAssigningLoad(s),
+        onStatusChange: (s) => setStatusLoad(s),
       }),
-    [role, currentShipperId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isAdmin, basePath],
   );
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
-  function handleCreate(values: LoadFormValues) {
-    addLoad({
-      id: String(Date.now()),
-      ...values,
-      createdBy:  currentShipperId,
-      createdAt:  new Date().toISOString(),
-      isPrivate:  config.newLoadIsPrivate,
-    });
-    toast.success("Load created successfully");
-    setCreateOpen(false);
-  }
-
-  function handleUpdate(values: LoadFormValues) {
-    if (!editingLoad) return;
-    updateLoad(editingLoad.id, { ...editingLoad, ...values });
-    toast.success("Load updated successfully");
-    setEditingLoad(null);
-  }
-
-  function handleDelete() {
+  // ── Handlers (local-state dialogs only) ──────────────────────────────────────
+  async function handleDelete(reason: string) {
     if (!deletingLoad) return;
-    deleteLoad(deletingLoad.id);
-    toast.success(`Load ${deletingLoad.loadNumber} deleted`);
-    setDeletingLoad(null);
+    try {
+      await deleteMut.mutateAsync({ id: deletingLoad.shipment_id, reason });
+      toast.success(`Load ${deletingLoad.load_number} deleted`);
+      setDeletingLoad(null);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
-  function handleEditFromView(load: Load) {
-    setViewingLoad(null);
-    setTimeout(() => setEditingLoad(load), 150);
+  async function handleStatusChange(status: ShipmentStatus, reason?: string) {
+    if (!statusLoad) return;
+    try {
+      await statusMut.mutateAsync({ status, reason });
+      toast.success("Status updated successfully");
+      setStatusLoad(null);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
-  // ── Badge text (shipper version needs the shipper name) ─────────────────────
-  const badgeText =
-    role === "shipper"
-      ? `Viewing as ${shipperName(currentShipperId)} — your private loads are visible only to you`
-      : config.badge.text;
+  async function handleAssign(dto: AssignShipmentDto) {
+    if (!assigningLoad) return;
+    try {
+      await assignMut.mutateAsync(dto);
+      toast.success("Load assigned successfully");
+      setAssigningLoad(null);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-7">
@@ -180,20 +143,16 @@ export default function LoadsPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
               Operations
             </p>
-            <h1
-              className="mt-2 font-bold text-foreground"
-              style={{ fontSize: "2.6rem", lineHeight: 1.1 }}
-            >
+            <h1 className="mt-2 text-4xl font-bold text-foreground">
               Manage Loads
             </h1>
             <p className="mt-2 text-sm text-muted">
               Manage load operations and shipment workflows.
             </p>
           </div>
-
           <Button
-            onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"
+            onClick={() => router.push(`${basePath}/create`)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"
           >
             <Plus className="h-4 w-4" />
             Create Load
@@ -201,68 +160,77 @@ export default function LoadsPage() {
         </div>
 
         {/* Role badge */}
-        <div className={`flex items-center gap-2 rounded-[10px] border px-4 py-2.5 text-sm ${config.badge.className}`}>
-          {config.badge.icon}
-          <span className="font-medium">{badgeText}</span>
+        <div
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm ${
+            isAdmin
+              ? "border-info/20 bg-info/5 text-blue-700"
+              : "border-warning/20 bg-warning/5 text-yellow-700"
+          }`}
+        >
+          {isAdmin
+            ? <ShieldAlert className="h-4 w-4 shrink-0" />
+            : <User className="h-4 w-4 shrink-0" />}
+          <span className="font-medium">
+            {isAdmin
+              ? "Viewing as Admin — full access to all loads"
+              : "Viewing as Shipper — your assigned shipments"}
+          </span>
         </div>
 
         {/* KPI cards */}
         <KpiGrid stats={stats} />
 
         {/* Table */}
-        <DataTable<Load>
-          title="Loads Management"
-          columns={columns}
-          data={filtered}
-          searchValue={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search loads…"
-          onRowClick={setViewingLoad}
-          pageSize={10}
-          emptyState={
-            <span className="text-muted">No loads match your search.</span>
-          }
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : (
+          <DataTable<Shipment>
+            title="Loads Management"
+            columns={columns}
+            data={filtered}
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search loads…"
+            onRowClick={(s) => router.push(`${basePath}/${s.shipment_id}`)}
+            pageSize={10}
+            emptyState={<span className="text-muted">No loads found.</span>}
+          />
+        )}
       </div>
 
-      {/* Dialogs */}
-      {viewingLoad && (
-        <ViewLoadDialog
-          load={viewingLoad}
-          open={!!viewingLoad}
-          onClose={() => setViewingLoad(null)}
-          canEdit={canEdit(viewingLoad)}
-          onEdit={() => handleEditFromView(viewingLoad)}
-        />
-      )}
-
-      <LoadDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="Create Load"
-        description={config.createDescription}
-        isAdmin={role === "admin"}
-        onSubmit={handleCreate}
-      />
-
-      {editingLoad && (
-        <LoadDialog
-          open={!!editingLoad}
-          onClose={() => setEditingLoad(null)}
-          title="Edit Load"
-          description="Update the shipment and load details below."
-          defaultValues={editingLoad}
-          isAdmin={role === "admin"}
-          onSubmit={handleUpdate}
-        />
-      )}
-
+      {/* Delete */}
       {deletingLoad && (
         <DeleteConfirmDialog
-          load={deletingLoad}
+          shipment={deletingLoad}
           open={!!deletingLoad}
           onClose={() => setDeletingLoad(null)}
           onConfirm={handleDelete}
+          loading={deleteMut.isPending}
+        />
+      )}
+
+      {/* Status change */}
+      {statusLoad && (
+        <StatusChangeDialog
+          shipment={statusLoad}
+          open={!!statusLoad}
+          onClose={() => setStatusLoad(null)}
+          onConfirm={handleStatusChange}
+          loading={statusMut.isPending}
+        />
+      )}
+
+      {/* Assign to shipper */}
+      {assigningLoad && (
+        <AssignDialog
+          shipment={assigningLoad}
+          shippers={shippers}
+          open={!!assigningLoad}
+          onClose={() => setAssigningLoad(null)}
+          onConfirm={handleAssign}
+          loading={assignMut.isPending}
         />
       )}
     </div>

@@ -2,27 +2,17 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useAuthStore } from '@/store/auth.store'
 
-// Handles the case where an authenticated user lands on the root page
-// (e.g. after OAuth, or navigating back after login)
 export default function AuthRedirect() {
   const router = useRouter()
+  const { isAuthenticated, user } = useAuthStore()
 
   useEffect(() => {
-    const supabase = createClient()
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) return
-
-      const { data: profile } = await supabase
-        .from('profiles').select('role').eq('id', session.user.id).single()
-
-      const role = (profile as { role?: string } | null)?.role
-      if (role === 'admin') router.push('/admin/dashboard')
-      else if (role === 'shipper') router.push('/shipper/dashboard')
-    })
-  }, [router])
+    if (!isAuthenticated || !user) return
+    if (user.role === 'admin') router.push('/admin/dashboard')
+    else if (user.role === 'shipper') router.push('/shipper/dashboard')
+  }, [isAuthenticated, user, router])
 
   return null
 }

@@ -27,7 +27,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 // ── POST /api/v1/auth/register ────────────────────────────────────────────────
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await authService.register(req.body as RegisterDto)
+    const result = await authService.register(req.body as RegisterDto, requestContext(req))
     created(res, result, 'Account created successfully')
   } catch (err) {
     next(err)

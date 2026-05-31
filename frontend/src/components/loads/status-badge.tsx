@@ -1,24 +1,18 @@
 "use client";
-import { LoadStatus } from "@/types/load.types";
 
+import { ShipmentStatus, SHIPMENT_STATUS_LABELS, SHIPMENT_STATUS_COLORS } from "@/types/api.types";
 
 type Props = {
-  status: LoadStatus;
+  status: ShipmentStatus;
 };
 
 export function StatusBadge({ status }: Props) {
-  const styles: Record<LoadStatus, string> = {
-    Pending: "bg-warning/10 text-yellow-700 border-warning/25",
-    "In Transit": "bg-info/10 text-blue-700 border-info/25",
-    Delivered: "bg-success/10 text-green-700 border-success/25",
-    Cancelled: "bg-danger/10 text-red-700 border-danger/25",
-  };
+  const label = SHIPMENT_STATUS_LABELS[status] ?? status;
+  const color = SHIPMENT_STATUS_COLORS[status] ?? "bg-gray-100 text-gray-700 border-gray-200";
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold ${styles[status]}`}
-    >
-      {status}
+    <span className={`inline-flex items-center rounded-full border px-3 py-0.5 text-xs font-semibold ${color}`}>
+      {label}
     </span>
   );
 }

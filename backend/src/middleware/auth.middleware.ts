@@ -27,9 +27,10 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
   // verifyAccessToken throws AppError — caught by the global error handler
   const payload = verifyAccessToken(token!)
   req.user = {
-    id: payload.sub,
-    email: payload.email,
-    role: payload.role,
+    id:        payload.sub,
+    email:     payload.email,
+    role:      payload.role,
+    accountId: payload.accountId ?? null,
   }
 
   next()

@@ -19,8 +19,19 @@ export function validate(schema: ZodSchema, target: Target = 'body') {
       }, {})
       return void next(AppError.badRequest('Validation failed', details))
     }
-    // Assign coerced/defaulted values back onto the request
-    ;(req as unknown as Record<string, unknown>)[target] = result.data
+    // Write coerced/defaulted values back onto the request.
+    // `req.query` is a getter-only on IncomingMessage's prototype, so direct
+    // assignment throws. Shadow it on the instance with defineProperty instead.
+    if (target === 'query') {
+      Object.defineProperty(req, 'query', {
+        value: result.data,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      })
+    } else {
+      ;(req as unknown as Record<string, unknown>)[target] = result.data
+    }
     next()
   }
 }

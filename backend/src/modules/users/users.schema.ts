@@ -17,6 +17,11 @@ export const updateUserRoleSchema = z.object({
   role: z.enum(['admin', 'shipper']),
 })
 
+export const approveUserSchema = z.object({
+  isApproved: z.boolean(),
+})
+
 export type UpdateProfileDto = z.infer<typeof updateProfileSchema>
-export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>
+export type ListUsersQuery   = z.infer<typeof listUsersQuerySchema>
 export type UpdateUserRoleDto = z.infer<typeof updateUserRoleSchema>
+export type ApproveUserDto   = z.infer<typeof approveUserSchema>

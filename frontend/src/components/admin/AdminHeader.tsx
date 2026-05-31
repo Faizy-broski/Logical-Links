@@ -7,8 +7,6 @@ import {
   Bell,
   ChevronDown,
   Menu,
-  Search,
-  Settings,
   User,
   LogOut,
 } from 'lucide-react'
@@ -23,7 +21,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-import { createClient } from '@/lib/supabase/client'
+import { useAuthStore } from '@/store/auth.store'
+import { api } from '@/lib/api'
 
 interface Props {
   notificationCount?: number
@@ -31,14 +30,17 @@ interface Props {
 }
 
 export default function AdminHeader({
-  notificationCount = 4,
+  notificationCount = 0,
   onMenuToggle,
 }: Props) {
   const router = useRouter()
+  const { user, refreshToken, clearAuth } = useAuthStore()
 
   async function handleSignOut() {
-    await createClient().auth.signOut()
-
+    try {
+      await api.post('/api/v1/auth/logout', { refreshToken, allDevices: false })
+    } catch {}
+    clearAuth()
     router.push('/login')
     router.refresh()
   }
@@ -102,7 +104,7 @@ export default function AdminHeader({
               sm:block
             "
           >
-            Manage shipments, customers & loads
+            Manage shipments, shippers &amp; loads
           </p>
         </div>
       </div>
@@ -111,7 +113,9 @@ export default function AdminHeader({
       <div className="flex items-center gap-3">
 
         {/* Notifications */}
-        <button
+        <Link
+          href="/admin/notifications"
+          aria-label="Notifications"
           className="
             relative flex h-11 w-11
             items-center justify-center
@@ -147,7 +151,7 @@ export default function AdminHeader({
                 : notificationCount}
             </span>
           )}
-        </button>
+        </Link>
 
         {/* Profile */}
         <DropdownMenu>
@@ -179,7 +183,7 @@ export default function AdminHeader({
                   text-sidebar
                 "
               >
-                AD
+                {(user?.fullName ?? 'AD').slice(0, 2).toUpperCase()}
               </div>
 
               {/* User */}
@@ -190,7 +194,7 @@ export default function AdminHeader({
                     text-foreground
                   "
                 >
-                  Admin User
+                  {user?.fullName ?? 'Admin'}
                 </p>
 
                 <p
@@ -198,7 +202,7 @@ export default function AdminHeader({
                     text-xs text-muted
                   "
                 >
-                  Super Admin
+                  {user?.email ?? 'admin'}
                 </p>
               </div>
 
@@ -239,7 +243,7 @@ export default function AdminHeader({
                   text-sidebar
                 "
               >
-                AD
+                {(user?.fullName ?? 'AD').slice(0, 2).toUpperCase()}
               </div>
 
               <div className="min-w-0">
@@ -249,7 +253,7 @@ export default function AdminHeader({
                     font-semibold text-foreground
                   "
                 >
-                  Admin User
+                  {user?.fullName ?? 'Admin'}
                 </p>
 
                 <p
@@ -258,7 +262,7 @@ export default function AdminHeader({
                     text-muted
                   "
                 >
-                  admin@logicallinks.com
+                  {user?.email ?? ''}
                 </p>
               </div>
             </div>
