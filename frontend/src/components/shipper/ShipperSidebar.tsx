@@ -3,16 +3,27 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Truck, Bell, User, LogOut, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Truck,
+  FileText,
+  FileQuestion,
+  Bell,
+  User,
+  LogOut,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useAuthStore } from "@/store/auth.store";
 import { api } from "@/lib/api";
 
 const navigation = [
-  { label: "Dashboard",     href: "/shipper/dashboard",      icon: LayoutDashboard },
-  { label: "My Loads",      href: "/shipper/loads",           icon: Truck           },
-  { label: "Notifications", href: "/shipper/notifications",   icon: Bell            },
-  { label: "My Profile",    href: "/shipper/profile",         icon: User            },
+  { label: "Dashboard", href: "/shipper/dashboard", icon: LayoutDashboard },
+  { label: "My Loads", href: "/shipper/loads", icon: Truck },
+  { label: "Invoices", href: "/shipper/invoices", icon: FileText },
+  { label: "Quotations", href: "/shipper/quotations", icon: FileQuestion },
+  { label: "Notifications", href: "/shipper/notifications", icon: Bell },
+  { label: "My Profile", href: "/shipper/profile", icon: User },
 ];
 
 interface Props {
@@ -22,12 +33,15 @@ interface Props {
 
 export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
   const { user, refreshToken, clearAuth } = useAuthStore();
 
   async function signOut() {
     try {
-      await api.post("/api/v1/auth/logout", { refreshToken, allDevices: false });
+      await api.post("/api/v1/auth/logout", {
+        refreshToken,
+        allDevices: false,
+      });
     } catch {}
     clearAuth();
     router.push("/login");
@@ -56,7 +70,9 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
             />
           </div>
           <div>
-            <h2 className="text-[13px] font-semibold tracking-wide text-white">Logical Links</h2>
+            <h2 className="text-[13px] font-semibold tracking-wide text-white">
+              Logical Links
+            </h2>
             <p className="text-[11px] text-zinc-500">Shipping CMS</p>
           </div>
         </Link>
@@ -74,8 +90,9 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="space-y-0.5">
           {navigation.map((item) => {
-            const Icon   = item.icon;
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const Icon = item.icon;
+            const active =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}
@@ -106,7 +123,9 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
             <p className="truncate text-[13px] font-semibold text-white">
               {user?.fullName ?? "Shipper"}
             </p>
-            <p className="truncate text-[11px] text-zinc-400">{user?.email ?? ""}</p>
+            <p className="truncate text-[11px] text-zinc-400">
+              {user?.email ?? ""}
+            </p>
           </div>
         </div>
         <button
@@ -117,7 +136,9 @@ export default function ShipperSidebar({ isOpen = false, onClose }: Props) {
           <LogOut className="h-4 w-4 shrink-0" />
           Sign Out
         </button>
-        <p className="text-center text-[10px] text-zinc-600">© 2026 Logical Links</p>
+        <p className="text-center text-[10px] text-zinc-600">
+          © 2026 Logical Links
+        </p>
       </div>
     </aside>
   );

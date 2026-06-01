@@ -204,7 +204,7 @@ export default function AdminCreateLoadPage() {
                         </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger className={`${F} h-10`}>
+                            <SelectTrigger className={`h-10`}>
                               <SelectValue />
                             </SelectTrigger>
                           </FormControl>
@@ -254,7 +254,7 @@ export default function AdminCreateLoadPage() {
                         value={field.value ?? ""}
                       >
                         <FormControl>
-                          <SelectTrigger className={`${F} h-10`}>
+                          <SelectTrigger className={`h-10`}>
                             <SelectValue placeholder="Unassigned — select later" />
                           </SelectTrigger>
                         </FormControl>
