@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, FileDown, Copy, Send, Loader2, X } from "lucide-react";
+import { Save, FileDown, Copy, Send, Loader2, X, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,32 +127,53 @@ const fieldLabelCls = "text-[11px] font-semibold uppercase tracking-wide text-mu
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
+export interface LoadPrefill {
+  loadNumber:       string;
+  originCity:       string;
+  originState:      string;
+  destinationCity:  string;
+  destinationState: string;
+  customerName?:    string;
+  customerCompany?: string;
+}
+
 interface Props {
-  profileId:   string;
-  quotation?:  Quotation;
-  redirectTo?: string;
-  isAdmin?:    boolean;
+  profileId:    string;
+  quotation?:   Quotation;
+  redirectTo?:  string;
+  isAdmin?:     boolean;
+  loadId?:      string | null;
+  loadPrefill?: LoadPrefill;
 }
 
 // ── Editor ────────────────────────────────────────────────────────────────────
 
-export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin }: Props) {
+export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin, loadId, loadPrefill }: Props) {
   const router = useRouter();
   const isEdit = !!quotation;
 
   // Line items live outside the main form (managed by LineItemsTable's own useForm)
-  const [items, setItems] = useState<FormItem[]>(
-    (quotation?.quotation_items ?? []).map((i) => ({
-      description: i.description,
-      category:    i.category,
-      quantity:    i.quantity,
-      unit:        i.unit,
-      unit_price:  i.unit_price,
-      amount:      i.amount,
-      notes:       i.notes ?? undefined,
-      sort_order:  i.sort_order,
-    })),
-  );
+  const [items, setItems] = useState<FormItem[]>(() => {
+    if (quotation?.quotation_items?.length) {
+      return quotation.quotation_items.map((i) => ({
+        description: i.description,
+        category:    i.category,
+        quantity:    i.quantity,
+        unit:        i.unit,
+        unit_price:  i.unit_price,
+        amount:      i.amount,
+        notes:       i.notes ?? undefined,
+        sort_order:  i.sort_order,
+      }));
+    }
+    if (loadPrefill && !quotation) {
+      return [
+        { description: "Freight Charge", category: "freight_charge" as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 0 },
+        { description: "Fuel Surcharge",  category: "fuel_surcharge"  as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 1 },
+      ];
+    }
+    return [];
+  });
 
   const form = useForm<QuotationFormValues>({
     resolver: zodResolver(quotationFormSchema),
@@ -159,8 +181,8 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin }: P
       status:          quotation?.status ?? "draft",
       issueDate:       quotation?.issue_date ?? today(),
       expiryDate:      quotation?.expiry_date ?? "",
-      customerName:    quotation?.customer_name ?? "",
-      customerCompany: quotation?.customer_company ?? "",
+      customerName:    quotation?.customer_name ?? loadPrefill?.customerName ?? "",
+      customerCompany: quotation?.customer_company ?? loadPrefill?.customerCompany ?? "",
       customerEmail:   quotation?.customer_email ?? "",
       customerPhone:   quotation?.customer_phone ?? "",
       billingAddress:  quotation?.billing_address ?? "",
@@ -218,7 +240,7 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin }: P
         await updateMut.mutateAsync(dto as UpdateQuotationDto);
         toast.success("Quotation saved");
       } else {
-        const res = await createMut.mutateAsync({ ...dto, profileId } as CreateQuotationDto);
+        const res = await createMut.mutateAsync({ ...dto, profileId, loadId: loadId ?? undefined } as CreateQuotationDto);
         toast.success("Quotation created");
         const newId = (res as any)?.data?.id;
         if (redirectTo && newId) router.push(redirectTo.replace("[id]", newId));
@@ -302,6 +324,35 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin }: P
             </Button>
           </div>
         </div>
+
+        {/* ── Linked load banner (mobile; sidebar shows on desktop) ── */}
+        {(loadPrefill || quotation?.shipments) && (
+          <div className="lg:hidden flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Truck className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Linked Load</p>
+              <p className="text-sm font-semibold text-foreground">
+                {quotation?.shipments?.load_number ?? loadPrefill?.loadNumber}
+              </p>
+              <p className="text-xs text-muted">
+                {quotation?.shipments
+                  ? `${quotation.shipments.origin_city} → ${quotation.shipments.destination_city}`
+                  : `${loadPrefill?.originCity}, ${loadPrefill?.originState} → ${loadPrefill?.destinationCity}, ${loadPrefill?.destinationState}`
+                }
+              </p>
+            </div>
+            {(loadId || quotation?.load_id) && (
+              <Link
+                href={`/${isAdmin ? "admin" : "shipper"}/loads/${quotation?.load_id ?? loadId}`}
+                className="shrink-0 text-xs font-medium text-primary hover:underline"
+              >
+                View Load
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* ── Main layout: left content + right sidebar ── */}
         <div className="grid gap-5 lg:grid-cols-[1fr_272px]">
@@ -587,16 +638,29 @@ export function QuotationEditor({ profileId, quotation, redirectTo, isAdmin }: P
             />
 
             {/* Load reference */}
-            {quotation?.shipments && (
-              <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-                <div className="border-b border-card-border px-5 py-4">
-                  <h3 className="text-sm font-semibold text-foreground">Load Reference</h3>
+            {(quotation?.shipments || loadPrefill) && (
+              <div className="overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 shadow-sm">
+                <div className="border-b border-primary/15 px-5 py-4">
+                  <h3 className="text-sm font-semibold text-foreground">Linked Load</h3>
                 </div>
                 <div className="px-5 py-4 text-sm">
-                  <p className="font-semibold text-foreground">{quotation.shipments.load_number}</p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {quotation.shipments.origin_city} → {quotation.shipments.destination_city}
+                  <p className="font-semibold text-foreground">
+                    {quotation?.shipments?.load_number ?? loadPrefill?.loadNumber}
                   </p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {quotation?.shipments
+                      ? `${quotation.shipments.origin_city} → ${quotation.shipments.destination_city}`
+                      : `${loadPrefill?.originCity}, ${loadPrefill?.originState} → ${loadPrefill?.destinationCity}, ${loadPrefill?.destinationState}`
+                    }
+                  </p>
+                  {(loadId || quotation?.load_id) && (
+                    <Link
+                      href={`/${isAdmin ? "admin" : "shipper"}/loads/${quotation?.load_id ?? loadId}`}
+                      className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
+                    >
+                      View Load →
+                    </Link>
+                  )}
                 </div>
               </div>
             )}

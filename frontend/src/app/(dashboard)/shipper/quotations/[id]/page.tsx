@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Pencil, Copy, Send, FileDown, ChevronRight,
+  ArrowLeft, Pencil, Copy, Send, FileDown, ChevronRight, Loader2,
   User, Building2, Mail, Phone, MapPin, DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuotationStatusBadge } from "@/components/documents/document-status-badge";
 import { LineItemsTable } from "@/components/documents/line-items-table";
 import { PricingSummary } from "@/components/documents/pricing-summary";
+import { PdfActionsCard } from "@/components/documents/pdf-actions-card";
 import { useQuotation, useDuplicateQuotation, useGenerateQuotationPdf } from "@/hooks/use-quotations";
 import { useConvertQuotationToInvoice } from "@/hooks/use-invoices";
 import type { LineItem } from "@/types/api.types";
@@ -74,14 +75,14 @@ export default function ShipperQuotationDetailPage({ params }: { params: Promise
     try { await duplicateMut.mutateAsync(id); toast.success("Quotation duplicated"); router.push("/shipper/quotations"); }
     catch (e) { toast.error((e as Error).message); }
   }
+
   async function handleGeneratePdf() {
     try {
-      const r = await pdfMut.mutateAsync();
-      const url = (r as any)?.data?.pdfUrl;
-      if (url) window.open(url, "_blank");
-      toast.success("PDF generated");
+      await pdfMut.mutateAsync();
+      toast.success("PDF generated successfully");
     } catch (e) { toast.error((e as Error).message); }
   }
+
   async function handleConvert() {
     try {
       const r = await convertMut.mutateAsync(id);
@@ -124,16 +125,11 @@ export default function ShipperQuotationDetailPage({ params }: { params: Promise
               </Button>
               <Button variant="outline" size="sm" onClick={handleGeneratePdf} disabled={pdfMut.isPending}
                 className="h-8 rounded-lg border-card-border px-3 text-xs gap-1.5">
-                <FileDown className="h-3.5 w-3.5" />
+                {pdfMut.isPending
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  : <FileDown className="h-3.5 w-3.5" />}
                 {quotation.pdf_url ? "Regenerate PDF" : "Generate PDF"}
               </Button>
-              {quotation.pdf_url && (
-                <Button variant="outline" size="sm" asChild className="h-8 rounded-lg border-card-border px-3 text-xs gap-1.5">
-                  <a href={quotation.pdf_url} target="_blank" rel="noreferrer">
-                    <FileDown className="h-3.5 w-3.5" /> Download
-                  </a>
-                </Button>
-              )}
               {isDraft && (
                 <Button size="sm" onClick={() => router.push(`/shipper/quotations/${id}/edit`)}
                   className="h-8 rounded-lg bg-primary px-4 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
@@ -145,7 +141,7 @@ export default function ShipperQuotationDetailPage({ params }: { params: Promise
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 space-y-6">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-2 sm:py-8 space-y-6">
 
         <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
           <div className="grid grid-cols-1 divide-y divide-card-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
@@ -216,6 +212,13 @@ export default function ShipperQuotationDetailPage({ params }: { params: Promise
           </div>
 
           <div className="space-y-4 lg:self-start">
+
+            {/* PDF Document card */}
+            <PdfActionsCard
+              pdfUrl={quotation.pdf_url ?? null}
+              filename={`quotation-${quotation.quotation_number}.pdf`}
+            />
+
             <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
               <div className="border-b border-card-border px-5 py-4">
                 <h3 className="text-sm font-semibold text-foreground">Summary</h3>

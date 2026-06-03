@@ -39,12 +39,15 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const { user, refreshToken, clearAuth } = useAuthStore();
 
   async function signOut() {
+    console.info("[Auth][AdminSidebar] User initiated logout — user=" + (user?.email ?? "unknown"));
     try {
       await api.post("/api/v1/auth/logout", {
         refreshToken,
         allDevices: false,
       });
-    } catch {}
+    } catch (err) {
+      console.warn("[Auth][AdminSidebar] Backend logout request failed (session cleared anyway):", err);
+    }
     clearAuth();
     router.push("/login");
     router.refresh();

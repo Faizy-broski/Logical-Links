@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
@@ -17,6 +17,17 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? '/'
   const setAuth = useAuthStore((s) => s.setAuth)
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore()
+
+  // Redirect already-authenticated users straight to their dashboard.
+  // Must wait for Zustand to hydrate from localStorage before deciding.
+  useEffect(() => {
+    if (!_hasHydrated) return
+    if (isAuthenticated && user) {
+      const dest = user.role === 'admin' ? '/admin/dashboard' : '/shipper/dashboard'
+      router.replace(dest)
+    }
+  }, [isAuthenticated, user, _hasHydrated, router])
 
   const [form, setForm] = useState<LoginSchema>({ email: '', password: '' })
   const [errors, setErrors] = useState<Partial<Record<keyof LoginSchema, string>>>({})

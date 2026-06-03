@@ -52,7 +52,7 @@ export const updateQuotationSchema = createQuotationSchema
 
 export const listQuotationsQuerySchema = z.object({
   page:      z.coerce.number().int().min(1).default(1),
-  limit:     z.coerce.number().int().min(1).max(100).default(20),
+  limit:     z.coerce.number().int().min(1).max(500).default(20),
   profileId: z.string().uuid().optional(),
   loadId:    z.string().uuid().optional(),
   status:    z.enum(QUOTATION_STATUSES).optional(),

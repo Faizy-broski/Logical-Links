@@ -30,7 +30,7 @@ export default function AdminInvoicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-2">
       <div className="mx-auto max-w-7xl space-y-6 sm:space-y-7">
 
         <div>

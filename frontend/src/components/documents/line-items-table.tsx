@@ -206,7 +206,7 @@ function SortableRow({
               </Button>
               <Button
                 type="button" variant="ghost" size="icon"
-                className="h-8 w-8 text-muted-light hover:text-red-500 hover:bg-red-500/5 rounded-lg"
+                className="h-8 w-8 text-muted-light hover:text-red-500 rounded-lg"
                 onClick={() => onDelete(index)} title="Delete row"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -270,7 +270,7 @@ function SortableRow({
                     <Input
                       type="number"
                       min="0"
-                      step="0.001"
+                      step="1"
                       value={field.value}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value) || 0;

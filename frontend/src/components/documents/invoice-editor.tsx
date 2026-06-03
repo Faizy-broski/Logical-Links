@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Save, FileDown, Copy, Loader2, X } from "lucide-react";
+import { Save, FileDown, Copy, Loader2, X, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -129,32 +130,53 @@ const fieldLabelCls = "text-[11px] font-semibold uppercase tracking-wide text-mu
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
+export interface LoadPrefill {
+  loadNumber:       string;
+  originCity:       string;
+  originState:      string;
+  destinationCity:  string;
+  destinationState: string;
+  customerName?:    string;
+  customerCompany?: string;
+}
+
 interface Props {
-  profileId:   string;
-  invoice?:    Invoice;
-  redirectTo?: string;
-  isAdmin?:    boolean;
+  profileId:    string;
+  invoice?:     Invoice;
+  redirectTo?:  string;
+  isAdmin?:     boolean;
+  loadId?:      string | null;
+  loadPrefill?: LoadPrefill;
 }
 
 // ── Editor ────────────────────────────────────────────────────────────────────
 
-export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin }: Props) {
+export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId, loadPrefill }: Props) {
   const router = useRouter();
   const isEdit = !!invoice;
 
   // Line items live outside the main form (managed by LineItemsTable's own useForm)
-  const [items, setItems] = useState<FormItem[]>(
-    (invoice?.invoice_items ?? []).map((i) => ({
-      description: i.description,
-      category:    i.category,
-      quantity:    i.quantity,
-      unit:        i.unit,
-      unit_price:  i.unit_price,
-      amount:      i.amount,
-      notes:       i.notes ?? undefined,
-      sort_order:  i.sort_order,
-    })),
-  );
+  const [items, setItems] = useState<FormItem[]>(() => {
+    if (invoice?.invoice_items?.length) {
+      return invoice.invoice_items.map((i) => ({
+        description: i.description,
+        category:    i.category,
+        quantity:    i.quantity,
+        unit:        i.unit,
+        unit_price:  i.unit_price,
+        amount:      i.amount,
+        notes:       i.notes ?? undefined,
+        sort_order:  i.sort_order,
+      }));
+    }
+    if (loadPrefill && !invoice) {
+      return [
+        { description: "Freight Charge", category: "freight_charge" as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 0 },
+        { description: "Fuel Surcharge",  category: "fuel_surcharge"  as const, quantity: 1, unit: "load", unit_price: 0, amount: 0, sort_order: 1 },
+      ];
+    }
+    return [];
+  });
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -162,8 +184,8 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin }: Props
       status:              invoice?.status ?? "draft",
       issueDate:           invoice?.issue_date ?? today(),
       dueDate:             invoice?.due_date ?? "",
-      customerName:        invoice?.customer_name ?? "",
-      customerCompany:     invoice?.customer_company ?? "",
+      customerName:        invoice?.customer_name ?? loadPrefill?.customerName ?? "",
+      customerCompany:     invoice?.customer_company ?? loadPrefill?.customerCompany ?? "",
       customerEmail:       invoice?.customer_email ?? "",
       customerPhone:       invoice?.customer_phone ?? "",
       billingAddress:      invoice?.billing_address ?? "",
@@ -227,7 +249,7 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin }: Props
         await updateMut.mutateAsync(dto as UpdateInvoiceDto);
         toast.success("Invoice saved");
       } else {
-        const res = await createMut.mutateAsync({ ...dto, profileId } as CreateInvoiceDto);
+        const res = await createMut.mutateAsync({ ...dto, profileId, loadId: loadId ?? undefined } as CreateInvoiceDto);
         toast.success("Invoice created");
         const newId = (res as any)?.data?.id;
         if (redirectTo && newId) router.push(redirectTo.replace("[id]", newId));
@@ -301,6 +323,35 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin }: Props
             </Button>
           </div>
         </div>
+
+        {/* ── Linked load banner (all screens — sidebar duplicate hidden via lg:hidden) ── */}
+        {(loadPrefill || invoice?.shipments) && (
+          <div className="lg:hidden flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Truck className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Linked Load</p>
+              <p className="text-sm font-semibold text-foreground">
+                {invoice?.shipments?.load_number ?? loadPrefill?.loadNumber}
+              </p>
+              <p className="text-xs text-muted">
+                {invoice?.shipments
+                  ? `${invoice.shipments.origin_city} → ${invoice.shipments.destination_city}`
+                  : `${loadPrefill?.originCity}, ${loadPrefill?.originState} → ${loadPrefill?.destinationCity}, ${loadPrefill?.destinationState}`
+                }
+              </p>
+            </div>
+            {(loadId || invoice?.load_id) && (
+              <Link
+                href={`/${isAdmin ? "admin" : "shipper"}/loads/${invoice?.load_id ?? loadId}`}
+                className="shrink-0 text-xs font-medium text-primary hover:underline"
+              >
+                View Load
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* ── Main layout: left content + right sidebar ── */}
         <div className="grid gap-5 lg:grid-cols-[1fr_272px]">
@@ -614,16 +665,29 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin }: Props
             />
 
             {/* Load reference */}
-            {invoice?.shipments && (
-              <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-                <div className="border-b border-card-border px-5 py-4">
-                  <h3 className="text-sm font-semibold text-foreground">Load Reference</h3>
+            {(invoice?.shipments || loadPrefill) && (
+              <div className="overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 shadow-sm">
+                <div className="border-b border-primary/15 px-5 py-4">
+                  <h3 className="text-sm font-semibold text-foreground">Linked Load</h3>
                 </div>
                 <div className="px-5 py-4 text-sm">
-                  <p className="font-semibold text-foreground">{invoice.shipments.load_number}</p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {invoice.shipments.origin_city} → {invoice.shipments.destination_city}
+                  <p className="font-semibold text-foreground">
+                    {invoice?.shipments?.load_number ?? loadPrefill?.loadNumber}
                   </p>
+                  <p className="mt-0.5 text-xs text-muted">
+                    {invoice?.shipments
+                      ? `${invoice.shipments.origin_city} → ${invoice.shipments.destination_city}`
+                      : `${loadPrefill?.originCity}, ${loadPrefill?.originState} → ${loadPrefill?.destinationCity}, ${loadPrefill?.destinationState}`
+                    }
+                  </p>
+                  {(loadId || invoice?.load_id) && (
+                    <Link
+                      href={`/${isAdmin ? "admin" : "shipper"}/loads/${invoice?.load_id ?? loadId}`}
+                      className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
+                    >
+                      View Load →
+                    </Link>
+                  )}
                 </div>
               </div>
             )}

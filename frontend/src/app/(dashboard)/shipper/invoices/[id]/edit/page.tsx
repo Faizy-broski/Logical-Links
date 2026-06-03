@@ -60,7 +60,7 @@ export default function ShipperEditInvoicePage({ params }: { params: Promise<{ i
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-2 sm:py-8">
         <InvoiceEditor profileId={user.id} invoice={invoice} redirectTo={`/shipper/invoices/${id}`} />
       </div>
     </div>

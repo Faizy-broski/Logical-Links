@@ -146,11 +146,15 @@ export type Shipment = {
   reference_number: string | null;
 
   created_by: string;
+  /** 'shipper' = created by a shipper user; assignment is permanently locked. null = pre-migration row (treated as admin-created). */
+  created_by_role: 'admin' | 'shipper' | null;
   created_at: string;
   updated_at: string;
 
   // Joined (Supabase uses the table name as the relation key)
   accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null };
+  /** Profile of the user who created this load (joined via profiles!created_by). */
+  profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper' } | null;
 };
 
 export type CreateShipmentDto = {
