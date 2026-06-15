@@ -15,7 +15,7 @@ const KEYS = {
 
 // ── Queries ────────────────────────────────────────────────────────────────────
 
-export function useQuotations(query: ListQuotationsQuery = {}) {
+export function useQuotations(query: ListQuotationsQuery = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: KEYS.list(query),
     queryFn:  () => {
@@ -24,6 +24,7 @@ export function useQuotations(query: ListQuotationsQuery = {}) {
       return api.get<PaginatedResponse<Quotation>>(`/api/v1/quotations?${params}`)
     },
     staleTime: 30_000,
+    enabled:   options?.enabled ?? true,
   });
 }
 

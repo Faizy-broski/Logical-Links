@@ -37,7 +37,7 @@ export default function AdminDashboard() {
 
   const kpis = [
     {
-      title:      'Total Loads',
+      title:      'Total Deliveries',
       value:      totalLoads,
       icon:       Package,
       chartColor: '#C89B3C',
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
       subtitle:   'vs last 30 days',
     },
     {
-      title:      'Active Loads',
+      title:      'Active Deliveries',
       value:      activeLoads,
       icon:       Truck,
       chartColor: '#3B82F6',

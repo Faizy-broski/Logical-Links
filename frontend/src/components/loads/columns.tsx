@@ -50,6 +50,7 @@ type ColumnsOptions = {
   canEdit: (s: Shipment) => boolean;
   canDelete: (s: Shipment) => boolean;
   canAssign: (s: Shipment) => boolean;
+  onEdit?: (s: Shipment) => void;
   onDelete: (s: Shipment) => void;
   onAssign: (s: Shipment) => void;
   onStatusChange: (s: Shipment) => void;
@@ -67,6 +68,7 @@ export function getLoadColumns({
   canEdit,
   canDelete,
   canAssign,
+  onEdit,
   onDelete,
   onAssign,
   onStatusChange,
@@ -244,14 +246,11 @@ export function getLoadColumns({
               >
                 {editable && (
                   <DropdownMenuItem
-                    asChild
-                    // onClick={() => onEdit(s)}
+                    onClick={() => onEdit?.(s)}
                     className="cursor-pointer"
                   >
-                    <Link href={`${basePath}/${s.shipment_id}/edit`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Link>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
                   </DropdownMenuItem>
                 )}
 

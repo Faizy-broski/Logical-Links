@@ -348,7 +348,7 @@ export function InvoiceEditor({ profileId, invoice, redirectTo, isAdmin, loadId,
         )}
 
         {/* ── Main layout: left content + right sidebar ── */}
-        <div className="grid gap-5 lg:grid-cols-[1fr_272px]">
+        <div className="grid gap-5 lg:grid-cols-1">
 
           {/* ── Form sections ── */}
           <div className="space-y-5 min-w-0">

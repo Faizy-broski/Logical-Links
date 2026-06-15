@@ -13,7 +13,7 @@ const KEYS = {
   detail: (id: string)           => ["invoices", "detail", id] as const,
 };
 
-export function useInvoices(query: ListInvoicesQuery = {}) {
+export function useInvoices(query: ListInvoicesQuery = {}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: KEYS.list(query),
     queryFn:  () => {
@@ -22,6 +22,7 @@ export function useInvoices(query: ListInvoicesQuery = {}) {
       return api.get<PaginatedResponse<Invoice>>(`/api/v1/invoices?${params}`)
     },
     staleTime: 30_000,
+    enabled:   options?.enabled ?? true,
   });
 }
 

@@ -252,6 +252,7 @@ export type ListShipmentsQuery = {
   page?:          number;
   limit?:         number;
   status?:        string;
+  statuses?:      string; // comma-separated list, takes precedence over status
   shipmentType?:  ShipmentType;
   accountId?:     string;
   search?:        string;

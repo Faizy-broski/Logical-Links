@@ -87,6 +87,9 @@ interface QuotationListProps {
   isLoading?: boolean;
   onDuplicate: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onView?: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onCreateClick?: () => void;
   // Server-side
   totalCount?: number;
   page?: number;
@@ -106,6 +109,9 @@ export function QuotationsList({
   isLoading,
   onDuplicate,
   onDelete,
+  onView,
+  onEdit,
+  onCreateClick,
   totalCount,
   page,
   onPageChange,
@@ -204,7 +210,7 @@ export function QuotationsList({
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <QuotationActions quotation={row.original} basePath={basePath} onDuplicate={onDuplicate} onDelete={onDelete} />
+        <QuotationActions quotation={row.original} basePath={basePath} onDuplicate={onDuplicate} onDelete={onDelete} onView={onView} onEdit={onEdit} />
       ),
     },
   ];
@@ -218,7 +224,7 @@ export function QuotationsList({
       searchValue={searchValue}
       onSearchChange={onSearchChange}
       searchPlaceholder="Search by number, customer…"
-      onRowClick={(q) => router.push(`${basePath}/${q.id}`)}
+      onRowClick={(q) => onView ? onView(q.id) : router.push(`${basePath}/${q.id}`)}
       pageSize={20}
       totalCount={totalCount}
       page={page}
@@ -227,11 +233,17 @@ export function QuotationsList({
       headerActions={
         <>
           {headerActions}
-          <Button asChild size="sm" className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
-            <Link href={`${basePath}/create`}>
+          {onCreateClick ? (
+            <Button size="sm" onClick={onCreateClick} className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
               <Plus className="h-3.5 w-3.5" /> New Quotation
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild size="sm" className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
+              <Link href={`${basePath}/create`}>
+                <Plus className="h-3.5 w-3.5" /> New Quotation
+              </Link>
+            </Button>
+          )}
         </>
       }
       emptyState={
@@ -246,8 +258,8 @@ export function QuotationsList({
 }
 
 function QuotationActions({
-  quotation, basePath, onDuplicate, onDelete,
-}: { quotation: Quotation; basePath: string; onDuplicate: (id: string) => Promise<void>; onDelete: (id: string) => Promise<void> }) {
+  quotation, basePath, onDuplicate, onDelete, onView, onEdit,
+}: { quotation: Quotation; basePath: string; onDuplicate: (id: string) => Promise<void>; onDelete: (id: string) => Promise<void>; onView?: (id: string) => void; onEdit?: (id: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -273,12 +285,24 @@ function QuotationActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 rounded-xl border-card-border bg-card shadow-lg">
-        <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
-          <Link href={`${basePath}/${quotation.id}`}><Eye className="h-4 w-4" /> View</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
-          <Link href={`${basePath}/${quotation.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
-        </DropdownMenuItem>
+        {onView ? (
+          <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onView(quotation.id)}>
+            <Eye className="h-4 w-4" /> View
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
+            <Link href={`${basePath}/${quotation.id}`}><Eye className="h-4 w-4" /> View</Link>
+          </DropdownMenuItem>
+        )}
+        {onEdit ? (
+          <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onEdit(quotation.id)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
+            <Link href={`${basePath}/${quotation.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
+          </DropdownMenuItem>
+        )}
         {quotation.pdf_url && (
           <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={handleDownload}>
             <FileDown className="h-4 w-4" /> Download PDF
@@ -305,6 +329,9 @@ interface InvoiceListProps {
   isLoading?: boolean;
   onDuplicate: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onView?: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onCreateClick?: () => void;
   // Server-side
   totalCount?: number;
   page?: number;
@@ -324,6 +351,9 @@ export function InvoicesList({
   isLoading,
   onDuplicate,
   onDelete,
+  onView,
+  onEdit,
+  onCreateClick,
   totalCount,
   page,
   onPageChange,
@@ -424,7 +454,7 @@ export function InvoicesList({
       id: "actions",
       header: "",
       cell: ({ row }) => (
-        <InvoiceActions invoice={row.original} basePath={basePath} onDuplicate={onDuplicate} onDelete={onDelete} />
+        <InvoiceActions invoice={row.original} basePath={basePath} onDuplicate={onDuplicate} onDelete={onDelete} onView={onView} onEdit={onEdit} />
       ),
     },
   ];
@@ -438,7 +468,7 @@ export function InvoicesList({
       searchValue={searchValue}
       onSearchChange={onSearchChange}
       searchPlaceholder="Search by number, customer…"
-      onRowClick={(inv) => router.push(`${basePath}/${inv.id}`)}
+      onRowClick={(inv) => onView ? onView(inv.id) : router.push(`${basePath}/${inv.id}`)}
       pageSize={20}
       totalCount={totalCount}
       page={page}
@@ -447,11 +477,17 @@ export function InvoicesList({
       headerActions={
         <>
           {headerActions}
-          <Button asChild size="sm" className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
-            <Link href={`${basePath}/create`}>
+          {onCreateClick ? (
+            <Button size="sm" onClick={onCreateClick} className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
               <Plus className="h-3.5 w-3.5" /> New Invoice
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild size="sm" className="h-8 rounded-lg bg-primary px-3 text-xs text-sidebar hover:bg-primary/85 gap-1.5">
+              <Link href={`${basePath}/create`}>
+                <Plus className="h-3.5 w-3.5" /> New Invoice
+              </Link>
+            </Button>
+          )}
         </>
       }
       emptyState={
@@ -466,8 +502,8 @@ export function InvoicesList({
 }
 
 function InvoiceActions({
-  invoice, basePath, onDuplicate, onDelete,
-}: { invoice: Invoice; basePath: string; onDuplicate: (id: string) => Promise<void>; onDelete: (id: string) => Promise<void> }) {
+  invoice, basePath, onDuplicate, onDelete, onView, onEdit,
+}: { invoice: Invoice; basePath: string; onDuplicate: (id: string) => Promise<void>; onDelete: (id: string) => Promise<void>; onView?: (id: string) => void; onEdit?: (id: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -493,12 +529,24 @@ function InvoiceActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 rounded-xl border-card-border bg-card shadow-lg">
-        <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
-          <Link href={`${basePath}/${invoice.id}`}><Eye className="h-4 w-4" /> View</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
-          <Link href={`${basePath}/${invoice.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
-        </DropdownMenuItem>
+        {onView ? (
+          <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onView(invoice.id)}>
+            <Eye className="h-4 w-4" /> View
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
+            <Link href={`${basePath}/${invoice.id}`}><Eye className="h-4 w-4" /> View</Link>
+          </DropdownMenuItem>
+        )}
+        {onEdit ? (
+          <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={() => onEdit(invoice.id)}>
+            <Pencil className="h-4 w-4" /> Edit
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem asChild className="cursor-pointer gap-2 rounded-lg">
+            <Link href={`${basePath}/${invoice.id}/edit`}><Pencil className="h-4 w-4" /> Edit</Link>
+          </DropdownMenuItem>
+        )}
         {invoice.pdf_url && (
           <DropdownMenuItem className="cursor-pointer gap-2 rounded-lg" onClick={handleDownload}>
             <FileDown className="h-4 w-4" /> Download PDF

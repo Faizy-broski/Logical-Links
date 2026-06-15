@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FileText, CheckCircle2, Send, Clock } from "lucide-react";
 import { KpiCard } from "@/components/loads/kpi-card";
@@ -12,6 +13,9 @@ import type { SortDir } from "@/hooks/use-table-filters";
 import { useQuotations, useDuplicateQuotation, useDeleteQuotation } from "@/hooks/use-quotations";
 import { QUOTATION_STATUS_LABELS } from "@/types/api.types";
 import type { QuotationStatus } from "@/types/api.types";
+import { CreateQuotationSheet } from "@/components/documents/sheets/create-quotation-sheet";
+import { QuotationDetailsSheet } from "@/components/documents/sheets/quotation-details-sheet";
+import { EditQuotationSheet } from "@/components/documents/sheets/edit-quotation-sheet";
 
 const FILTER_DEFAULTS = {
   search:         "",
@@ -39,6 +43,45 @@ const FILTER_DEFS: FilterDef[] = [
 ];
 
 export default function AdminQuotationsPage() {
+  const router       = useRouter();
+  const pathname     = usePathname();
+  const searchParams = useSearchParams();
+
+  // Sheet params
+  const createParam  = searchParams.get("create");
+  const detailsParam = searchParams.get("details");
+  const editParam    = searchParams.get("edit");
+  const loadIdParam  = searchParams.get("loadId");
+
+  const createOpen  = createParam === "true";
+  const detailsOpen = !!detailsParam;
+  const editOpen    = !!editParam;
+
+  // Last-known ID for smooth close animation
+  const [lastDetailsId, setLastDetailsId] = useState<string | null>(detailsParam);
+  const [lastEditId,    setLastEditId]    = useState<string | null>(editParam);
+  useEffect(() => { if (detailsParam) setLastDetailsId(detailsParam); }, [detailsParam]);
+  useEffect(() => { if (editParam)    setLastEditId(editParam); },    [editParam]);
+
+  function buildSheetUrl(key: "create" | "details" | "edit", value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("create"); params.delete("details"); params.delete("edit"); params.delete("loadId");
+    params.set(key, value);
+    return `${pathname}?${params.toString()}`;
+  }
+  function closeSheetUrl() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("create"); params.delete("details"); params.delete("edit"); params.delete("loadId");
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  const openCreate  = () => router.push(buildSheetUrl("create", "true"));
+  const openDetails = (id: string) => router.push(buildSheetUrl("details", id));
+  const openEdit    = (id: string) => router.push(buildSheetUrl("edit", id));
+  const closeSheet  = () => router.push(closeSheetUrl());
+
+  // Filters
   const { filters, setFilter, setFilters, clearAll, activeCount } =
     useTableFilters(FILTER_DEFAULTS);
 
@@ -47,7 +90,7 @@ export default function AdminQuotationsPage() {
   const sortDir = (filters.sortDir as SortDir) || null;
 
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setDebouncedSearch(filters.search), 300);
@@ -55,8 +98,7 @@ export default function AdminQuotationsPage() {
   }, [filters.search]);
 
   const query = useMemo(() => ({
-    page,
-    limit: 20,
+    page, limit: 20,
     ...(debouncedSearch        && { search:         debouncedSearch }),
     ...(filters.status         && { status:         filters.status as QuotationStatus }),
     ...(filters.issueDateFrom  && { issueDateFrom:  filters.issueDateFrom }),
@@ -134,6 +176,9 @@ export default function AdminQuotationsPage() {
           isLoading={isLoading}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
+          onView={openDetails}
+          onEdit={openEdit}
+          onCreateClick={openCreate}
           totalCount={totalCount}
           page={page}
           onPageChange={(pg) => setFilter("page", String(pg))}
@@ -155,6 +200,23 @@ export default function AdminQuotationsPage() {
           }
         />
       </div>
+
+      <CreateQuotationSheet
+        open={createOpen}
+        onClose={closeSheet}
+        loadId={loadIdParam}
+      />
+      <QuotationDetailsSheet
+        open={detailsOpen}
+        onClose={closeSheet}
+        quotationId={lastDetailsId ?? ""}
+        onEditClick={openEdit}
+      />
+      <EditQuotationSheet
+        open={editOpen}
+        onClose={closeSheet}
+        quotationId={lastEditId ?? ""}
+      />
     </div>
   );
 }

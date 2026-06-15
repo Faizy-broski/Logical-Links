@@ -52,7 +52,7 @@ export default function ShipperDashboard() {
 
   const kpis = [
     {
-      title:      'Total Loads',
+      title:      'Total Deliveries',
       value:      totalLoads,
       icon:       Package,
       chartColor: '#C89B3C',

@@ -2,7 +2,7 @@ import { Truck, Clock3, CheckCircle2, AlertTriangle } from "lucide-react";
 import { KpiCard, type KpiDataPoint } from "@/components/loads/kpi-card";
 
 const kpiItems = [
-  { title: "Total Loads",  key: "total",      icon: Truck,          chartColor: "#C89B3C" },
+  { title: "Total Deliveries",  key: "total",      icon: Truck,          chartColor: "#C89B3C" },
   { title: "In Transit",   key: "transit",     icon: Clock3,         chartColor: "#3B82F6" },
   { title: "Delivered",    key: "delivered",   icon: CheckCircle2,   chartColor: "#10B981" },
   { title: "Exceptions",   key: "exceptions",  icon: AlertTriangle,  chartColor: "#EF4444" },

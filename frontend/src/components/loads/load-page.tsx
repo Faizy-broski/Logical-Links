@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useRef, useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, ShieldAlert, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,12 @@ import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dia
 import { AssignDialog } from "@/components/loads/dialogs/assign-dialog";
 import { TableFilters } from "@/components/ui/table-filters";
 import type { FilterDef } from "@/components/ui/table-filters";
+import { WorkspaceNavigation } from "@/components/ui/workspace-navigation";
+import type { WorkspaceNavItem } from "@/components/ui/workspace-navigation";
+
+import { CreateLoadSheet } from "@/components/loads/sheets/create-load-sheet";
+import { EditLoadSheet } from "@/components/loads/sheets/edit-load-sheet";
+import { LoadDetailsSheet } from "@/components/loads/sheets/load-details-sheet";
 
 import { useAuthStore } from "@/store/auth.store";
 import {
@@ -30,8 +35,22 @@ import type {
   Shipment,
   ShipmentStatus,
   AssignShipmentDto,
+  ListShipmentsQuery,
 } from "@/types/api.types";
 import { SHIPMENT_STATUS_LABELS as STATUS_LABELS } from "@/types/api.types";
+
+// ── Workspace views ────────────────────────────────────────────────────────────
+
+type WorkspaceViewKey = "all" | "active" | "scheduled" | "in_progress" | "completed" | "exceptions";
+
+const WORKSPACE_VIEWS: { key: WorkspaceViewKey; label: string; statuses: string | null }[] = [
+  { key: "all",         label: "All Deliveries", statuses: null },
+  { key: "active",      label: "Active",       statuses: "pending,confirmed,assigned" },
+  { key: "scheduled",   label: "Scheduled",    statuses: "confirmed" },
+  { key: "in_progress", label: "In Progress",  statuses: "picked_up,in_transit,out_for_delivery" },
+  { key: "completed",   label: "Completed",    statuses: "delivered" },
+  { key: "exceptions",  label: "Exceptions",   statuses: "cancelled" },
+];
 
 // ── Filter defaults ────────────────────────────────────────────────────────────
 
@@ -68,14 +87,70 @@ const CREATOR_OPTIONS = [
 ];
 
 export default function LoadsPage() {
-  const router   = useRouter();
-  const pathname = usePathname();
-  const user     = useAuthStore((s) => s.user);
-  const isAdmin  = user?.role === "admin";
+  const router      = useRouter();
+  const pathname    = usePathname();
+  const searchParams = useSearchParams();
+  const user        = useAuthStore((s) => s.user);
+  const isAdmin     = user?.role === "admin";
 
-  const basePath = pathname.startsWith("/admin") ? "/admin/loads" : "/shipper/loads";
+  const basePath    = pathname.startsWith("/admin") ? "/admin/loads" : "/shipper/loads";
   const docBasePath = pathname.startsWith("/admin") ? "/admin" : "/shipper";
 
+  // ── Sheet URL params ───────────────────────────────────────────────────────
+  const createParam  = searchParams.get("create");
+  const detailsParam = searchParams.get("details");
+  const editParam    = searchParams.get("edit");
+
+  const createOpen = createParam === "true";
+  const detailsOpen = !!detailsParam;
+  const editOpen    = !!editParam;
+
+  // Keep last known IDs so the sheet content stays visible during close animation
+  const [lastDetailsId, setLastDetailsId] = useState<string | null>(detailsParam);
+  const [lastEditId,    setLastEditId]    = useState<string | null>(editParam);
+
+  useEffect(() => { if (detailsParam) setLastDetailsId(detailsParam); }, [detailsParam]);
+  useEffect(() => { if (editParam)    setLastEditId(editParam); },    [editParam]);
+
+  // ── Workspace view (from URL param) ───────────────────────────────────────
+  const viewParam    = (searchParams.get("view") ?? "all") as WorkspaceViewKey;
+  const activeView   = WORKSPACE_VIEWS.find((v) => v.key === viewParam) ?? WORKSPACE_VIEWS[0];
+  const viewStatuses = activeView.statuses;
+
+  function setWorkspaceView(key: WorkspaceViewKey) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (key === "all") params.delete("view");
+    else params.set("view", key);
+    // Reset to page 1 when switching views
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  // ── Sheet navigation helpers ───────────────────────────────────────────────
+  function buildSheetUrl(key: "create" | "details" | "edit", value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("create");
+    params.delete("details");
+    params.delete("edit");
+    params.set(key, value);
+    return `${pathname}?${params.toString()}`;
+  }
+
+  function closeSheetUrl() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("create");
+    params.delete("details");
+    params.delete("edit");
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  const openCreate  = () => router.push(buildSheetUrl("create", "true"));
+  const openDetails = (id: string) => router.push(buildSheetUrl("details", id));
+  const openEdit    = (id: string) => router.push(buildSheetUrl("edit", id));
+  const closeSheet  = () => router.push(closeSheetUrl());
+
+  // ── Dialog state (table row actions) ──────────────────────────────────────
   const [deletingLoad,  setDeletingLoad]  = useState<Shipment | null>(null);
   const [statusLoad,    setStatusLoad]    = useState<Shipment | null>(null);
   const [assigningLoad, setAssigningLoad] = useState<Shipment | null>(null);
@@ -88,21 +163,29 @@ export default function LoadsPage() {
   const sortBy  = filters.sortBy  || undefined;
   const sortDir = (filters.sortDir as SortDir) || null;
 
-  // Debounce search to avoid hammering the backend
+  // Debounce search
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => setDebouncedSearch(filters.search), 300);
     return () => clearTimeout(searchTimer.current);
   }, [filters.search]);
 
+  // Shared account scoping for non-admin users
+  const accountScope: Partial<ListShipmentsQuery> = !isAdmin
+    ? { accountId: user?.accountId ?? undefined }
+    : {};
+
   // ── Data ───────────────────────────────────────────────────────────────────
   const shipmentsQuery = useMemo(() => ({
     page,
     limit: 20,
     ...(debouncedSearch && { search: debouncedSearch }),
-    ...(filters.status        && { status: filters.status }),
+    // Workspace view overrides the status filter; if "all" use the table filter
+    ...(viewStatuses
+      ? { statuses: viewStatuses }
+      : filters.status && { status: filters.status }),
     ...(filters.shipmentType  && { shipmentType: filters.shipmentType as "freight" | "last_mile" }),
     ...(filters.createdByRole && isAdmin && { createdByRole: filters.createdByRole as "admin" | "shipper" }),
     ...(filters.accountId     && isAdmin && { accountId: filters.accountId }),
@@ -112,8 +195,8 @@ export default function LoadsPage() {
     ...(filters.updatedTo     && { updatedTo:   filters.updatedTo }),
     ...(sortBy                && { sortBy: sortBy as any }),
     ...(sortDir               && { sortDir }),
-    ...(!isAdmin && { accountId: user?.accountId ?? undefined }),
-  }), [filters, debouncedSearch, page, sortBy, sortDir, isAdmin, user?.accountId]);
+    ...accountScope,
+  }), [filters, debouncedSearch, page, sortBy, sortDir, isAdmin, user?.accountId, viewStatuses]);
 
   const { data: shipmentsRes, isLoading } = useShipments(shipmentsQuery);
   const { data: companiesRes } = useAccounts({ limit: 100 }, { enabled: isAdmin });
@@ -121,6 +204,31 @@ export default function LoadsPage() {
   const shipments  = shipmentsRes?.data ?? [];
   const totalCount = (shipmentsRes as any)?.meta?.total ?? 0;
   const companies  = companiesRes?.data ?? [];
+
+  // ── Workspace nav counts (lightweight queries — limit 1, read meta.total) ─
+  const countActive      = useShipments({ statuses: "pending,confirmed,assigned",              limit: 1, ...accountScope });
+  const countScheduled   = useShipments({ statuses: "confirmed",                               limit: 1, ...accountScope });
+  const countInProgress  = useShipments({ statuses: "picked_up,in_transit,out_for_delivery",  limit: 1, ...accountScope });
+  const countCompleted   = useShipments({ statuses: "delivered",                               limit: 1, ...accountScope });
+  const countExceptions  = useShipments({ statuses: "cancelled",                               limit: 1, ...accountScope });
+
+  const navItems: WorkspaceNavItem[] = WORKSPACE_VIEWS.map((v) => {
+    if (v.key === "all") return { key: v.key, label: v.label };
+    const countMap: Record<string, { data: any; isLoading: boolean }> = {
+      active:      countActive,
+      scheduled:   countScheduled,
+      in_progress: countInProgress,
+      completed:   countCompleted,
+      exceptions:  countExceptions,
+    };
+    const q = countMap[v.key];
+    return {
+      key:          v.key,
+      label:        v.label,
+      count:        q.isLoading ? undefined : ((q.data as any)?.meta?.total ?? 0),
+      countLoading: q.isLoading,
+    };
+  });
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const deleteMut = useDeleteShipment();
@@ -162,6 +270,7 @@ export default function LoadsPage() {
         sortBy:  sortBy ?? "",
         sortDir,
         onSort:  handleSort,
+        onEdit:            (s) => openEdit(s.shipment_id),
         onDelete:          (s) => setDeletingLoad(s),
         onAssign:          (s) => setAssigningLoad(s),
         onStatusChange:    (s) => setStatusLoad(s),
@@ -180,7 +289,8 @@ export default function LoadsPage() {
 
   const filterChips = useMemo(() => {
     const chips = [];
-    if (filters.status)
+    // Only show status chip when workspace view is "all" (otherwise the view controls it)
+    if (filters.status && !viewStatuses)
       chips.push({ key: "status", label: "Status", value: STATUS_LABELS[filters.status as keyof typeof STATUS_LABELS] ?? filters.status, onRemove: () => setFilter("status", "") });
     if (filters.shipmentType)
       chips.push({ key: "shipmentType", label: "Type", value: filters.shipmentType === "freight" ? "Freight" : "Last Mile", onRemove: () => setFilter("shipmentType", "") });
@@ -193,7 +303,7 @@ export default function LoadsPage() {
     if (filters.updatedFrom || filters.updatedTo)
       chips.push({ key: "updated", label: "Updated", value: `${filters.updatedFrom || "…"} – ${filters.updatedTo || "…"}`, onRemove: () => setFilters({ updatedFrom: "", updatedTo: "" }) });
     return chips;
-  }, [filters, isAdmin, companyName, setFilter, setFilters]);
+  }, [filters, isAdmin, companyName, setFilter, setFilters, viewStatuses]);
 
   // ── Filter defs ────────────────────────────────────────────────────────────
   const companyOptions = useMemo(
@@ -202,7 +312,8 @@ export default function LoadsPage() {
   );
 
   const filterDefs: FilterDef[] = useMemo(() => [
-    { type: "select",    key: "status",       label: "Status",       options: STATUS_OPTIONS },
+    // Hide status filter when a workspace view is active (the view controls it)
+    ...(!viewStatuses ? [{ type: "select" as const, key: "status", label: "Status", options: STATUS_OPTIONS }] : []),
     { type: "select",    key: "shipmentType", label: "Type",         options: TYPE_OPTIONS },
     ...(isAdmin ? [
       { type: "select" as const, key: "createdByRole", label: "Created By",   options: CREATOR_OPTIONS },
@@ -210,9 +321,9 @@ export default function LoadsPage() {
     ] : []),
     { type: "dateRange", label: "Created Date", fromKey: "dateFrom",    toKey: "dateTo" },
     { type: "dateRange", label: "Updated Date", fromKey: "updatedFrom", toKey: "updatedTo" },
-  ], [isAdmin, companyOptions]);
+  ], [isAdmin, companyOptions, viewStatuses]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── Handlers (table-level dialogs) ────────────────────────────────────────
   async function handleDelete(reason: string) {
     if (!deletingLoad) return;
     try {
@@ -257,20 +368,18 @@ export default function LoadsPage() {
               Operations
             </p>
             <h1 className="mt-2 text-4xl font-bold text-foreground">
-              Manage Loads
+              Deliveries
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Manage load operations and shipment workflows.
+              Manage delivery operations and shipment workflows.
             </p>
           </div>
           <Button
-            asChild
+            onClick={openCreate}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-sidebar hover:bg-primary/85"
           >
-            <Link href={`${basePath}/create`}>
-              <Plus className="h-4 w-4" />
-              Create Load
-            </Link>
+            <Plus className="h-4 w-4" />
+            Create Load
           </Button>
         </div>
 
@@ -289,45 +398,58 @@ export default function LoadsPage() {
           )}
           <span className="font-medium">
             {isAdmin
-              ? "Viewing as System Admin — full access to all loads"
+              ? "Viewing as System Admin — full access to all deliveries"
               : user?.companyRole === "employee"
-                ? "Viewing as Employee — your assigned loads"
-                : "Viewing as Company Admin — your company's shipments"}
+                ? "Viewing as Employee — your assigned deliveries"
+                : "Viewing as Company Admin — your company's deliveries"}
           </span>
         </div>
 
         {/* KPI cards */}
         <KpiGrid stats={stats} />
 
-        {/* Table */}
-        <DataTable<Shipment>
-          title="Loads Management"
-          columns={columns}
-          data={shipments}
-          isLoading={isLoading}
-          searchValue={filters.search}
-          onSearchChange={(v) => setFilter("search", v)}
-          searchPlaceholder="Search loads, creator name…"
-          onRowClick={(s) => router.push(`${basePath}/${s.shipment_id}`)}
-          pageSize={20}
-          totalCount={totalCount}
-          page={page}
-          onPageChange={(pg) => setFilter("page", String(pg))}
-          filterChips={filterChips}
-          emptyState={<span className="text-muted">No loads found.</span>}
-          headerActions={
-            <TableFilters
-              defs={filterDefs}
-              getValue={(key) => filters[key as keyof typeof filters] ?? ""}
-              onChange={(key, val) => setFilter(key as keyof typeof FILTER_DEFAULTS, val)}
-              onClearAll={clearAll}
-              activeCount={activeCount}
-              chips={filterChips}
+        {/* Deliveries workspace: left nav + table */}
+        <div className="flex items-start gap-5">
+          <WorkspaceNavigation
+            title="Deliveries"
+            items={navItems}
+            activeKey={viewParam}
+            onSelect={(key) => setWorkspaceView(key as WorkspaceViewKey)}
+          />
+
+          {/* Center: table */}
+          <div className="flex-1 min-w-0">
+            <DataTable<Shipment>
+              title="Deliveries"
+              columns={columns}
+              data={shipments}
+              isLoading={isLoading}
+              searchValue={filters.search}
+              onSearchChange={(v) => setFilter("search", v)}
+              searchPlaceholder="Search deliveries, creator name…"
+              onRowClick={(s) => openDetails(s.shipment_id)}
+              pageSize={20}
+              totalCount={totalCount}
+              page={page}
+              onPageChange={(pg) => setFilter("page", String(pg))}
+              filterChips={filterChips}
+              emptyState={<span className="text-muted">No deliveries found.</span>}
+              headerActions={
+                <TableFilters
+                  defs={filterDefs}
+                  getValue={(key) => filters[key as keyof typeof filters] ?? ""}
+                  onChange={(key, val) => setFilter(key as keyof typeof FILTER_DEFAULTS, val)}
+                  onClearAll={clearAll}
+                  activeCount={activeCount}
+                  chips={filterChips}
+                />
+              }
             />
-          }
-        />
+          </div>
+        </div>
       </div>
 
+      {/* Table-level dialogs */}
       {deletingLoad && (
         <DeleteConfirmDialog
           shipment={deletingLoad}
@@ -337,7 +459,6 @@ export default function LoadsPage() {
           loading={deleteMut.isPending}
         />
       )}
-
       {statusLoad && (
         <StatusChangeDialog
           shipment={statusLoad}
@@ -347,7 +468,6 @@ export default function LoadsPage() {
           loading={statusMut.isPending}
         />
       )}
-
       {assigningLoad && (
         <AssignDialog
           shipment={assigningLoad}
@@ -358,6 +478,23 @@ export default function LoadsPage() {
           loading={assignMut.isPending}
         />
       )}
+
+      {/* Sheets — driven by URL params */}
+      <CreateLoadSheet
+        open={createOpen}
+        onClose={closeSheet}
+      />
+      <LoadDetailsSheet
+        open={detailsOpen}
+        onClose={closeSheet}
+        loadId={lastDetailsId ?? ""}
+        onEditClick={openEdit}
+      />
+      <EditLoadSheet
+        open={editOpen}
+        onClose={closeSheet}
+        loadId={lastEditId ?? ""}
+      />
     </div>
   );
 }
