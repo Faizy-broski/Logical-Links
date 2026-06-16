@@ -69,7 +69,7 @@ export default function Offerings() {
               you can trust.
             </p>
 
-            <div className="mt-12 flex items-center gap-6">
+            {/* <div className="mt-12 flex items-center gap-6">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <ArrowLeft className="h-6 w-6 text-primary" />
               </Button>
@@ -81,7 +81,7 @@ export default function Offerings() {
               <Button variant="ghost" size="icon" className="rounded-full">
                 <ArrowRight className="h-6 w-6 text-primary" />
               </Button>
-            </div>
+            </div> */}
           </motion.div>
 
           {/* Right */}
@@ -107,7 +107,7 @@ export default function Offerings() {
               service.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-3">
+            {/* <div className="mt-10 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-4">
                 <div className="flex -space-x-3">
                   <Avatar className="border-2 border-background">
@@ -138,7 +138,7 @@ export default function Offerings() {
                 Guest&apos;s Review
                 <ArrowRight className="h-4 w-4" />
               </Button>
-            </div>
+            </div> */}
           </motion.div>
         </div>
       </div>
