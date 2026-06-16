@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 export default function Tracking() {
   return (
     <section id="tracking" className="py-24">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Content */}
           <motion.div
@@ -48,13 +48,10 @@ export default function Tracking() {
             className="relative"
           >
             <div className="overflow-hidden rounded-sm">
-              <Image
+              <img
                 src="/tracking.svg"
                 alt="Logistics Truck"
-                width={1000}
-                height={1000}
                 className="w-full object-cover"
-                priority
               />
             </div>
           </motion.div>

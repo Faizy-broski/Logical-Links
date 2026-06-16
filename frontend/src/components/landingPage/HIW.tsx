@@ -44,7 +44,7 @@ export default function HowItWorks() {
       <div className="absolute left-8 top-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-primary-light/20 blur-[120px]" />
       <div className="absolute right-8 top-1 -translate-y-1 w-64 h-64 rounded-full bg-primary-light/20 blur-[120px]" />
 
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -54,7 +54,7 @@ export default function HowItWorks() {
           className="text-center mb-20"
         >
           <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
-            How It Works
+            How It {" "}<span className="text-foreground">Works</span>
           </h2>
           <p className="text-lg text-muted">
             Three simple steps to experience the gold standard in logistics.
@@ -101,7 +101,7 @@ export default function HowItWorks() {
         >
           <Link
             href="/register"
-            className="px-10 py-2 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+            className="px-10 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
             Start Your Shipment
           </Link>

@@ -12,7 +12,7 @@ import Tracking from "@/components/landingPage/Tracking";
 import Offerings from "@/components/landingPage/Offerings";
 import Services from "@/components/landingPage/Services";
 import Technologies from "@/components/landingPage/Techonologies";
-import Quote from "@/components/landingPage/Quote"
+import Quote from "@/components/landingPage/Quote";
 import Milestones from "@/components/landingPage/Milestones";
 import Footer from "@/components/landingPage/Footer";
 
@@ -24,20 +24,20 @@ export default function LandingPage() {
         <span className="underline">Important Note:</span>{" "}
         <span>if you completely feel secure then transfer your shipment.</span>
       </div>
-      <div className="bg-[url('/hero.svg')] bg-cover bg-center rounded-b-[30px] sm:rounded-b-[50px]">
+      <div className="bg-[url('/hero.svg')] bg-cover bg-center bg-[center_top_2.5rem] pt-10 rounded-b-[30px] sm:rounded-b-[50px]">
         <Header />
         <Hero />
       </div>
-      <Tracking/>
+      <Tracking />
       <About />
-      <Offerings/>
+      <Offerings />
       <HIW />
-      <Services/>
-      <Technologies/>
-      <Milestones/>
-      <Quote/>
+      <Services />
+      <Technologies />
+      <Milestones />
+      <Quote />
       <Testimonials />
-      <Footer/>
+      <Footer />
     </div>
   );
 }

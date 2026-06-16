@@ -25,7 +25,7 @@ const cardVariants = {
 export default function Offerings() {
   return (
     <section id="offerings" className="py-24">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-6xl mx-auto">
         {/* Top Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service, i) => (
@@ -52,16 +52,21 @@ export default function Offerings() {
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
             <h2 className="font-serif font-semibold leading-[0.9]">
-              <span className="block display-font text-primary text-4xl sm:text-6xl">WHAT WE</span>
+              <span className="block display-font text-primary text-4xl sm:text-6xl">
+                WHAT WE
+              </span>
               <span className="flex items-center gap-6">
                 <span className="h-2 w-12 rounded-full bg-primary" />
-                <span className="text-foreground display-font text-4xl sm:text-6xl">CAN OFFER</span>
+                <span className="text-foreground display-font text-4xl sm:text-6xl">
+                  CAN OFFER
+                </span>
               </span>
             </h2>
 
             <p className="mt-10 max-w-lg text-sm leading-relaxed text-muted-foreground">
-              Reliable, cost-effective courier &amp; logistics solutions—tailored
-              shipping, tracking, and fulfillment services you can trust.
+              Reliable, cost-effective courier &amp; logistics
+              solutions—tailored shipping, tracking, and fulfillment services
+              you can trust.
             </p>
 
             <div className="mt-12 flex items-center gap-6">
@@ -98,7 +103,8 @@ export default function Offerings() {
 
             <p className="mt-10 text-sm font-medium">
               Create experience with{" "}
-              <span className="font-bold">LOGICAL LINKS</span> and efficient service.
+              <span className="font-bold">LOGICAL LINKS</span> and efficient
+              service.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center gap-3">
@@ -125,7 +131,10 @@ export default function Offerings() {
                 <Star className="h-4 w-4 fill-primary text-primary" />
               </div>
 
-              <Button variant="outline" className="border-0 ring ring-zinc-300 bg-transparent gap-2 font-normal text-sm px-4 py-2 h-fit rounded-xs">
+              <Button
+                variant="outline"
+                className="border-0 ring ring-zinc-300 bg-transparent gap-2 font-normal text-sm px-4 py-2 h-fit rounded-xs"
+              >
                 Guest&apos;s Review
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -137,7 +146,15 @@ export default function Offerings() {
   );
 }
 
-function ServiceCard({ image, title, id }: { image: string; title: string; id: string }) {
+function ServiceCard({
+  image,
+  title,
+  id,
+}: {
+  image: string;
+  title: string;
+  id: string;
+}) {
   return (
     <Card className="group relative overflow-hidden rounded-xs border-0 p-0">
       <div className="relative aspect-[1.45/1]">

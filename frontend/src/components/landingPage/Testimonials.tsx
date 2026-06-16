@@ -43,7 +43,7 @@ export default function Testimonials() {
       <div className="absolute left-0 top-0 h-full w-96 bg-primary/5 blur-3xl" />
       <div className="absolute right-0 bottom-0 h-full w-96 bg-primary/5 blur-3xl" />
 
-      <div className="max-w-6xl relative mx-auto px-6">
+      <div className="max-w-6xl relative mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}

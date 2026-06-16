@@ -41,9 +41,9 @@ export default function Services() {
       <Image src="/services.svg" alt="" fill className="object-cover" />
 
       <div className="max-w-6xl mx-auto">
-        <ArrowUpRight className="absolute right-20 top-16 size-48 text-white/10 stroke-[3]" />
+        <ArrowUpRight className="absolute right-3 top-16 size-48 text-white/10 stroke-[3]" />
 
-        <div className="container relative z-10 mx-auto px-6">
+        <div className="relative z-10 mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -51,7 +51,7 @@ export default function Services() {
             transition={{ duration: 0.7, ease: "easeOut" }}
             className="max-w-4xl"
           >
-            <h2 className="text-3xl sm:text-5xl leading-tight font-bold text-white">
+            <h2 className="text-3xl sm:text-6xl leading-tight font-bold text-white">
               Tailored Logistics Services
               <br />
               <span className="flex items-center gap-5">
@@ -98,7 +98,7 @@ function ServiceCard({
   image: string;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-lg">
+    <div className="group relative overflow-hidden rounded-xs">
       <div className="relative aspect-[1.2]">
         <Image
           src={image}
@@ -108,16 +108,20 @@ function ServiceCard({
         />
         <div className="absolute inset-0 p-6 flex flex-col justify-between">
           <div>
-            <p className="text-white text-2xl font-medium leading-tight">{title}</p>
-            <p className="mt-3 text-xs text-white/80 line-clamp-2">{description}</p>
+            <p className="text-white text-2xl font-medium leading-tight">
+              {title}
+            </p>
+            <p className="mt-3 text-xs text-white/80 line-clamp-2">
+              {description}
+            </p>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end -mr-3 -mb-3">
             <Button
               size="icon"
               variant="secondary"
-              className="rounded-full bg-white hover:bg-white"
+              className="rounded-full bg-white hover:bg-white size-11"
             >
-              <ArrowUpRight className="size-5 text-black" />
+              <ArrowUpRight className="size-7 text-black" />
             </Button>
           </div>
         </div>

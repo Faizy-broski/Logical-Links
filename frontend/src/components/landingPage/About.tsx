@@ -5,17 +5,19 @@ import { motion } from "framer-motion";
 
 export default function About() {
   return (
-    <section id="about" className="py-20 bg-[url('/about.svg')] bg-cover bg-center">
+    <section
+      id="about"
+      className="py-20 bg-[url('/about.svg')] bg-contain bg-center"
+    >
       <div className="max-w-4xl mx-auto px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          
         >
           <h1 className="text-4xl sm:text-6xl font-bold text-primary mb-6">
-              About Us
+            About <span className="text-foreground">Us</span>
           </h1>
         </motion.div>
 
@@ -56,7 +58,7 @@ export default function About() {
         >
           <Link
             href="/register"
-            className="px-16 py-2 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+            className="px-16 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
             Get a Quote
           </Link>

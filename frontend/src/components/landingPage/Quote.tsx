@@ -14,7 +14,7 @@ export default function LogisticsHero() {
         style={{ backgroundImage: "url('/quoteBg.svg')" }}
       />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center py-16">
         <div className="grid w-full gap-12 lg:grid-cols-2">
           {/* Left Content */}
           <motion.div

@@ -7,15 +7,16 @@ import { motion } from "framer-motion";
 export default function Hero() {
   return (
     <section id="hero">
-      <div className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-start">
+      <div className="max-w-6xl mx-auto pt-24 pb-20 text-start">
         <motion.h1
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="text-3xl sm:text-5xl font-bold text-gray-900 leading-tight mb-6 uppercase"
+          className="text-3xl sm:text-6xl font-bold leading-tight mb-6 uppercase"
         >
           Smart
-          <br className="hidden sm:block" /> <span className="text-primary">Logistis</span>
+          <br className="hidden sm:block" />{" "}
+          <span className="text-primary">Logistis</span>
           <br className="hidden sm:block" /> built for
           <br className="hidden sm:block" /> performance
         </motion.h1>

@@ -36,11 +36,16 @@ export default function Header() {
       className={`px-6 py-4 fixed top-5 z-50 w-full transition-all duration-300 ${scrolled ? "top-0" : "top-5"}`}
     >
       <div
-        className={`max-w-6xl mx-auto flex items-center justify-between rounded-xl px-6 py-3 transition-all duration-300 ${
+        className={`max-w-7xl mx-auto flex items-center justify-between rounded-xl px-6 py-3 transition-all duration-300 ${
           scrolled ? "bg-white/90 backdrop-blur-md shadow-md" : "bg-transparent"
         }`}
       >
-        <button type="button" onClick={() => scrollTo("hero")} aria-label="Go to top" className="focus:outline-none">
+        <button
+          type="button"
+          onClick={() => scrollTo("hero")}
+          aria-label="Go to top"
+          className="focus:outline-none"
+        >
           <Image src="/logo.svg" alt="Logical Links" width={100} height={50} />
         </button>
 
@@ -94,7 +99,10 @@ export default function Header() {
               <button
                 key={n.label}
                 type="button"
-                onClick={() => { scrollTo(n.section); setOpen(false); }}
+                onClick={() => {
+                  scrollTo(n.section);
+                  setOpen(false);
+                }}
                 className="text-sm font-medium text-gray-700 hover:text-primary transition-colors text-left"
               >
                 {n.label}
@@ -102,8 +110,11 @@ export default function Header() {
             ))}
             <button
               type="button"
-              onClick={() => { scrollTo("quote"); setOpen(false); }}
-              className="mt-2 px-6 py-2 text-sm font-medium text-center text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
+              onClick={() => {
+                scrollTo("quote");
+                setOpen(false);
+              }}
+              className="mt-2 px-6 py-2 text-sm font-medium text-center outline outline-primary outline-offset-2 text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
             >
               Get a Quote
             </button>

@@ -43,7 +43,7 @@ export function CreatorBadge({ shipment, size = "md", showName = false }: Creato
   }
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border border-primary-dark bg-primary-light/50 font-medium text-primary-dark dark:border-primary-700 dark:bg-primary-950 dark:text-primary-300 ${padSize} ${textSize}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border border-primary-dark bg-primary-light/50 font-medium text-primary-dark dark:border-primary-700 dark:bg-primary-light dark:text-primary-90 ${padSize} ${textSize}`}>
       <ShieldCheck className={`shrink-0 ${iconSize}`} />
       {showName ? `Admin: ${creatorName}` : "Super Admin"}
     </span>
