@@ -52,9 +52,9 @@ export default function Testimonials() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           className="text-center mb-16"
         >
-          <h2 className="font-bold text-4xl sm:text-6xl leading-none">
-            <span className="display-font text-primary">Trusted by</span>{" "}
-            <span className="display-font text-foreground">Industry Leaders</span>
+          <h2 className="font-bold text-4xl sm:text-6xl leading-none text-primary">
+            <span className="display-font">Trusted by</span>{" "}
+            <span className="display-font">Industry Leaders</span>
           </h2>
           <p className="mt-6 text-muted text-lg">
             Don&apos;t just take our word for it. See what our clients say about our
@@ -68,7 +68,7 @@ export default function Testimonials() {
             <motion.div
               key={item.name}
               custom={i}
-              variants={cardVariants}
+              // variants={cardVariants}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}

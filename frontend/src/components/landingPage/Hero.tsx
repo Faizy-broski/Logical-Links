@@ -12,7 +12,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          className="text-3xl sm:text-6xl font-bold leading-tight mb-6 uppercase"
+          className="text-3xl sm:text-6xl text-black font-bold leading-tight mb-6 uppercase"
         >
           Smart
           <br className="hidden sm:block" />{" "}
@@ -46,16 +46,16 @@ export default function Hero() {
         >
           <Link
             href="/register"
-            className="px-6 py-3 text-base outline outline-1 outline-primary outline-offset-2 font-semibold text-white bg-primary hover:bg-primary-dark rounded-xs shadow-sm transition-colors"
+            className="px-6 py-3 text-base outline outline-primary outline-offset-2 font-semibold text-white bg-primary hover:bg-primary-dark rounded-xs shadow-sm transition-colors"
           >
-            Create a free account
+            Track Shippment
           </Link>
-          <Link
+          {/* <Link
             href="/login"
-            className="px-6 py-3 text-base outline outline-1 outline-primary outline-offset-2 border border-primary font-semibold text-primary bg-background hover:bg-gray-200 rounded-xs transition-colors"
+            className="px-6 py-3 text-base outline outline-primary outline-offset-2 border border-primary font-semibold text-primary bg-background hover:bg-gray-200 rounded-xs transition-colors"
           >
             Sign in
-          </Link>
+          </Link> */}
         </motion.div>
       </div>
     </section>

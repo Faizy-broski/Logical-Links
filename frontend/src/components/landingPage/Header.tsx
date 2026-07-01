@@ -56,7 +56,7 @@ export default function Header() {
               key={n.label}
               type="button"
               onClick={() => scrollTo(n.section)}
-              className="text-sm font-medium text-muted hover:text-primary transition-colors"
+              className="text-sm font-medium text-black hover:text-primary transition-colors"
             >
               {n.label}
             </button>
@@ -70,7 +70,7 @@ export default function Header() {
             onClick={() => scrollTo("quote")}
             className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
-            Get a Quote
+           Request a Quote
           </button>
         </div>
 

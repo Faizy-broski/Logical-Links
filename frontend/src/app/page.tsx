@@ -24,17 +24,17 @@ export default function LandingPage() {
         <span className="underline">Important Note:</span>{" "}
         <span>if you completely feel secure then transfer your shipment.</span>
       </div>
-      <div className="bg-[url('/hero.svg')] bg-cover bg-center bg-[center_top_2.5rem] pt-10 rounded-b-[30px] sm:rounded-b-[50px]">
+      <div className="bg-[url('/hero.png')] bg-cover bg-center pt-10">
         <Header />
         <Hero />
       </div>
-      <Tracking />
+      {/* <Tracking /> */}
       <About />
-      <Offerings />
       <HIW />
       <Services />
-      <Technologies />
-      <Milestones />
+      {/* <Technologies /> */}
+      <Offerings />
+      {/* <Milestones /> */}
       <Quote />
       <Testimonials />
       <Footer />

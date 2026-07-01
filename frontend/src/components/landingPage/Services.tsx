@@ -7,21 +7,24 @@ import { motion } from "framer-motion";
 
 const services = [
   {
-    title: "FTL (Full Truckload) | LTL (Less Than Truckload)",
+    title: "FTL & LTL Transportation",
+    items: ["Full Truckload (FTL)", "Less Than Truckload (LTL)"],
     description:
-      "Ensuring the safe and secure delivery of your freight to destination.",
+      "Full and partial truckload transportation designed for efficient, cost-effective freight movement across regional and long-haul routes.",
     image: "/service1.svg",
   },
   {
-    title: "Dedicated Trucking Services | Special or Heavy Transport",
+    title: "Dedicated & Specialized Transport",
+    items: ["Dedicated Trucking Services", "Specialized & Heavy Transport"],
     description:
-      "Reliable transportation solutions for specialized freight requirements.",
+      "Dedicated vehicles and specialized equipment for oversized, heavy, and project-based freight transportation.",
     image: "/service2.svg",
   },
   {
-    title: "RUSH (Courier Services)",
+    title: "RUSH Delivery Solutions",
+    items: ["Last-Mile Delivery", "E-Commerce Delivery", "Courier Services"],
     description:
-      "Fast and secure same-day courier delivery for urgent shipments.",
+      "Same-day and last-mile delivery solutions for time-sensitive retail, e-commerce, and healthcare shipments.",
     image: "/service3.svg",
   },
 ];
@@ -41,7 +44,7 @@ export default function Services() {
       <Image src="/services.svg" alt="" fill className="object-cover" />
 
       <div className="max-w-6xl mx-auto">
-        <ArrowUpRight className="absolute right-3 top-16 size-48 text-white/10 stroke-[3]" />
+        <ArrowUpRight className="absolute right-3 top-16 size-48 text-white/10 stroke-3" />
 
         <div className="relative z-10 mx-auto">
           <motion.div
@@ -61,10 +64,9 @@ export default function Services() {
             </h2>
 
             <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/80">
-              At Logical Links, we specialize in providing fast and reliable
-              logistics solutions that fit your business needs. From local
-              deliveries to international shipments every package reaches safely
-              and on time.
+              Explore our transportation and delivery solutions designed to
+              support businesses of all sizes. Select a category below to learn
+              more about the solution that best fits your needs.
             </p>
           </motion.div>
 
@@ -73,7 +75,7 @@ export default function Services() {
               <motion.div
                 key={service.title}
                 custom={i}
-                variants={cardVariants}
+                // variants={cardVariants}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
@@ -90,10 +92,12 @@ export default function Services() {
 
 function ServiceCard({
   title,
+  items,
   description,
   image,
 }: {
   title: string;
+  items: string[];
   description: string;
   image: string;
 }) {
@@ -111,6 +115,17 @@ function ServiceCard({
             <p className="text-white text-2xl font-medium leading-tight">
               {title}
             </p>
+            <ul className="mt-3 space-y-0.5">
+              {items.map((item) => (
+                <li
+                  key={item}
+                  className="text-xs text-white/80 flex items-center gap-1.5"
+                >
+                  <span className="h-1 w-1 rounded-full bg-white/60 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
             <p className="mt-3 text-xs text-white/80 line-clamp-2">
               {description}
             </p>

@@ -9,21 +9,21 @@ const steps = [
     number: 1,
     title: "Book Your Shipment",
     description:
-      "Simple online booking with instant quotes and flexible scheduling options.",
+      "Simple online booking with instant quotes and flexible scheduling options to fit your timeline.",
     icon: ClipboardList,
   },
   {
     number: 2,
     title: "We Pick Up",
     description:
-      "Professional drivers collect your items with real-time GPS tracking from start to finish.",
+      "Professional drivers collect your shipment with real-time GPS tracking from pickup to delivery.",
     icon: Truck,
   },
   {
     number: 3,
     title: "Delivered with Care",
     description:
-      "Safe delivery with proof of delivery and customer satisfaction guaranteed.",
+      "Secure delivery with proof of delivery confirmation and end-to-end shipment visibility.",
     icon: Package,
   },
 ];
@@ -54,10 +54,10 @@ export default function HowItWorks() {
           className="text-center mb-20"
         >
           <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
-            How It {" "}<span className="text-foreground">Works</span>
+            How It Works
           </h2>
           <p className="text-lg text-muted">
-            Three simple steps to experience the gold standard in logistics.
+            Three simple steps to streamlined logistics execution.
           </p>
         </motion.div>
 
@@ -72,7 +72,9 @@ export default function HowItWorks() {
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
-              <motion.div key={step.number} variants={cardVariants} className="relative">
+              <motion.div key={step.number} 
+              // variants={cardVariants} 
+              className="relative">
                 {index < steps.length - 1 && (
                   <div className="hidden lg:block absolute top-1/2 left-full w-14 h-px bg-primary -translate-y-1/2 z-0" />
                 )}
@@ -99,12 +101,12 @@ export default function HowItWorks() {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center mt-10"
         >
-          <Link
+          {/* <Link
             href="/register"
             className="px-10 py-3 text-sm font-medium text-white outline outline-1 outline-primary outline-offset-2 bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
             Start Your Shipment
-          </Link>
+          </Link> */}
         </motion.div>
       </div>
     </section>
