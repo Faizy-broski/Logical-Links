@@ -7,7 +7,7 @@
     "backend": {
       "root": "backend",
       "runtime": "node",
-      "entrypoint": "index.js"
+      "entrypoint": "api/index.ts"
     }
   },
   "rewrites": [
