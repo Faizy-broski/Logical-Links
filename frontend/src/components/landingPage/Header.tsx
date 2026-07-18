@@ -79,7 +79,7 @@ export default function Header() {
           </a>
           <a
             href="/register"
-            className="px-5 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-xs transition-colors"
+            className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-xs transition-colors"
           >
             Sign Up
           </a>
@@ -88,7 +88,7 @@ export default function Header() {
             onClick={() => goToSection("quote")}
             className="px-6 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-xs transition-colors"
           >
-           Request a Quote
+            Request a Quote
           </button>
         </div>
 
