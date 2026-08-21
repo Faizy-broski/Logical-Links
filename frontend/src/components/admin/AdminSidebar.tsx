@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Truck,
-  Users,
+  Building2,
   FileText,
   FileQuestion,
   Bell,
@@ -22,6 +22,8 @@ import {
   LifeBuoy,
   UserCircle2,
   Award,
+  Gift,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
@@ -36,15 +38,16 @@ import { ADMIN_ROLE_LABELS } from "@/types/api.types";
 const baseNavigation = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, permission: null },
   { label: "Deliveries", href: "/admin/loads", icon: Truck, permission: "deliveries.view" },
-  { label: "Companies", href: "/admin/shippers", icon: Users, permission: "customers.view" },
-  { label: "Residential", href: "/admin/residential", icon: UserCircle2, permission: "customers.view" },
-  { label: "Invoices", href: "/admin/invoices", icon: FileText, permission: "invoices.view" },
+  { label: "Residential Customers", href: "/admin/residential", icon: UserCircle2, permission: "customers.view" },
+  { label: "Corporate Customers", href: "/admin/corporate-customers", icon: Building2, permission: "customers.view" },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion, permission: "quotations.view" },
+  { label: "Invoices", href: "/admin/invoices", icon: FileText, permission: "invoices.view" },
+  { label: "Rewards", href: "/admin/rewards", icon: Gift, permission: "rewards.view" },
   { label: "Tiers", href: "/admin/tiers", icon: Award, permission: "tiers.view" },
-  { label: "Customization", href: "/admin/customization", icon: Settings, permission: "settings.general" },
-  { label: "Alerts", href: "/admin/notifications", icon: Bell, permission: null },
   { label: "Support", href: "/admin/support", icon: LifeBuoy, permission: "support.view" },
-  { label: "Profile", href: "/admin/profile", icon: User, permission: null },
+  { label: "Alerts", href: "/admin/notifications", icon: Bell, permission: null },
+  { label: "Customization", href: "/admin/customization", icon: Settings, permission: "settings.general" },
+  { label: "Admin Profile", href: "/admin/profile", icon: User, permission: null },
 ] as const;
 
 type SidebarMode = "expanded" | "collapsed" | "hover";
@@ -67,6 +70,8 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const canViewSupport = usePermission("support.view");
   const canManageSettings = usePermission("settings.general");
   const canViewTiers = usePermission("tiers.view");
+  const canViewRewards = usePermission("rewards.view");
+  const canViewPricing = usePermission("pricing.view");
 
   const permissionMap: Record<string, boolean> = {
     "deliveries.view": canViewDeliveries,
@@ -76,14 +81,16 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
     "support.view": canViewSupport,
     "settings.general": canManageSettings,
     "tiers.view": canViewTiers,
+    "rewards.view": canViewRewards,
   };
 
   const navigation = [
-    ...baseNavigation.slice(0, 3),
+    ...baseNavigation.slice(0, 2),
     ...(canViewEmployees ? [{ label: "Employees", href: "/admin/employees", icon: Shield }] : []),
-    ...baseNavigation.slice(3, 6),
+    ...baseNavigation.slice(2, 11),
+    ...(canViewPricing ? [{ label: "Pricing Settings", href: "/admin/settings/delivery-rates", icon: DollarSign }] : []),
     ...(canManagePermissions ? [{ label: "Roles & Permissions", href: "/admin/settings/roles", icon: Settings }] : []),
-    ...baseNavigation.slice(6),
+    ...baseNavigation.slice(11),
   ].filter((item) => !("permission" in item) || item.permission === null || permissionMap[item.permission]);
 
   const [mode, setMode] = useState<SidebarMode>("expanded");
@@ -254,7 +261,9 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
               </p>
               <span className="inline-flex items-center gap-0.5 text-[10px] text-primary">
                 <Shield className="h-2.5 w-2.5" />
-                {user && user.adminRole ? ADMIN_ROLE_LABELS[user.adminRole] : "System Admin"}
+                {user && user.adminRole
+                  ? ADMIN_ROLE_LABELS[user.adminRole] ?? (user.adminRole.charAt(0).toUpperCase() + user.adminRole.slice(1))
+                  : "System Admin"}
               </span>
             </div>
           </div>

@@ -10,6 +10,11 @@ const QUOTATION_SELECT = `
   shipments (
     shipment_id, load_number, origin_city, destination_city,
     account_id, assigned_employee_id,
+    shipment_type, service_type, service_level,
+    origin_address, destination_address,
+    cargo_description, pieces, package_type, weight_kg,
+    preferred_delivery_date, estimated_delivery_date, special_instructions,
+    customer_id,
     accounts ( account_id, account_name, logo_url ),
     profiles!assigned_employee_id ( id, full_name, avatar_url )
   ),

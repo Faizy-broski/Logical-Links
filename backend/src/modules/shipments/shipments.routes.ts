@@ -88,3 +88,14 @@ shipmentsRouter.post(
   validate(assignEmployeeSchema),
   shipmentsController.assignEmployee,
 )
+
+// ── Assign to Driver (platform admin only) ────────────────────────────────────
+// Admin assigns (or unassigns) a delivery to one of Logical Links' own drivers.
+shipmentsRouter.post(
+  '/:id/assign-driver',
+  authMiddleware,
+  requireAdmin,
+  requirePermission('deliveries.assign'),
+  validate(assignEmployeeSchema),
+  shipmentsController.assignDriver,
+)

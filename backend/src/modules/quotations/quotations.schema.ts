@@ -7,7 +7,10 @@ export const LINE_ITEM_CATEGORIES = [
   'administrative_fee', 'insurance', 'miscellaneous', 'custom',
 ] as const
 
-export const QUOTATION_STATUSES = ['draft', 'sent', 'accepted', 'rejected', 'expired'] as const
+// 'requested' = a customer-submitted quote request with no price yet,
+// awaiting admin pricing — distinct from 'draft' (internal admin work in
+// progress, never shown to the customer).
+export const QUOTATION_STATUSES = ['requested', 'draft', 'sent', 'accepted', 'rejected', 'expired'] as const
 
 const lineItemSchema = z.object({
   id:          z.string().uuid().optional(),
@@ -47,6 +50,14 @@ export const createQuotationSchema = z.object({
   destinationLat:     z.coerce.number().optional().nullable(),
   destinationLng:     z.coerce.number().optional().nullable(),
   distanceKm:         z.coerce.number().min(0).optional().nullable(),
+  originCity:            z.string().max(100).optional().nullable(),
+  originState:           z.string().max(100).optional().nullable(),
+  originPostcode:        z.string().max(20).optional().nullable(),
+  destinationCity:       z.string().max(100).optional().nullable(),
+  destinationState:      z.string().max(100).optional().nullable(),
+  destinationPostcode:   z.string().max(20).optional().nullable(),
+  cargoDescription:      z.string().max(500).optional().nullable(),
+  serviceType:           z.string().max(50).optional().nullable(),
   items:           z.array(lineItemSchema).min(0).default([]),
 })
 
@@ -86,8 +97,43 @@ export const acceptQuotationSchema = z.object({
   acknowledged: z.literal(true, { message: 'You must acknowledge the Terms & Conditions' }),
 })
 
+// ── Self-service quote request (customer workflow) ─────────────────────────────
+// Residential customers get an instant auto-priced quote — every field the
+// pricing engine needs is required. Corporate customers only submit a
+// request (no pricing fields) — an admin prices it afterward via the
+// existing PATCH /:id + line items flow.
+const quoteRequestAddressFields = {
+  originAddress:        z.string().min(5).max(500),
+  originLat:             z.coerce.number(),
+  originLng:             z.coerce.number(),
+  originCity:            z.string().min(1).max(100),
+  originState:           z.string().min(1).max(100),
+  originPostcode:        z.string().min(1).max(20),
+  destinationAddress:      z.string().min(5).max(500),
+  destinationLat:          z.coerce.number(),
+  destinationLng:          z.coerce.number(),
+  destinationCity:         z.string().min(1).max(100),
+  destinationState:        z.string().min(1).max(100),
+  destinationPostcode:     z.string().min(1).max(20),
+  cargoDescription:      z.string().min(3, 'Please describe what needs to be delivered').max(500),
+}
+
+export const residentialQuoteRequestSchema = z.object({
+  ...quoteRequestAddressFields,
+  distanceKm:           z.coerce.number().min(0),
+  serviceType:          z.string().min(1, 'Select a service type').max(50),
+  additionalChargeKeys: z.array(z.string()).default([]),
+})
+
+export const corporateQuoteRequestSchema = z.object({
+  ...quoteRequestAddressFields,
+  notes: z.string().max(5000).optional().nullable(),
+})
+
 export type CreateQuotationDto   = z.infer<typeof createQuotationSchema>
 export type UpdateQuotationDto   = z.infer<typeof updateQuotationSchema>
 export type ListQuotationsQuery  = z.infer<typeof listQuotationsQuerySchema>
 export type QuotationLineItemDto = z.infer<typeof lineItemSchema>
 export type AcceptQuotationDto   = z.infer<typeof acceptQuotationSchema>
+export type ResidentialQuoteRequestDto = z.infer<typeof residentialQuoteRequestSchema>
+export type CorporateQuoteRequestDto   = z.infer<typeof corporateQuoteRequestSchema>

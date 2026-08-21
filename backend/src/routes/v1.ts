@@ -17,6 +17,11 @@ import { supportRouter } from '../modules/support/support.routes'
 import { adminEmployeesRouter } from '../modules/admin-employees/admin-employees.routes'
 import { adminRolesRouter } from '../modules/admin-roles/admin-roles.routes'
 import { tiersRouter } from '../modules/tiers/tiers.routes'
+import { rewardsRouter } from '../modules/rewards/rewards.routes'
+import { deliveryRatesRouter } from '../modules/delivery-rates/delivery-rates.routes'
+import { additionalChargesRouter } from '../modules/additional-charges/additional-charges.routes'
+import { pricingRouter } from '../modules/pricing/pricing.routes'
+import { rewardsCreditRouter } from '../modules/rewards-credit/rewards-credit.routes'
 
 export const v1Router = Router()
 
@@ -38,3 +43,8 @@ v1Router.use('/support',       supportRouter)
 v1Router.use('/admin/employees', adminEmployeesRouter)
 v1Router.use('/admin/roles',     adminRolesRouter)
 v1Router.use('/tiers',           tiersRouter)
+v1Router.use('/rewards',         rewardsRouter)
+v1Router.use('/delivery-rates',    deliveryRatesRouter)
+v1Router.use('/additional-charges', additionalChargesRouter)
+v1Router.use('/pricing',           pricingRouter)
+v1Router.use('/rewards-credit',    rewardsCreditRouter)

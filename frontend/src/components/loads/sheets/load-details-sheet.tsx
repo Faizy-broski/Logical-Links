@@ -27,6 +27,7 @@ import {
   Eye,
   Clock,
   PackageCheck,
+  Calculator,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,9 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dialog";
 import { AssignDialog } from "@/components/loads/dialogs/assign-dialog";
+import { PricingCalculatorDialog } from "@/components/loads/dialogs/pricing-calculator-dialog";
 import { AssignEmployeeDialog } from "@/components/loads/dialogs/assign-employee-dialog";
+import { LAST_MILE_SERVICE_TYPE_LABELS } from "@/components/loads/sheets/load-form-fields";
 import { TrackingTimeline } from "@/components/tracking/tracking-timeline";
 import { formatDate } from "@/lib/utils/format-date";
 
@@ -215,6 +218,7 @@ export function LoadDetailsSheet({
 
   const [statusOpen, setStatusOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [pricingCalcOpen, setPricingCalcOpen] = useState(false);
   const [assignEmpOpen, setAssignEmpOpen] = useState(false);
 
   const { data, isLoading } = useShipment(loadId);
@@ -351,6 +355,18 @@ export function LoadDetailsSheet({
                   >
                     <UserPlus className="mr-1.5 h-3.5 w-3.5" />
                     {shipment.account_id ? "Reassign" : "Assign"}
+                  </Button>
+                )}
+
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPricingCalcOpen(true)}
+                    className="h-8 flex-1 rounded-lg border-card-border px-2 text-xs text-foreground sm:flex-none sm:px-3"
+                  >
+                    <Calculator className="mr-1.5 h-3.5 w-3.5" />
+                    Calculate Price
                   </Button>
                 )}
 
@@ -530,7 +546,7 @@ export function LoadDetailsSheet({
                               rounded="lg"
                             />
                           }
-                          label="Shipping Company"
+                          label="Client"
                           value={shipment.accounts?.account_name ?? "Unassigned"}
                         />
                       ) : null}
@@ -544,7 +560,7 @@ export function LoadDetailsSheet({
                               rounded="lg"
                             />
                           }
-                          label="Assigned Employee"
+                          label={shipment.shipment_type === "last_mile" ? "Assigned Driver" : "Assigned Employee"}
                           value={shipment.employee.full_name}
                         />
                       )}
@@ -557,6 +573,13 @@ export function LoadDetailsSheet({
                           </span>
                         }
                       />
+                      {shipment.service_type && (
+                        <InfoTile
+                          icon={<Truck className="h-4 w-4" />}
+                          label="Service Type"
+                          value={LAST_MILE_SERVICE_TYPE_LABELS[shipment.service_type] ?? shipment.service_type}
+                        />
+                      )}
                       {shipment.weight_kg != null && (
                         <InfoTile
                           icon={<Weight className="h-4 w-4" />}
@@ -581,7 +604,7 @@ export function LoadDetailsSheet({
                       {shipment.reference_number && (
                         <InfoTile
                           icon={<Tag className="h-4 w-4" />}
-                          label="Reference"
+                          label="Confirmation Number"
                           value={shipment.reference_number}
                         />
                       )}
@@ -640,7 +663,7 @@ export function LoadDetailsSheet({
                     <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
                       <div className="border-b border-card-border px-6 py-4">
                         <h2 className="text-sm font-semibold text-foreground">
-                          Cargo Description
+                          Delivery Details
                         </h2>
                       </div>
                       <div className="px-6 py-5">
@@ -881,6 +904,16 @@ export function LoadDetailsSheet({
           onClose={() => setAssignEmpOpen(false)}
           onConfirm={handleAssignEmployee}
           loading={assignEmpMut.isPending}
+        />
+      )}
+
+      {shipment && isAdmin && (
+        <PricingCalculatorDialog
+          open={pricingCalcOpen}
+          onClose={() => setPricingCalcOpen(false)}
+          initialServiceType={shipment.service_type}
+          pickupAddress={shipment.origin_address}
+          deliveryAddress={shipment.destination_address}
         />
       )}
     </Sheet>

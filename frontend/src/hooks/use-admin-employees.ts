@@ -8,12 +8,13 @@ const KEYS = {
   detail: (id: string) => ["admin-employees", id] as const,
 };
 
-type ListQuery = { page?: number; limit?: number };
+type ListQuery = { page?: number; limit?: number; role?: string };
 
 export function useAdminEmployees(query: ListQuery = {}, options?: { enabled?: boolean }) {
   const params = new URLSearchParams();
   if (query.page)  params.set("page",  String(query.page));
   if (query.limit) params.set("limit", String(query.limit));
+  if (query.role)  params.set("role",  query.role);
   const qs = params.toString() ? `?${params.toString()}` : "";
 
   return useQuery({

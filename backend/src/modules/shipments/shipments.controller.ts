@@ -120,6 +120,15 @@ export async function assignEmployee(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function assignDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const shipment = await shipmentsService.assignDriver(param(req, 'id'), req.body as AssignEmployeeDto)
+    ok(res, shipment, 'Driver assigned')
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     await shipmentsService.deleteShipment(
