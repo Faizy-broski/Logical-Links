@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
 import { useDeliveryRates } from "@/hooks/use-delivery-rates";
+import { useServiceLevels } from "@/hooks/use-service-levels";
 import { useAdditionalCharges } from "@/hooks/use-additional-charges";
 import { useCalculatePrice } from "@/hooks/use-pricing";
 import type { PriceBreakdown } from "@/types/api.types";
@@ -38,11 +39,16 @@ export function PricingCalculatorDialog({
   const { data: ratesRes } = useDeliveryRates({ enabled: open });
   const rates = (ratesRes?.data ?? []).filter((r) => r.is_active);
 
+  const { data: levelsRes } = useServiceLevels({ enabled: open });
+  const levels = (levelsRes?.data ?? []).filter((l) => l.is_active);
+
   const { data: chargesRes } = useAdditionalCharges({ enabled: open });
   const charges = (chargesRes?.data ?? []).filter((c) => c.is_active);
 
   const [serviceType, setServiceType] = useState(initialServiceType ?? "");
+  const [serviceLevel, setServiceLevel] = useState("standard");
   const [distanceKm, setDistanceKm] = useState<string>("");
+  const [weightKg, setWeightKg] = useState<string>("");
   const [selectedCharges, setSelectedCharges] = useState<Set<string>>(new Set());
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
 
@@ -64,7 +70,9 @@ export function PricingCalculatorDialog({
     try {
       const res = await calculateMut.mutateAsync({
         serviceType,
+        serviceLevel,
         distanceKm: Number(distanceKm),
+        weightKg: weightKg ? Number(weightKg) : undefined,
         additionalChargeKeys: Array.from(selectedCharges),
       });
       setBreakdown(res.data);
@@ -108,6 +116,19 @@ export function PricingCalculatorDialog({
               />
             </div>
             <div className="space-y-1.5">
+              <Label>Service Level</Label>
+              <SearchableSelect
+                value={serviceLevel}
+                onValueChange={(v) => { setServiceLevel(v); setBreakdown(null); }}
+                options={levels.map((l) => ({ value: l.slug, label: l.label }))}
+                placeholder="Select service level"
+                searchPlaceholder="Search…"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
               <Label htmlFor="distance">Distance (KM)</Label>
               <Input
                 id="distance"
@@ -116,6 +137,18 @@ export function PricingCalculatorDialog({
                 step={0.1}
                 value={distanceKm}
                 onChange={(e) => { setDistanceKm(e.target.value); setBreakdown(null); }}
+                className="rounded-lg"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                min={0}
+                step={0.1}
+                value={weightKg}
+                onChange={(e) => { setWeightKg(e.target.value); setBreakdown(null); }}
                 className="rounded-lg"
               />
             </div>
@@ -150,7 +183,7 @@ export function PricingCalculatorDialog({
           <Button
             type="button"
             onClick={handleCalculate}
-            disabled={!serviceType || !distanceKm || calculateMut.isPending}
+            disabled={!serviceType || !serviceLevel || !distanceKm || calculateMut.isPending}
             className="w-full rounded-lg bg-primary text-sidebar hover:bg-primary/85"
           >
             {calculateMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Calculate"}
@@ -160,7 +193,14 @@ export function PricingCalculatorDialog({
             <div className="space-y-1.5 rounded-lg border border-card-border bg-background p-4 text-sm">
               <Row label="Base Fee" value={breakdown.baseFee} />
               <Row label={`Distance Charge (${breakdown.distanceKm} km × $${breakdown.perKmRate.toFixed(2)})`} value={breakdown.distanceCharge} />
-              <Row label="Delivery Charge" value={breakdown.deliveryCharge} bold />
+              <Row
+                label={breakdown.serviceLevelMultiplier !== 1 ? `Delivery Charge (${breakdown.serviceLevelLabel} × ${breakdown.serviceLevelMultiplier})` : "Delivery Charge"}
+                value={breakdown.deliveryCharge}
+                bold
+              />
+              {breakdown.weightCharge > 0 && (
+                <Row label={`Weight Surcharge (${breakdown.weightKg} kg × $${breakdown.weightPerKgRate.toFixed(2)}/kg)`} value={breakdown.weightCharge} />
+              )}
               {breakdown.additionalCharges.map((c) => (
                 <Row key={c.key} label={c.label} value={c.amount} />
               ))}

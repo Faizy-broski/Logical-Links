@@ -23,7 +23,7 @@ export function useAdminEmployees(query: ListQuery = {}, options?: { enabled?: b
     enabled:  options?.enabled ?? true,
     staleTime: 2 * 60_000,
   });
-}
+} 
 
 export function useAdminEmployee(id: string) {
   return useQuery({

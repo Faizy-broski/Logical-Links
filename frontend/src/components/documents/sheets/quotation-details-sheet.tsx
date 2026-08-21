@@ -412,7 +412,7 @@ export function QuotationDetailsSheet({ open, onClose, quotationId, onEditClick 
                     {quotation.shipments.profiles && (
                       <InfoTile
                         icon={<UserAvatar name={quotation.shipments.profiles.full_name} avatarUrl={quotation.shipments.profiles.avatar_url} size="sm" rounded="lg" />}
-                        label="Assigned Employee"
+                        label="Assigned Driver"
                         value={quotation.shipments.profiles.full_name ?? "—"}
                       />
                     )}

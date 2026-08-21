@@ -47,10 +47,26 @@ export async function findAll(
   accountId?: string,
   employeeId?: string,
   excludeDraft?: boolean,
+  profileId?: string,
 ) {
   const sortField = query.sortBy ?? 'created_at'
   const ascending = query.sortDir === 'asc'
   const range     = [(query.page - 1) * query.limit, query.page * query.limit - 1] as const
+
+  // Residential scope: only quotations issued directly to this customer
+  if (profileId) {
+    let q: any = supabase
+      .from(TABLE)
+      .select(QUOTATION_SELECT, { count: 'exact' })
+      .is('deleted_at', null)
+      .order(sortField, { ascending })
+      .range(...range)
+      .eq('profile_id', profileId)
+
+    if (excludeDraft) q = q.neq('status', 'draft')
+
+    return applyQuotationFilters(q, query)
+  }
 
   // Employee scope: only quotations linked to loads assigned to them
   if (employeeId) {
@@ -103,7 +119,7 @@ export async function findAll(
 
 // ── Stats (KPI cards) ─────────────────────────────────────────────────────────
 // Mirrors the scoping rules in findAll but issues count-only queries per bucket.
-export async function getStats(accountId?: string, employeeId?: string, excludeDraft?: boolean) {
+export async function getStats(accountId?: string, employeeId?: string, excludeDraft?: boolean, profileId?: string) {
   const today = new Date().toISOString().slice(0, 10)
 
   // Employee scope: only quotations linked to loads assigned to them
@@ -111,7 +127,9 @@ export async function getStats(accountId?: string, employeeId?: string, excludeD
   // Company admin scope: quotations linked to company-owned loads OR unlinked docs created by company members
   let accountScopeOr: string | undefined
 
-  if (employeeId) {
+  if (profileId) {
+    // handled below via `scoped()`'s profileId branch
+  } else if (employeeId) {
     const { data: loads } = await supabase
       .from('shipments').select('shipment_id').eq('assigned_employee_id', employeeId)
     employeeLoadIds = (loads ?? []).map((l: { shipment_id: string }) => l.shipment_id)
@@ -138,7 +156,9 @@ export async function getStats(accountId?: string, employeeId?: string, excludeD
   function scoped(): any {
     let q: any = supabase.from(TABLE).select('*', { count: 'exact', head: true }).is('deleted_at', null)
     if (excludeDraft) q = q.neq('status', 'draft')
-    if (employeeLoadIds) {
+    if (profileId) {
+      q = q.eq('profile_id', profileId)
+    } else if (employeeLoadIds) {
       q = q.in('load_id', employeeLoadIds)
     } else if (accountScopeOr) {
       q = q.or(accountScopeOr)

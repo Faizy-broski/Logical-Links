@@ -67,8 +67,8 @@ function assertTransition(current: string, next: string): void {
 
 // ── Access guard ──────────────────────────────────────────────────────────────
 // Admins: full access.
-// Company admins: shipments belonging to their account OR created by them.
-// Employees: only shipments explicitly assigned to them.
+// Corporate customers: shipments belonging to their account OR created by them.
+// Corporate customers have no employees of their own — one login per account.
 async function requireShipmentAccess(
   id:          string,
   isAdmin:     boolean,
@@ -86,11 +86,6 @@ async function requireShipmentAccess(
     if (isResidential) {
       // Residential customers can only access shipments linked directly to them
       if (shipment.customer_id !== userId) {
-        throw AppError.forbidden('You do not have access to this shipment')
-      }
-    } else if (companyRole === 'employee') {
-      // Employees can only access shipments assigned directly to them
-      if (shipment.assigned_employee_id !== userId) {
         throw AppError.forbidden('You do not have access to this shipment')
       }
     } else {
@@ -437,75 +432,13 @@ export async function assignToCompany(
   return data
 }
 
-// ── Assign to Employee (company-admin-only) ────────────────────────────────────
-// Company admin assigns (or unassigns) a load to an employee within the same company.
-export async function assignToEmployee(
-  shipmentId:     string,
-  dto:            AssignEmployeeDto,
-  companyAdminId: string,
-  accountId:      string,
-) {
-  const { data: raw, error: fetchErr } = await shipmentsRepo.findById(shipmentId)
-  if (fetchErr || !raw) throw AppError.notFound('Shipment')
-
-  const shipment = cast<ShipmentRow>(raw)
-
-  // Verify the load belongs to this company
-  if (shipment.account_id !== accountId) {
-    throw AppError.forbidden('This load does not belong to your company')
-  }
-
-  if (dto.employeeId !== null) {
-    // Verify the employee belongs to the same company
-    const { data: employee, error: empErr } = await supabase
-      .from('profiles')
-      .select('id, full_name, account_id, company_role')
-      .eq('id', dto.employeeId)
-      .eq('account_id', accountId)
-      .eq('company_role', 'employee')
-      .single()
-
-    if (empErr || !employee) {
-      throw AppError.notFound('Employee not found in your company')
-    }
-
-    notifyUser(dto.employeeId, 'shipment_assigned', 'Load assigned to you', 'A load has been assigned to you.', shipmentId)
-  }
-
-  const { data, error } = await shipmentsRepo.updateById(shipmentId, {
-    assigned_employee_id: dto.employeeId,
-  })
-  if (error || !data) throw AppError.internal('Failed to assign employee', error)
-
-  return data
-}
-
 // ── Assign to Driver (platform admin only) ─────────────────────────────────────
 // Admin assigns (or unassigns) a delivery to one of Logical Links' own drivers
-// (profiles.role = 'admin', admin_role = 'driver'). Reuses the same
-// assigned_employee_id column as assignToEmployee above — a shipment has one
-// assignee at a time regardless of whether it's a shipping company's own
-// employee or a platform driver.
+// (profiles.role = 'admin', admin_role = 'driver'). Corporate customers have no
+// employees of their own — assigned_employee_id is used solely for this.
 export async function assignDriver(shipmentId: string, dto: AssignEmployeeDto) {
   const { data: raw, error: fetchErr } = await shipmentsRepo.findById(shipmentId)
   if (fetchErr || !raw) throw AppError.notFound('Shipment')
-
-  const existingAssigneeId = (raw as { assigned_employee_id?: string | null }).assigned_employee_id
-  if (dto.employeeId !== null && existingAssigneeId && existingAssigneeId !== dto.employeeId) {
-    // assigned_employee_id is shared between a shipping company's own
-    // employee (assignToEmployee above) and a platform driver — overwriting
-    // it here without checking would silently strip a company's employee
-    // assignment. Require an explicit unassign first instead of clobbering.
-    const { data: existingAssignee } = await supabase
-      .from('profiles')
-      .select('id, company_role')
-      .eq('id', existingAssigneeId)
-      .maybeSingle()
-
-    if (existingAssignee?.company_role === 'employee') {
-      throw AppError.conflict('This shipment is already assigned to the shipping company\'s own employee — unassign it first before assigning a platform driver')
-    }
-  }
 
   if (dto.employeeId !== null) {
     const { data: driver, error: driverErr } = await supabase

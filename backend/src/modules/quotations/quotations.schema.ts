@@ -58,6 +58,10 @@ export const createQuotationSchema = z.object({
   destinationPostcode:   z.string().max(20).optional().nullable(),
   cargoDescription:      z.string().max(500).optional().nullable(),
   serviceType:           z.string().max(50).optional().nullable(),
+  serviceLevel:          z.string().max(50).optional().nullable(),
+  weightKg:              z.coerce.number().min(0).optional().nullable(),
+  pieces:                z.coerce.number().int().min(1).optional().nullable(),
+  preferredDeliveryDate: z.string().datetime({ offset: true }).optional().nullable(),
   items:           z.array(lineItemSchema).min(0).default([]),
 })
 
@@ -101,8 +105,14 @@ export const acceptQuotationSchema = z.object({
 // Residential customers get an instant auto-priced quote — every field the
 // pricing engine needs is required. Corporate customers only submit a
 // request (no pricing fields) — an admin prices it afterward via the
-// existing PATCH /:id + line items flow.
-const quoteRequestAddressFields = {
+// existing PATCH /:id + line items flow. Both forms capture the same set of
+// contact/shipment-detail fields (Aug 22 spec); "customerCompany" is only
+// meaningful for corporate but stays optional on both schemas.
+const quoteRequestCommonFields = {
+  customerName:    z.string().min(1, 'Customer name is required').max(255),
+  customerCompany: z.string().max(255).optional().nullable(),
+  customerEmail:   z.string().email('Enter a valid email').max(255),
+  customerPhone:   z.string().min(1, 'Phone number is required').max(50),
   originAddress:        z.string().min(5).max(500),
   originLat:             z.coerce.number(),
   originLng:             z.coerce.number(),
@@ -115,19 +125,23 @@ const quoteRequestAddressFields = {
   destinationCity:         z.string().min(1).max(100),
   destinationState:        z.string().min(1).max(100),
   destinationPostcode:     z.string().min(1).max(20),
+  serviceType:          z.string().min(1, 'Select a service type').max(50),
+  serviceLevel:         z.string().min(1, 'Select a service level').max(50),
   cargoDescription:      z.string().min(3, 'Please describe what needs to be delivered').max(500),
+  pieces:               z.coerce.number().int().min(1, 'Enter the number of packages'),
+  weightKg:             z.coerce.number().positive('Enter the weight in kg'),
+  preferredDeliveryDate: z.string().datetime({ offset: true, message: 'Select a preferred delivery date' }),
+  notes:                z.string().max(5000).optional().nullable(),
 }
 
 export const residentialQuoteRequestSchema = z.object({
-  ...quoteRequestAddressFields,
+  ...quoteRequestCommonFields,
   distanceKm:           z.coerce.number().min(0),
-  serviceType:          z.string().min(1, 'Select a service type').max(50),
   additionalChargeKeys: z.array(z.string()).default([]),
 })
 
 export const corporateQuoteRequestSchema = z.object({
-  ...quoteRequestAddressFields,
-  notes: z.string().max(5000).optional().nullable(),
+  ...quoteRequestCommonFields,
 })
 
 export type CreateQuotationDto   = z.infer<typeof createQuotationSchema>

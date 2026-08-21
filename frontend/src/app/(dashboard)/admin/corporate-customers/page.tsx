@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Building2,
-  Users,
   CheckCircle2,
   Clock,
   Phone,
@@ -64,10 +63,6 @@ function initials(name: string | null, fallback: string): string {
 
 function getAdmin(profiles?: AccountProfile[]): AccountProfile | undefined {
   return profiles?.find((p) => p.company_role === "company_admin");
-}
-
-function getEmployeeCount(profiles?: AccountProfile[]): number {
-  return profiles?.filter((p) => p.company_role === "employee").length ?? 0;
 }
 
 function StatusPill({ active }: { active: boolean }) {
@@ -300,19 +295,6 @@ export default function CorporateCustomersPage() {
                 {admin.phone && <span className="flex items-center gap-1 text-xs text-muted"><Phone className="h-3 w-3 shrink-0" />{admin.phone}</span>}
                 <div className="mt-0.5"><ApprovalPill approved={admin.is_approved} /></div>
               </div>
-            </div>
-          );
-        },
-      },
-      {
-        id: "employees",
-        header: "Employees",
-        cell: ({ row }) => {
-          const count = getEmployeeCount(row.original.profiles);
-          return (
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5 text-muted" />
-              <span className="text-sm text-foreground tabular-nums">{count}</span>
             </div>
           );
         },

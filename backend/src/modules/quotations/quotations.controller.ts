@@ -25,7 +25,6 @@ export async function stats(req: Request, res: Response, next: NextFunction): Pr
       req.user!.role,
       req.user!.id,
       req.user!.accountId,
-      req.user!.companyRole,
     )
     ok(res, result)
   } catch (err) {
@@ -41,7 +40,6 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
       req.user!.role,
       req.user!.id,
       req.user!.accountId,
-      req.user!.companyRole,
     )
     paginated(res, quotations, { page, limit, total, totalPages: Math.ceil(total / limit) })
   } catch (err) {
@@ -56,7 +54,6 @@ export async function getOne(req: Request, res: Response, next: NextFunction): P
       req.user!.role,
       req.user!.accountId,
       req.user!.id,
-      req.user!.companyRole,
     )
     ok(res, quotation)
   } catch (err) {
@@ -146,7 +143,6 @@ export async function generatePdf(req: Request, res: Response, next: NextFunctio
       req.user!.role,
       req.user!.accountId,
       req.user!.id,
-      req.user!.companyRole,
     )
     ok(res, result, 'PDF generated')
   } catch (err) {

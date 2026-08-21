@@ -394,9 +394,7 @@ export default function LoadsPage() {
               ? "Viewing as System Admin — full access to all deliveries"
               : isResidential
                 ? "Viewing as Residential Customer — your deliveries"
-                : user?.companyRole === "employee"
-                  ? "Viewing as Employee — your assigned deliveries"
-                  : "Viewing as Company Admin — your company's deliveries"}
+                : "Viewing as Company Admin — your company's deliveries"}
           </span>
         </div>
 

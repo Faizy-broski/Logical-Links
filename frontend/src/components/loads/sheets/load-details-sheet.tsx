@@ -39,7 +39,6 @@ import { CompanyLogo } from "@/components/ui/company-logo";
 import { StatusChangeDialog } from "@/components/loads/dialogs/status-change-dialog";
 import { AssignDialog } from "@/components/loads/dialogs/assign-dialog";
 import { PricingCalculatorDialog } from "@/components/loads/dialogs/pricing-calculator-dialog";
-import { AssignEmployeeDialog } from "@/components/loads/dialogs/assign-employee-dialog";
 import { LAST_MILE_SERVICE_TYPE_LABELS } from "@/components/loads/sheets/load-form-fields";
 import { TrackingTimeline } from "@/components/tracking/tracking-timeline";
 import { formatDate } from "@/lib/utils/format-date";
@@ -53,10 +52,8 @@ import {
   useShipment,
   useUpdateShipmentStatus,
   useAssignShipment,
-  useAssignEmployee,
 } from "@/hooks/use-shipments";
 import { useAccounts } from "@/hooks/use-accounts";
-import { useEmployees } from "@/hooks/use-company-users";
 import { useInvoices } from "@/hooks/use-invoices";
 import { useQuotations } from "@/hooks/use-quotations";
 import { useTrackingEvents } from "@/hooks/use-tracking";
@@ -67,7 +64,6 @@ import type {
   Shipment,
   ShipmentStatus,
   AssignShipmentDto,
-  AssignEmployeeDto,
   Invoice,
   Quotation,
   TrackingEvent,
@@ -219,7 +215,6 @@ export function LoadDetailsSheet({
   const [statusOpen, setStatusOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [pricingCalcOpen, setPricingCalcOpen] = useState(false);
-  const [assignEmpOpen, setAssignEmpOpen] = useState(false);
 
   const { data, isLoading } = useShipment(loadId);
   const { data: companiesRes } = useAccounts(
@@ -234,10 +229,6 @@ export function LoadDetailsSheet({
     { loadId: loadId || undefined },
     { enabled: !!loadId && open },
   );
-  const { data: employeesRes } = useEmployees(
-    { limit: 100 },
-    { enabled: isCompanyAdmin && !isAdmin && open },
-  );
   const { data: trackingRes, refetch: refetchTracking } = useTrackingEvents(
     loadId,
     { limit: 100 },
@@ -248,11 +239,9 @@ export function LoadDetailsSheet({
   const loadQuotations = (quotationsRes?.data ?? []) as Quotation[];
   const trackingEvents = (trackingRes?.data ?? []) as TrackingEvent[];
   const companies = companiesRes?.data ?? [];
-  const employees = employeesRes?.data ?? [];
 
   const statusMut = useUpdateShipmentStatus(loadId);
   const assignMut = useAssignShipment(loadId);
-  const assignEmpMut = useAssignEmployee(loadId);
 
   async function handleStatusChange(status: string, reason?: string) {
     try {
@@ -269,18 +258,6 @@ export function LoadDetailsSheet({
       await assignMut.mutateAsync(dto);
       toast.success("Company assigned");
       setAssignOpen(false);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  }
-
-  async function handleAssignEmployee(dto: AssignEmployeeDto) {
-    try {
-      await assignEmpMut.mutateAsync(dto);
-      toast.success(
-        dto.employeeId ? "Employee assigned" : "Employee unassigned",
-      );
-      setAssignEmpOpen(false);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -334,18 +311,6 @@ export function LoadDetailsSheet({
           <div className="flex w-full flex-wrap items-center gap-2 sm:ml-4 sm:w-auto sm:flex-nowrap sm:justify-end">
             {shipment && (
               <>
-                {isCompanyAdmin && !isAdmin && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setAssignEmpOpen(true)}
-                    className="h-8 flex-1 rounded-lg border-card-border px-2 text-xs text-foreground sm:flex-none sm:px-3"
-                  >
-                    <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                    Assign Emp.
-                  </Button>
-                )}
-
                 {canAssign && (
                   <Button
                     type="button"
@@ -560,7 +525,7 @@ export function LoadDetailsSheet({
                               rounded="lg"
                             />
                           }
-                          label={shipment.shipment_type === "last_mile" ? "Assigned Driver" : "Assigned Employee"}
+                          label="Assigned Driver"
                           value={shipment.employee.full_name}
                         />
                       )}
@@ -893,17 +858,6 @@ export function LoadDetailsSheet({
           onClose={() => setAssignOpen(false)}
           onConfirm={handleAssign}
           loading={assignMut.isPending}
-        />
-      )}
-
-      {shipment && isCompanyAdmin && !isAdmin && assignEmpOpen && (
-        <AssignEmployeeDialog
-          shipment={shipment}
-          employees={employees}
-          open={assignEmpOpen}
-          onClose={() => setAssignEmpOpen(false)}
-          onConfirm={handleAssignEmployee}
-          loading={assignEmpMut.isPending}
         />
       )}
 

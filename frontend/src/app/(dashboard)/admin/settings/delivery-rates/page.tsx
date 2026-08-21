@@ -122,6 +122,9 @@ export default function DeliveryRateLibraryPage() {
           <Link href="/admin/settings/additional-charges" className="rounded-full border border-card-border px-4 py-1.5 text-sm font-medium text-muted hover:text-foreground">
             Additional Charges
           </Link>
+          <Link href="/admin/settings/service-levels" className="rounded-full border border-card-border px-4 py-1.5 text-sm font-medium text-muted hover:text-foreground">
+            Service Levels
+          </Link>
         </div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

@@ -150,20 +150,6 @@ export type UserProfile = {
   createdAt:   string;
 };
 
-// ── Company Users (Employees) ─────────────────────────────────────────────────
-
-export type CompanyUser = {
-  id:          string;
-  email:       string;
-  full_name:   string | null;
-  phone:       string | null;
-  avatar_url:  string | null;
-  company_role: "employee";
-  is_active:   boolean;
-  account_id:  string;
-  created_at:  string;
-};
-
 // ── Admin Employees (Internal Staff) ──────────────────────────────────────────
 
 // Admin roles are DB-driven — see AdminRoleDef / useAdminRoles(). This is kept as
@@ -333,7 +319,7 @@ export type Shipment = {
   accounts?: Pick<Account, "account_id" | "account_name"> & { account_code?: string | null; logo_url?: string | null };
   /** Profile of the user who created this load (joined via profiles!created_by). */
   profiles?: { id: string; full_name: string | null; role: 'admin' | 'shipper'; avatar_url?: string | null } | null;
-  /** Profile of the assigned employee (joined via profiles!assigned_employee_id). */
+  /** Profile of the assigned driver (joined via profiles!assigned_employee_id) — corporate customers have no employees of their own, so this is always a Logical Links driver. */
   employee?: { id: string; full_name: string | null; avatar_url?: string | null } | null;
   /** UUID of the residential customer this delivery belongs to (mutually exclusive with account_id). */
   customer_id?: string | null;
@@ -396,7 +382,7 @@ export type AssignShipmentDto = {
   accountId: string;
 };
 
-// Company admin assigns (or unassigns) a load to an employee.
+// Platform admin assigns (or unassigns) a delivery to a Logical Links driver.
 export type AssignEmployeeDto = {
   employeeId: string | null;
 };
@@ -564,6 +550,10 @@ export type Quotation = {
   destination_postcode: string | null;
   cargo_description:   string | null;
   service_type:        string | null;
+  service_level:       string | null;
+  weight_kg:           number | null;
+  pieces:              number | null;
+  preferred_delivery_date: string | null;
   pdf_url:          string | null;
   accepted_at:      string | null;
   declined_at:      string | null;
@@ -645,6 +635,10 @@ export type CreateQuotationDto = {
   destinationPostcode?:   string | null;
   cargoDescription?:      string | null;
   serviceType?:           string | null;
+  serviceLevel?:          string | null;
+  weightKg?:              number | null;
+  pieces?:                number | null;
+  preferredDeliveryDate?: string | null;
   items?:          Omit<LineItem, "id" | "created_at" | "updated_at">[];
 };
 
@@ -652,7 +646,11 @@ export type UpdateQuotationDto = Partial<Omit<CreateQuotationDto, "profileId">>;
 
 // ── Self-service quote request ──────────────────────────────────────────────────
 
-type QuoteRequestAddressFields = {
+type QuoteRequestCommonFields = {
+  customerName:    string;
+  customerCompany?: string | null;
+  customerEmail:   string;
+  customerPhone:   string;
   originAddress:      string;
   originLat:          number;
   originLng:          number;
@@ -665,18 +663,21 @@ type QuoteRequestAddressFields = {
   destinationCity:    string;
   destinationState:   string;
   destinationPostcode: string;
+  serviceType:        string;
+  serviceLevel:       string;
   cargoDescription:   string;
+  pieces:             number;
+  weightKg:           number;
+  preferredDeliveryDate: string;
+  notes?:             string | null;
 };
 
-export type ResidentialQuoteRequestDto = QuoteRequestAddressFields & {
+export type ResidentialQuoteRequestDto = QuoteRequestCommonFields & {
   distanceKm:           number;
-  serviceType:          string;
   additionalChargeKeys?: string[];
 };
 
-export type CorporateQuoteRequestDto = QuoteRequestAddressFields & {
-  notes?: string | null;
-};
+export type CorporateQuoteRequestDto = QuoteRequestCommonFields;
 
 export type ListQuotationsQuery = {
   page?:           number;
@@ -932,9 +933,42 @@ export type UpdateChargeDto = {
   isActive?: boolean;
 };
 
+export type ServiceLevel = {
+  level_id:   string;
+  slug:       string;
+  label:      string;
+  multiplier: number;
+  is_active:  boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateServiceLevelDto = {
+  slug:       string;
+  label:      string;
+  multiplier: number;
+};
+
+export type UpdateServiceLevelDto = {
+  label?:      string;
+  multiplier?: number;
+  isActive?:   boolean;
+};
+
+export type WeightRate = {
+  key:        string;
+  label:      string;
+  value:      number;
+  unit:       string | null;
+  updated_at: string;
+};
+
 export type CalculatePriceDto = {
   serviceType:          string;
+  serviceLevel:         string;
   distanceKm:           number;
+  weightKg?:            number;
   additionalChargeKeys: string[];
 };
 
@@ -956,7 +990,13 @@ export type PriceBreakdown = {
   perKmRate:              number;
   distanceCharge:         number;
   minimumCharge:          number;
+  serviceLevel:           string;
+  serviceLevelLabel:      string;
+  serviceLevelMultiplier: number;
   deliveryCharge:         number;
+  weightKg:               number;
+  weightPerKgRate:        number;
+  weightCharge:           number;
   additionalCharges:      { key: string; label: string; amount: number }[];
   additionalChargesTotal: number;
   subtotal:               number;

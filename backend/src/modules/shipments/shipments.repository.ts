@@ -133,11 +133,9 @@ export async function findAll(
     if (isResidential && userId) {
       // Residential customers see only shipments linked directly to them
       q = q.eq('customer_id', userId)
-    } else if (companyRole === 'employee' && userId) {
-      // Employees see only shipments assigned to them
-      q = q.eq('assigned_employee_id', userId)
     } else {
-      // Company admins see all shipments belonging to their account OR created by them
+      // Corporate customers see all shipments belonging to their account OR created by them
+      // (corporate accounts have no employees of their own — one login per account)
       if (accountId && userId) {
         q = q.or(`account_id.eq.${accountId},created_by.eq.${userId}`)
       } else if (accountId) {

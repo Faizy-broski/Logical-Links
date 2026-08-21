@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, MapPin, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 
 import { geocodeAddress, haversineDistanceKm, type AddressSuggestion, type Coordinates } from "@/lib/utils/geocode";
+import { dateInputValueToIso } from "@/lib/utils/format-date";
+import { useDeliveryRates } from "@/hooks/use-delivery-rates";
+import { useServiceLevels } from "@/hooks/use-service-levels";
+import { useMe } from "@/hooks/use-users";
+import { useMyProfile } from "@/hooks/use-accounts";
 import { useRequestCorporateQuote } from "@/hooks/use-quotations";
 import type { CorporateQuoteRequestDto } from "@/types/api.types";
 
@@ -20,15 +27,50 @@ const EMPTY_ADDRESS: AddressParts = { address: "", coords: null, city: "", state
 
 export default function RequestCorporateQuotePage() {
   const router = useRouter();
+  const { data: meRes } = useMe();
+  const { data: myProfileRes } = useMyProfile();
+  const { data: ratesRes } = useDeliveryRates();
+  const rates = (ratesRes?.data ?? []).filter((r) => r.is_active);
+  const { data: levelsRes } = useServiceLevels();
+  const levels = (levelsRes?.data ?? []).filter((l) => l.is_active);
 
+  const [customerName, setCustomerName] = useState("");
+  const [customerCompany, setCustomerCompany] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [origin, setOrigin] = useState<AddressParts>(EMPTY_ADDRESS);
   const [destination, setDestination] = useState<AddressParts>(EMPTY_ADDRESS);
+  const [serviceType, setServiceType] = useState("");
+  const [serviceLevel, setServiceLevel] = useState("");
   const [cargoDescription, setCargoDescription] = useState("");
+  const [pieces, setPieces] = useState("");
+  const [weightKg, setWeightKg] = useState("");
+  const [preferredDeliveryDate, setPreferredDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
   const [geocoding, setGeocoding] = useState<"origin" | "destination" | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const requestMut = useRequestCorporateQuote();
+
+  useEffect(() => {
+    if (!meRes?.data) return;
+    setCustomerName((prev) => prev || meRes.data.fullName || "");
+    setCustomerEmail((prev) => prev || meRes.data.email || "");
+    setCustomerPhone((prev) => prev || meRes.data.phone || "");
+  }, [meRes]);
+
+  useEffect(() => {
+    if (myProfileRes?.data?.account_name) {
+      setCustomerCompany((prev) => prev || myProfileRes.data.account_name);
+    }
+  }, [myProfileRes]);
+
+  useEffect(() => {
+    if (!serviceLevel && levels.length > 0) {
+      const standard = levels.find((l) => l.slug === "standard") ?? levels[0];
+      setServiceLevel(standard.slug);
+    }
+  }, [levels, serviceLevel]);
 
   const distanceKm = origin.coords && destination.coords
     ? Math.round(haversineDistanceKm(origin.coords, destination.coords) * 10) / 10
@@ -54,18 +96,27 @@ export default function RequestCorporateQuotePage() {
   }
 
   const canSubmit =
+    customerName.trim() && customerEmail.trim() && customerPhone.trim() &&
     origin.address && origin.coords && origin.city && origin.state && origin.postcode &&
     destination.address && destination.coords && destination.city && destination.state && destination.postcode &&
-    cargoDescription.trim().length >= 3;
+    serviceType && serviceLevel && cargoDescription.trim().length >= 3 &&
+    Number(pieces) >= 1 && Number(weightKg) > 0 && preferredDeliveryDate;
 
   async function handleSubmit() {
     if (!canSubmit) return;
     const dto: CorporateQuoteRequestDto = {
+      customerName: customerName.trim(),
+      customerCompany: customerCompany.trim() || null,
+      customerEmail: customerEmail.trim(),
+      customerPhone: customerPhone.trim(),
       originAddress: origin.address, originLat: origin.coords!.lat, originLng: origin.coords!.lng,
       originCity: origin.city, originState: origin.state, originPostcode: origin.postcode,
       destinationAddress: destination.address, destinationLat: destination.coords!.lat, destinationLng: destination.coords!.lng,
       destinationCity: destination.city, destinationState: destination.state, destinationPostcode: destination.postcode,
+      serviceType, serviceLevel,
       cargoDescription: cargoDescription.trim(),
+      pieces: Number(pieces), weightKg: Number(weightKg),
+      preferredDeliveryDate: dateInputValueToIso(preferredDeliveryDate)!,
       notes: notes.trim() || null,
     };
     try {
@@ -114,8 +165,30 @@ export default function RequestCorporateQuotePage() {
         </div>
 
         <div className="space-y-5 rounded-3xl border border-card-border bg-card p-6 shadow-sm">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Customer Name</Label>
+              <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Contact name" className="rounded-lg" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Company</Label>
+              <Input value={customerCompany} onChange={(e) => setCustomerCompany(e.target.value)} placeholder="Company name" className="rounded-lg" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="you@example.com" className="rounded-lg" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Phone</Label>
+              <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Phone number" className="rounded-lg" />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label>Origin Address</Label>
+            <Label>Pickup Address</Label>
             <AddressAutocomplete
               as="textarea"
               rows={2}
@@ -129,7 +202,7 @@ export default function RequestCorporateQuotePage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Destination Address</Label>
+            <Label>Delivery Address</Label>
             <AddressAutocomplete
               as="textarea"
               rows={2}
@@ -153,19 +226,57 @@ export default function RequestCorporateQuotePage() {
             )}
           </div>
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Service Type</Label>
+              <SearchableSelect
+                value={serviceType}
+                onValueChange={setServiceType}
+                options={rates.map((r) => ({ value: r.service_type, label: r.label }))}
+                placeholder="What kind of delivery is this?"
+                searchPlaceholder="Search…"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Service Level</Label>
+              <SearchableSelect
+                value={serviceLevel}
+                onValueChange={setServiceLevel}
+                options={levels.map((l) => ({ value: l.slug, label: l.label }))}
+                placeholder="How fast do you need it?"
+                searchPlaceholder="Search…"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <Label>What needs to be shipped?</Label>
             <Textarea
               value={cargoDescription}
               onChange={(e) => setCargoDescription(e.target.value)}
-              placeholder="Describe the freight — type, weight, pallets, special handling…"
+              placeholder="Describe the freight — type, pallets, special handling…"
               rows={3}
               className="resize-none"
             />
           </div>
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label>Number of Packages</Label>
+              <Input type="number" min={1} step={1} value={pieces} onChange={(e) => setPieces(e.target.value)} className="rounded-lg" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Weight (kg)</Label>
+              <Input type="number" min={0.1} step={0.1} value={weightKg} onChange={(e) => setWeightKg(e.target.value)} className="rounded-lg" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Preferred Delivery Date</Label>
+              <Input type="date" value={preferredDeliveryDate} onChange={(e) => setPreferredDeliveryDate(e.target.value)} className="rounded-lg" />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label>Additional Notes (optional)</Label>
+            <Label>Special Instructions (optional)</Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

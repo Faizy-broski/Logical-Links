@@ -37,18 +37,23 @@ function computeTotals(items: { quantity: number; unit_price: number }[], discou
   return { subtotal: Math.round(subtotal * 100) / 100, tax, total }
 }
 
+// Corporate customers (role='shipper') have no employees of their own — one
+// login per account — so the only non-admin, non-residential scope is by account.
 export async function listQuotations(
   query: ListQuotationsQuery,
   callerRole: string,
   callerId: string,
   callerAccountId?: string | null,
-  companyRole?: string | null,
 ) {
   const accountId    = callerRole === 'shipper' ? (callerAccountId ?? undefined) : undefined
-  const employeeId   = callerRole === 'shipper' && companyRole === 'employee' ? callerId : undefined
+  // Residential customers only ever see their own quotations (profile_id match) —
+  // without this they fell through with no scope at all and could list every
+  // company's quotations system-wide (see [[customer_types]] "grep every module
+  // for callerRole === 'shipper'" lesson — this module had the exact gap).
+  const profileId     = callerRole === 'residential' ? callerId : undefined
   // Customers never see internal drafts — only quotations that have been issued to them.
-  const excludeDraft = callerRole === 'shipper'
-  const { data, count, error } = await repo.findAll(query, accountId, employeeId, excludeDraft)
+  const excludeDraft = callerRole === 'shipper' || callerRole === 'residential'
+  const { data, count, error } = await repo.findAll(query, accountId, undefined, excludeDraft, profileId)
   if (error) throw AppError.internal('Failed to fetch quotations', error)
   return { quotations: data ?? [], total: count ?? 0 }
 }
@@ -57,12 +62,11 @@ export async function getQuotationStats(
   callerRole: string,
   callerId: string,
   callerAccountId?: string | null,
-  companyRole?: string | null,
 ) {
   const accountId    = callerRole === 'shipper' ? (callerAccountId ?? undefined) : undefined
-  const employeeId   = callerRole === 'shipper' && companyRole === 'employee' ? callerId : undefined
-  const excludeDraft = callerRole === 'shipper'
-  return repo.getStats(accountId, employeeId, excludeDraft)
+  const profileId     = callerRole === 'residential' ? callerId : undefined
+  const excludeDraft = callerRole === 'shipper' || callerRole === 'residential'
+  return repo.getStats(accountId, undefined, excludeDraft, profileId)
 }
 
 export async function getQuotation(
@@ -70,7 +74,6 @@ export async function getQuotation(
   callerRole: string,
   callerAccountId?: string | null,
   callerId?: string,
-  companyRole?: string | null,
 ) {
   const { data, error } = await repo.findById(id)
   if (error || !data) throw AppError.notFound('Quotation')
@@ -83,15 +86,7 @@ export async function getQuotation(
     // Customers never see internal drafts — treat as not found, same as any other doc they can't access.
     if (data.status === 'draft') throw AppError.notFound('Quotation')
 
-    if (companyRole === 'employee' && callerId) {
-      if (!data.load_id || !(await repo.loadBelongsToEmployee(data.load_id, callerId))) {
-        throw AppError.forbidden()
-      }
-    } else if (companyRole === 'company_admin') {
-      if (!(await repo.documentBelongsToCompany(data.load_id, data.profile_id, callerAccountId))) {
-        throw AppError.forbidden()
-      }
-    } else {
+    if (!(await repo.documentBelongsToCompany(data.load_id, data.profile_id, callerAccountId))) {
       throw AppError.forbidden()
     }
   }
@@ -145,6 +140,10 @@ export async function createQuotation(dto: CreateQuotationDto, createdBy: string
     destination_postcode:   dto.destinationPostcode ?? null,
     cargo_description:      dto.cargoDescription ?? null,
     service_type:           dto.serviceType ?? null,
+    service_level:           dto.serviceLevel ?? null,
+    weight_kg:               dto.weightKg ?? null,
+    pieces:                  dto.pieces ?? null,
+    preferred_delivery_date: dto.preferredDeliveryDate ?? null,
   })
 
   if (error || !quotation) throw AppError.internal('Failed to create quotation', error)
@@ -193,26 +192,36 @@ export async function createResidentialQuote(callerId: string, callerEmail: stri
 
   const breakdown = await pricingService.calculateDeliveryPrice({
     serviceType:          dto.serviceType,
+    serviceLevel:         dto.serviceLevel,
     distanceKm:           dto.distanceKm,
+    weightKg:             dto.weightKg,
     additionalChargeKeys: dto.additionalChargeKeys,
   })
 
   const items = [
     {
-      description: `${breakdown.label} Delivery`,
+      description: `${breakdown.label} Delivery (${breakdown.serviceLevelLabel})`,
       category:    'freight_charge' as const,
       quantity:    1,
       unit:        'delivery',
       unit_price:  breakdown.deliveryCharge,
       sort_order:  0,
     },
+    ...(breakdown.weightCharge > 0 ? [{
+      description: `Weight Surcharge (${breakdown.weightKg} kg × $${breakdown.weightPerKgRate.toFixed(2)}/kg)`,
+      category:    'accessorial' as const,
+      quantity:    1,
+      unit:        'charge',
+      unit_price:  breakdown.weightCharge,
+      sort_order:  1,
+    }] : []),
     ...breakdown.additionalCharges.map((c, idx) => ({
       description: c.label,
       category:    'accessorial' as const,
       quantity:    1,
       unit:        'charge',
       unit_price:  c.amount,
-      sort_order:  idx + 1,
+      sort_order:  idx + 2,
     })),
   ]
 
@@ -223,9 +232,9 @@ export async function createResidentialQuote(callerId: string, callerEmail: stri
       profileId:    callerId,
       status:       'sent',
       issueDate:    today,
-      customerName: (profile?.full_name as string | null) ?? 'Residential Customer',
-      customerEmail: callerEmail,
-      customerPhone: (profile?.phone as string | null) ?? null,
+      customerName:    dto.customerName || (profile?.full_name as string | null) || 'Residential Customer',
+      customerEmail:   dto.customerEmail || callerEmail,
+      customerPhone:   dto.customerPhone || (profile?.phone as string | null) || null,
       currency:     'CAD',
       originAddress:        dto.originAddress,
       originLat:            dto.originLat,
@@ -242,6 +251,11 @@ export async function createResidentialQuote(callerId: string, callerEmail: stri
       distanceKm:           dto.distanceKm,
       cargoDescription:     dto.cargoDescription,
       serviceType:          dto.serviceType,
+      serviceLevel:         dto.serviceLevel,
+      weightKg:             dto.weightKg,
+      pieces:               dto.pieces,
+      preferredDeliveryDate: dto.preferredDeliveryDate,
+      notes:                dto.notes ?? null,
       items,
     } as CreateQuotationDto,
     callerId,
@@ -264,9 +278,10 @@ export async function createCorporateQuoteRequest(callerId: string, callerAccoun
       profileId:    callerId,
       status:       'requested',
       issueDate:    today,
-      customerName:    (profile?.full_name as string | null) ?? 'Shipping Company Contact',
-      customerCompany: (account?.account_name as string | null) ?? null,
-      customerPhone:   (profile?.phone as string | null) ?? null,
+      customerName:    dto.customerName || (profile?.full_name as string | null) || 'Shipping Company Contact',
+      customerCompany: dto.customerCompany || (account?.account_name as string | null) || null,
+      customerEmail:   dto.customerEmail,
+      customerPhone:   dto.customerPhone || (profile?.phone as string | null) || null,
       currency:     'CAD',
       originAddress:        dto.originAddress,
       originLat:            dto.originLat,
@@ -281,6 +296,11 @@ export async function createCorporateQuoteRequest(callerId: string, callerAccoun
       destinationState:     dto.destinationState,
       destinationPostcode:  dto.destinationPostcode,
       cargoDescription:     dto.cargoDescription,
+      serviceType:          dto.serviceType,
+      serviceLevel:         dto.serviceLevel,
+      weightKg:             dto.weightKg,
+      pieces:               dto.pieces,
+      preferredDeliveryDate: dto.preferredDeliveryDate,
       notes:        dto.notes ?? null,
     } as CreateQuotationDto,
     callerId,
@@ -372,6 +392,10 @@ export async function updateQuotation(
   if (dto.destinationPostcode !== undefined) patch.destination_postcode = dto.destinationPostcode
   if (dto.cargoDescription    !== undefined) patch.cargo_description    = dto.cargoDescription
   if (dto.serviceType         !== undefined) patch.service_type         = dto.serviceType
+  if (dto.serviceLevel        !== undefined) patch.service_level        = dto.serviceLevel
+  if (dto.weightKg            !== undefined) patch.weight_kg            = dto.weightKg
+  if (dto.pieces              !== undefined) patch.pieces               = dto.pieces
+  if (dto.preferredDeliveryDate !== undefined) patch.preferred_delivery_date = dto.preferredDeliveryDate
   patch.subtotal = subtotal
   patch.discount = discount
   patch.tax_rate = taxRate
@@ -473,6 +497,8 @@ async function createShipmentFromAcceptedQuotation(
   const dto: CreateShipmentDto = {
     shipmentType:  quotation.service_type ? 'last_mile' : 'freight',
     serviceType:   (quotation.service_type as string | null) ?? undefined,
+    serviceLevel:  (quotation.service_level as string | null) ?? undefined,
+    preferredDeliveryDate: (quotation.preferred_delivery_date as string | null) ?? undefined,
     originAddress:        quotation.origin_address as string,
     originCity:           quotation.origin_city as string,
     originState:          quotation.origin_state as string,
@@ -484,6 +510,9 @@ async function createShipmentFromAcceptedQuotation(
     destinationPostcode:  quotation.destination_postcode as string,
     destinationCountry:   'Australia',
     cargoDescription:     quotation.cargo_description as string,
+    weightKg:             (quotation.weight_kg as number | null) ?? undefined,
+    pieces:               (quotation.pieces as number | null) ?? undefined,
+    specialInstructions:  (quotation.notes as string | null) ?? undefined,
     isDangerousGoods:      false,
     requiresRefrigeration: false,
     quotedPrice: Number(quotation.total) || undefined,
@@ -716,10 +745,9 @@ export async function generatePdf(
   callerRole: string,
   callerAccountId?: string | null,
   callerId?: string,
-  companyRole?: string | null,
 ) {
   // Reuses getQuotation's ownership check (also hides drafts from shippers).
-  const data = await getQuotation(id, callerRole, callerAccountId, callerId, companyRole)
+  const data = await getQuotation(id, callerRole, callerAccountId, callerId)
 
   const pdfUrl = await generateAndUploadQuotationPdf(data)
   await repo.updatePdfUrl(id, pdfUrl)

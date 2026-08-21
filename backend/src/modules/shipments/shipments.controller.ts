@@ -106,20 +106,6 @@ export async function assign(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-export async function assignEmployee(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const shipment = await shipmentsService.assignToEmployee(
-      param(req, 'id'),
-      req.body as AssignEmployeeDto,
-      req.user!.id,
-      req.user!.accountId!,
-    )
-    ok(res, shipment, 'Employee assigned')
-  } catch (err) {
-    next(err)
-  }
-}
-
 export async function assignDriver(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const shipment = await shipmentsService.assignDriver(param(req, 'id'), req.body as AssignEmployeeDto)

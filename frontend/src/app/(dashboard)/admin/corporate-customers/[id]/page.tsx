@@ -14,7 +14,6 @@ import {
   XCircle,
   ChevronRight,
   Building2,
-  Users,
   UserCircle2,
   BadgeCheck,
   Globe,
@@ -54,10 +53,6 @@ function initials(name: string | null, fallback = "CO"): string {
 
 function getAdmin(profiles?: AccountProfile[]): AccountProfile | undefined {
   return profiles?.find((p) => p.company_role === "company_admin");
-}
-
-function getEmployees(profiles?: AccountProfile[]): AccountProfile[] {
-  return profiles?.filter((p) => p.company_role === "employee") ?? [];
 }
 
 function formatAddress(account: Account): string | null {
@@ -137,7 +132,6 @@ export default function AdminCorporateCustomerDetailPage({
   }
 
   const admin = getAdmin(account.profiles);
-  const employees = getEmployees(account.profiles);
 
   return (
     <div className="min-h-screen bg-background">
@@ -227,10 +221,6 @@ export default function AdminCorporateCustomerDetailPage({
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info/10 px-3 py-1 text-xs font-semibold text-blue-700">
                     <Building2 className="h-3 w-3" />
                     Corporate Customer
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-card-border bg-background px-3 py-1 text-xs font-semibold text-muted">
-                    <Users className="h-3 w-3" />
-                    {employees.length} {employees.length === 1 ? "Employee" : "Employees"}
                   </span>
                 </div>
               </div>
@@ -388,84 +378,11 @@ export default function AdminCorporateCustomerDetailPage({
             </div>
           </div>
 
-          {/* ── Employees list ── */}
-          <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-            <div className="border-b border-card-border px-6 py-4">
-              <h3 className="text-sm font-semibold text-foreground">
-                Employees
-                {employees.length > 0 && (
-                  <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                    {employees.length}
-                  </span>
-                )}
-              </h3>
-              <p className="mt-0.5 text-xs text-muted">
-                Staff members assigned to this corporate customer
-              </p>
-            </div>
-            <div className="p-6">
-              {employees.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/20">
-                    <Users className="h-6 w-6 text-muted" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">No employees yet</p>
-                  <p className="mt-1 text-xs text-muted">
-                    Employees will appear here once they are added to this corporate customer.
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-card-border">
-                  {employees.map((emp) => (
-                    <EmployeeRow key={emp.id} employee={emp} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* ── Internal Notes ── */}
           <ShipperNotesSection shipperId={id} />
 
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ─── Employee row ───────────────────────────────────────────────────────── */
-
-function EmployeeRow({ employee }: { employee: AccountProfile }) {
-  return (
-    <div className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-      <UserAvatar
-        name={employee.full_name}
-        avatarUrl={employee.avatar_url}
-        size="md"
-        rounded="xl"
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground">
-          {employee.full_name ?? (
-            <span className="italic font-normal text-muted">No name set</span>
-          )}
-        </p>
-        {employee.phone && (
-          <p className="flex items-center gap-1 text-xs text-muted mt-0.5">
-            <Phone className="h-3 w-3 shrink-0" />
-            {employee.phone}
-          </p>
-        )}
-      </div>
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${
-          employee.is_active !== false
-            ? "border-success/25 bg-success/10 text-green-700"
-            : "border-danger/25 bg-danger/10 text-red-700"
-        }`}
-      >
-        {employee.is_active !== false ? "Active" : "Inactive"}
-      </span>
     </div>
   );
 }
