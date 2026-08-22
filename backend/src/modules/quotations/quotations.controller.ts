@@ -102,8 +102,6 @@ export async function update(req: Request, res: Response, next: NextFunction): P
       param(req, 'id'),
       req.body as UpdateQuotationDto,
       req.user!.role,
-      req.user!.id,
-      req.user!.companyRole,
       req.user!.accountId,
     )
     ok(res, quotation, 'Quotation updated')
@@ -117,8 +115,6 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
     await service.deleteQuotation(
       param(req, 'id'),
       req.user!.role,
-      req.user!.id,
-      req.user!.companyRole,
       req.user!.accountId,
     )
     noContent(res)
@@ -157,7 +153,6 @@ export async function accept(req: Request, res: Response, next: NextFunction): P
       req.body as AcceptQuotationDto,
       req.user!.id,
       req.user!.role,
-      req.user!.companyRole,
       req.user!.accountId,
       requestContext(req),
     )
@@ -173,7 +168,6 @@ export async function decline(req: Request, res: Response, next: NextFunction): 
       param(req, 'id'),
       req.user!.id,
       req.user!.role,
-      req.user!.companyRole,
       req.user!.accountId,
     )
     ok(res, quotation, 'Quotation declined')

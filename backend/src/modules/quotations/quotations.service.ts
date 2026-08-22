@@ -322,8 +322,6 @@ export async function updateQuotation(
   id: string,
   dto: UpdateQuotationDto,
   callerRole: string,
-  callerId?: string,
-  companyRole?: string | null,
   callerAccountId?: string | null,
 ) {
   const { data: existing } = await repo.findById(id)
@@ -340,16 +338,9 @@ export async function updateQuotation(
     throw AppError.forbidden('Status can only be set to Draft or Sent here — Accepted/Declined are set by the shipper')
   }
 
+  // Corporate customers have no employees of their own — one login per account.
   if (callerRole === 'shipper') {
-    if (companyRole === 'employee' && callerId) {
-      if (!existing.load_id || !(await repo.loadBelongsToEmployee(existing.load_id, callerId))) {
-        throw AppError.forbidden()
-      }
-    } else if (companyRole === 'company_admin' && callerAccountId) {
-      if (!(await repo.documentBelongsToCompany(existing.load_id, existing.profile_id, callerAccountId))) {
-        throw AppError.forbidden()
-      }
-    } else {
+    if (!callerAccountId || !(await repo.documentBelongsToCompany(existing.load_id, existing.profile_id, callerAccountId))) {
       throw AppError.forbidden()
     }
   }
@@ -433,29 +424,21 @@ export async function updateQuotation(
 }
 
 // Shared by accept/decline — same membership check used elsewhere in this module.
+// Corporate customers have no employees of their own — one login per account.
 async function assertCustomerCanActOn(
   quotation: { load_id: string | null; profile_id: string },
   callerId: string,
   callerRole: string,
-  companyRole: string | null | undefined,
   callerAccountId: string | null | undefined,
 ): Promise<void> {
-  // Residential customers have no companyRole/account — a quotation belongs to
+  // Residential customers have no account — a quotation belongs to
   // them directly via profile_id, same as it belongs to a shipper via account.
   if (callerRole === 'residential') {
     if (quotation.profile_id !== callerId) throw AppError.forbidden()
     return
   }
 
-  if (companyRole === 'employee') {
-    if (!quotation.load_id || !(await repo.loadBelongsToEmployee(quotation.load_id, callerId))) {
-      throw AppError.forbidden()
-    }
-  } else if (companyRole === 'company_admin' && callerAccountId) {
-    if (!(await repo.documentBelongsToCompany(quotation.load_id, quotation.profile_id, callerAccountId))) {
-      throw AppError.forbidden()
-    }
-  } else {
+  if (!callerAccountId || !(await repo.documentBelongsToCompany(quotation.load_id, quotation.profile_id, callerAccountId))) {
     throw AppError.forbidden()
   }
 }
@@ -530,7 +513,6 @@ export async function acceptQuotation(
   dto: AcceptQuotationDto,
   callerId: string,
   callerRole: string,
-  companyRole: string | null | undefined,
   callerAccountId: string | null | undefined,
   context: { ipAddress?: string; userAgent?: string },
 ) {
@@ -539,7 +521,7 @@ export async function acceptQuotation(
   const { data: existing } = await repo.findById(id)
   if (!existing || existing.status === 'draft') throw AppError.notFound('Quotation')
 
-  await assertCustomerCanActOn(existing, callerId, callerRole, companyRole, callerAccountId)
+  await assertCustomerCanActOn(existing, callerId, callerRole, callerAccountId)
 
   if (existing.status === 'accepted') throw AppError.conflict('Quotation has already been accepted')
   if (existing.status === 'rejected') throw AppError.conflict('Quotation has already been declined')
@@ -597,7 +579,6 @@ export async function declineQuotation(
   id: string,
   callerId: string,
   callerRole: string,
-  companyRole: string | null | undefined,
   callerAccountId: string | null | undefined,
 ) {
   if (callerRole !== 'shipper' && callerRole !== 'residential') throw AppError.forbidden('Only customers can decline quotations')
@@ -605,7 +586,7 @@ export async function declineQuotation(
   const { data: existing } = await repo.findById(id)
   if (!existing || existing.status === 'draft') throw AppError.notFound('Quotation')
 
-  await assertCustomerCanActOn(existing, callerId, callerRole, companyRole, callerAccountId)
+  await assertCustomerCanActOn(existing, callerId, callerRole, callerAccountId)
 
   if (existing.status === 'accepted') throw AppError.conflict('Quotation has already been accepted')
   if (existing.status === 'rejected') throw AppError.conflict('Quotation has already been declined')
@@ -631,8 +612,6 @@ export async function declineQuotation(
 export async function deleteQuotation(
   id: string,
   callerRole: string,
-  callerId?: string,
-  companyRole?: string | null,
   callerAccountId?: string | null,
 ) {
   const { data: existing } = await repo.findById(id)
@@ -642,16 +621,9 @@ export async function deleteQuotation(
     throw AppError.forbidden('Only draft quotations can be deleted')
   }
 
+  // Corporate customers have no employees of their own — one login per account.
   if (callerRole === 'shipper') {
-    if (companyRole === 'employee' && callerId) {
-      if (!existing.load_id || !(await repo.loadBelongsToEmployee(existing.load_id, callerId))) {
-        throw AppError.forbidden()
-      }
-    } else if (companyRole === 'company_admin' && callerAccountId) {
-      if (!(await repo.documentBelongsToCompany(existing.load_id, existing.profile_id, callerAccountId))) {
-        throw AppError.forbidden()
-      }
-    } else {
+    if (!callerAccountId || !(await repo.documentBelongsToCompany(existing.load_id, existing.profile_id, callerAccountId))) {
       throw AppError.forbidden()
     }
   }
