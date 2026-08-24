@@ -1,0 +1,22 @@
+-- =============================================================================
+-- Migration 069: Birthday bonus — rolling 365-day cooldown, not calendar year
+-- =============================================================================
+-- Migration 068's unique index blocked a second 'birthday_bonus' ledger row
+-- within the same calendar year — but that's the wrong boundary for two
+-- reasons: (1) it does nothing to stop someone earning it, changing their
+-- date_of_birth, and earning it again — the actual abuse case — because
+-- self-service date_of_birth was freely editable and a second bonus is
+-- allowed as soon as the calendar flips (e.g. earn Dec 31, change DOB,
+-- earn again Jan 1 — 1 day apart, both technically "this year"/"next
+-- year"). (2) It's the reason a lock-the-field approach was tried instead —
+-- but locking date_of_birth forever means a genuine typo can never be
+-- corrected.
+--
+-- The actual fix: date_of_birth stays freely editable (see
+-- users.service.ts), and the gate moves to the earn side — at most one
+-- birthday_bonus per profile every rolling 365 days, measured from the
+-- profile's last award, not the calendar. rewards-credit.service.ts now
+-- enforces this by reading the most recent birthday_bonus ledger row's
+-- created_at directly, so the old fixed-grouping unique index (which can't
+-- express a rolling window) is no longer the right tool and is dropped.
+drop index if exists idx_credit_ledger_birthday_bonus_per_year;
