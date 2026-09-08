@@ -6,6 +6,8 @@ import * as rewardsCreditService from '../rewards-credit/rewards-credit.service'
 import * as pricingService from '../pricing/pricing.service'
 import * as deliveriesService from '../deliveries/deliveries.service'
 import { generateAndUploadQuotationPdf } from '../../services/pdf.service'
+import { sendEmail } from '../../services/email/email.service'
+import { quoteReadyEmail } from '../../services/email/templates/delivery.templates'
 import type { UserRole } from '../../middleware/auth.middleware'
 import type { CreateDeliveryDto } from '../deliveries/deliveries.schema'
 import type {
@@ -30,6 +32,51 @@ function notifyUser(
     .catch(() => undefined)
 }
 
+// "Your Quote Is Ready" email — corporate customers only (per the client's
+// event matrix; residential quotations do not trigger this mail). No email
+// provider is wired yet, so this drives the no-op dispatcher today. Never
+// throws.
+function sendQuoteReadyEmail(quotation: {
+  id: string
+  profile_id: string
+  load_id: string | null
+  quotation_number?: unknown
+  customer_email?: unknown
+}): void {
+  void (async () => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', quotation.profile_id)
+      .maybeSingle()
+    if (profile?.role !== 'corporate') return
+
+    let recipient = (quotation.customer_email as string | null) ?? null
+    if (!recipient) {
+      try {
+        const { data } = await supabase.auth.admin.getUserById(quotation.profile_id)
+        recipient = data.user?.email ?? null
+      } catch {
+        recipient = null
+      }
+    }
+    if (!recipient) return
+
+    let identifier = (quotation.quotation_number as string | undefined) ?? ''
+    if (quotation.load_id) {
+      const { data: load } = await supabase
+        .from('shipments')
+        .select('load_number')
+        .eq('shipment_id', quotation.load_id)
+        .maybeSingle()
+      if (load?.load_number) identifier = load.load_number as string
+    }
+
+    const msg = quoteReadyEmail({ loadNumber: identifier, audience: 'corporate' })
+    void sendEmail({ to: recipient, subject: msg.subject, html: msg.html, text: msg.text }).catch(() => undefined)
+  })().catch(() => undefined)
+}
+
 function computeTotals(items: { quantity: number; unit_price: number }[], discount: number, taxRate: number) {
   const subtotal = items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0)
   const tax      = Math.round((subtotal - discount) * taxRate * 100) / 100
@@ -44,6 +91,7 @@ export async function listQuotations(
   callerRole: string,
   callerId: string,
   callerAccountId?: string | null,
+  ownScopedKeys?: string[],
 ) {
   const accountId    = callerRole === 'corporate' ? (callerAccountId ?? undefined) : undefined
   // Residential customers only ever see their own quotations (profile_id match) —
@@ -51,9 +99,13 @@ export async function listQuotations(
   // company's quotations system-wide (see [[customer_types]] "grep every module
   // for callerRole === 'corporate'" lesson — this module had the exact gap).
   const profileId     = callerRole === 'residential' ? callerId : undefined
+  // Own/assigned-only scope (admin_role_permissions.scope = 'own' on
+  // 'quotations.view') — restricts an admin to quotations linked to
+  // deliveries assigned to them (standalone quotations stay visible to all).
+  const employeeId = callerRole === 'admin' && ownScopedKeys?.includes('quotations.view') ? callerId : undefined
   // Customers never see internal drafts — only quotations that have been issued to them.
   const excludeDraft = callerRole === 'corporate' || callerRole === 'residential'
-  const { data, count, error } = await repo.findAll(query, accountId, undefined, excludeDraft, profileId)
+  const { data, count, error } = await repo.findAll(query, accountId, employeeId, excludeDraft, profileId)
   if (error) throw AppError.internal('Failed to fetch quotations', error)
   return { quotations: data ?? [], total: count ?? 0 }
 }
@@ -62,11 +114,13 @@ export async function getQuotationStats(
   callerRole: string,
   callerId: string,
   callerAccountId?: string | null,
+  ownScopedKeys?: string[],
 ) {
   const accountId    = callerRole === 'corporate' ? (callerAccountId ?? undefined) : undefined
   const profileId     = callerRole === 'residential' ? callerId : undefined
+  const employeeId = callerRole === 'admin' && ownScopedKeys?.includes('quotations.view') ? callerId : undefined
   const excludeDraft = callerRole === 'corporate' || callerRole === 'residential'
-  return repo.getStats(accountId, undefined, excludeDraft, profileId)
+  return repo.getStats(accountId, employeeId, excludeDraft, profileId)
 }
 
 export async function getQuotation(
@@ -166,7 +220,7 @@ export async function createQuotation(dto: CreateQuotationDto, createdBy: string
 
   if (dto.status === 'sent') {
     const quotationNumber = quotation.quotation_number as string
-    notifyUser(dto.profileId, 'quotation_sent', 'New quotation received', `Quotation ${quotationNumber} is ready for review.`, quotation.id)
+    notifyUser(dto.profileId, 'quotation_sent', 'Quote ready', `Your quote for ${quotationNumber} is ready for review.`, quotation.id)
     void notificationsService.notifyAllAdmins(
       'quotation_sent',
       'Quotation sent',
@@ -175,6 +229,13 @@ export async function createQuotation(dto: CreateQuotationDto, createdBy: string
       quotation.id,
       createdBy,
     )
+    sendQuoteReadyEmail({
+      id:               quotation.id as string,
+      profile_id:       dto.profileId,
+      load_id:          (quotation.load_id as string | null) ?? null,
+      quotation_number: quotation.quotation_number,
+      customer_email:   quotation.customer_email,
+    })
   }
 
   const { data: full } = await repo.findById(quotation.id)
@@ -509,7 +570,14 @@ export async function updateQuotation(
   // Only Draft → Sent is reachable here (see guard above) — Accepted/Rejected
   // notifications are fired from acceptQuotation/declineQuotation instead.
   if (dto.status === 'sent' && dto.status !== existing.status) {
-    notifyUser(existing.profile_id as string, 'quotation_sent', 'New quotation received', `Quotation ${quotationNumber} is ready for review.`, id)
+    notifyUser(existing.profile_id as string, 'quotation_sent', 'Quote ready', `Your quote for ${quotationNumber} is ready for review.`, id)
+    sendQuoteReadyEmail({
+      id:               id,
+      profile_id:       existing.profile_id as string,
+      load_id:          (existing.load_id as string | null) ?? null,
+      quotation_number: quotationNumber,
+      customer_email:   (updated.customer_email as string | null) ?? (existing.customer_email as string | null) ?? null,
+    })
   } else {
     // A non-status edit (pricing, items, addresses, etc.) — worth telling
     // the customer their quotation changed, and leadership either way.
