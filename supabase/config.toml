@@ -25,7 +25,7 @@ file_size_limit = "50MiB"
 
 [auth]
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+additional_redirect_urls = ["https://localhost:3000", "http://localhost:3000/auth/google/callback"]
 jwt_expiry = 3600
 enable_signup = true
 
@@ -33,3 +33,12 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# Google sign-in / sign-up (frontend: lib/google-auth.ts → /auth/google/callback).
+# Credentials come from a Google Cloud OAuth client; its authorised redirect URI
+# must be <supabase-url>/auth/v1/callback.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
