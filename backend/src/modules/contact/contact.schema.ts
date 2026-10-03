@@ -19,8 +19,14 @@ export const listContactMessagesQuerySchema = z.object({
   limit:  z.coerce.number().int().min(1).max(100).default(20),
   status: z.enum(CONTACT_MESSAGE_STATUSES).optional(),
   search: z.string().max(200).optional(),
+  archived: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
+})
+
+export const replyContactMessageSchema = z.object({
+  body: z.string().trim().min(1, 'Reply is required').max(5000),
 })
 
 export type SubmitContactMessageDto     = z.infer<typeof submitContactMessageSchema>
 export type UpdateContactMessageStatusDto = z.infer<typeof updateContactMessageStatusSchema>
+export type ReplyContactMessageDto = z.infer<typeof replyContactMessageSchema>
 export type ListContactMessagesQuery     = z.infer<typeof listContactMessagesQuerySchema>

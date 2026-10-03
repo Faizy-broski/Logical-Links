@@ -9,5 +9,8 @@ export const notificationsRouter = Router()
 
 notificationsRouter.get('/', authMiddleware, notificationsController.list)
 notificationsRouter.patch('/read', authMiddleware, validate(markReadSchema), notificationsController.markRead)
+notificationsRouter.patch('/archive', authMiddleware, validate(markReadSchema), notificationsController.archive)
+notificationsRouter.patch('/unarchive', authMiddleware, validate(markReadSchema), notificationsController.unarchive)
+notificationsRouter.delete('/', authMiddleware, validate(markReadSchema), notificationsController.remove)
 notificationsRouter.patch('/read-all', authMiddleware, notificationsController.markAllRead)
 notificationsRouter.post('/alerts', authMiddleware, requireAdmin, requirePermission('notifications.manage'), validate(createAlertSchema), notificationsController.createAlert)

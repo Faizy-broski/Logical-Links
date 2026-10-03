@@ -1,9 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, CheckCheck, Megaphone } from 'lucide-react'
+import { Archive, ArchiveRestore, Bell, CheckCheck, Megaphone, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useNotifications, useMarkNotificationsRead, useMarkAllNotificationsRead, type NotificationCategory } from '@/hooks/use-notifications'
+import {
+  useNotifications,
+  useMarkNotificationsRead,
+  useMarkAllNotificationsRead,
+  useArchiveNotifications,
+  useDeleteNotifications,
+  type NotificationCategory,
+} from '@/hooks/use-notifications'
 import { useAuthStore } from '@/store/auth.store'
 import { CreateAlertSheet } from './CreateAlertSheet'
 import { formatDate } from '@/lib/utils/format-date'
@@ -15,7 +22,15 @@ const SEVERITY_STYLES: Record<string, string> = {
   critical: 'bg-red-50 text-red-700 border-red-200',
 }
 
-type Tab = 'all' | 'unread' | NotificationCategory
+type Tab = 'all' | 'unread' | 'archived' | NotificationCategory
+
+const ARCHIVE_RETENTION_DAYS = 30
+
+function daysUntilPurge(archivedAt: string | null): number | null {
+  if (!archivedAt) return null
+  const purgeAt = new Date(archivedAt).getTime() + ARCHIVE_RETENTION_DAYS * 86_400_000
+  return Math.max(0, Math.ceil((purgeAt - Date.now()) / 86_400_000))
+}
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'all',        label: 'All Alerts' },
@@ -27,6 +42,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'account',    label: 'Account' },
   { id: 'team',       label: 'Team' },
   { id: 'operations', label: 'Operations' },
+  { id: 'archived',   label: 'Archived' },
 ]
 
 export function NotificationsView() {
@@ -36,10 +52,13 @@ export function NotificationsView() {
   const [createOpen, setCreateOpen] = useState(false)
 
   const unreadOnly = tab === 'unread'
-  const category = tab === 'all' || tab === 'unread' ? undefined : tab
+  const archived = tab === 'archived'
+  const category = tab === 'all' || tab === 'unread' || tab === 'archived' ? undefined : tab
 
-  const { data, isLoading } = useNotifications({ page, limit: 20, unreadOnly, category }, { poll: true })
+  const { data, isLoading } = useNotifications({ page, limit: 20, unreadOnly, category, archived }, { poll: true })
   const markRead    = useMarkNotificationsRead()
+  const archiveMut  = useArchiveNotifications()
+  const deleteMut   = useDeleteNotifications()
   const markAllRead = useMarkAllNotificationsRead()
 
   const notifications = data?.data ?? []
@@ -48,6 +67,24 @@ export function NotificationsView() {
 
   function handleMarkRead(id: string) {
     markRead.mutate([id], { onError: (err) => toast.error((err as Error).message) })
+  }
+
+  function handleArchive(id: string, next: boolean) {
+    archiveMut.mutate(
+      { ids: [id], archived: next },
+      {
+        onSuccess: () => toast.success(next ? 'Alert archived' : 'Alert restored'),
+        onError: (err) => toast.error((err as Error).message),
+      },
+    )
+  }
+
+  function handleDelete(id: string) {
+    if (!window.confirm('Permanently delete this alert? This cannot be undone.')) return
+    deleteMut.mutate([id], {
+      onSuccess: () => toast.success('Alert deleted'),
+      onError: (err) => toast.error((err as Error).message),
+    })
   }
 
   function handleMarkAllRead() {
@@ -124,7 +161,7 @@ export function NotificationsView() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
               <Bell className="h-6 w-6 text-primary" />
             </div>
-            <p className="text-sm text-muted">No alerts yet.</p>
+            <p className="text-sm text-muted">{archived ? 'No archived alerts.' : 'No alerts yet.'}</p>
           </div>
         ) : (
           <ul className="divide-y divide-card-border">
@@ -155,18 +192,45 @@ export function NotificationsView() {
                   {n.body && (
                     <p className="mt-0.5 text-sm text-muted">{n.body}</p>
                   )}
-                  <p className="mt-1 text-[11px] text-zinc-400">{formatDate(n.created_at)}</p>
+                  <p className="mt-1 text-[11px] text-zinc-400">
+                    {formatDate(n.created_at)}
+                    {archived && daysUntilPurge(n.archived_at) !== null && (
+                      <> · auto-deletes in {daysUntilPurge(n.archived_at)} day{daysUntilPurge(n.archived_at) === 1 ? '' : 's'}</>
+                    )}
+                  </p>
                 </div>
-                {!n.is_read && (
+                <div className="flex shrink-0 items-center gap-1">
+                  {!n.is_read && !archived && (
+                    <button
+                      type="button"
+                      onClick={() => handleMarkRead(n.notification_id)}
+                      disabled={markRead.isPending}
+                      className="rounded-lg px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                    >
+                      Mark read
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => handleMarkRead(n.notification_id)}
-                    disabled={markRead.isPending}
-                    className="shrink-0 rounded-lg px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                    title={archived ? 'Restore' : 'Archive'}
+                    aria-label={archived ? 'Restore alert' : 'Archive alert'}
+                    onClick={() => handleArchive(n.notification_id, !archived)}
+                    disabled={archiveMut.isPending}
+                    className="rounded-lg p-1.5 text-muted transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
                   >
-                    Mark read
+                    {archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    title="Delete"
+                    aria-label="Delete alert"
+                    onClick={() => handleDelete(n.notification_id)}
+                    disabled={deleteMut.isPending}
+                    className="rounded-lg p-1.5 text-muted transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

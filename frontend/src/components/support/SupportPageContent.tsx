@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { PlusCircle, Phone, Mail, LifeBuoy, ChevronDown, ChevronUp } from "lucide-react";
 import { DataTable } from "@/components/deliveries/deliveries-table";
@@ -9,7 +9,9 @@ import { NewCaseDialog } from "@/components/support/new-case-dialog";
 import { CaseDetailsSheet } from "@/components/support/case-details-sheet";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
-import { useSupportCases } from "@/hooks/use-support";
+import { useCreateSupportCase, useSupportCases } from "@/hooks/use-support";
+import { takePendingSupport } from "@/lib/pending-intent";
+import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { usePermission } from "@/hooks/use-permission";
 import { KNOWLEDGE_BASE_ARTICLES } from "@/lib/knowledge-base";
@@ -58,6 +60,25 @@ export function SupportPageContent() {
 
   const { data: res, isLoading } = useSupportCases({ page: 1, limit: 50 });
   const cases = res?.data ?? [];
+
+  // A Customer Support request sent from the landing page before sign-in
+  // becomes a ticket now, and opens so the customer sees it and its status.
+  const createCase = useCreateSupportCase();
+  const pendingHandled = useRef(false);
+  useEffect(() => {
+    if (pendingHandled.current || isAdmin) return;
+    pendingHandled.current = true;
+    const draft = takePendingSupport();
+    if (!draft) return;
+    createCase
+      .mutateAsync(draft)
+      .then((created) => {
+        toast.success("Your support request has been logged as a ticket");
+        setActiveCaseId(created.data.case_id);
+      })
+      .catch((err) => toast.error((err as Error).message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   const columns: ColumnDef<SupportCase>[] = [
     {

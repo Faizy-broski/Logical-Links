@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { takePendingQuote, type QuoteDraft } from "@/lib/pending-intent";
 import { FileQuestion, MapPin, Loader2, PackageSearch, AlertCircle, History, Gift } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,42 @@ export default function ResidentialQuotationsPage() {
   const decideMut = useDecideResidentialQuote();
   const { data: pastQuotesRes, isLoading: pastQuotesLoading } = useQuotations({ sortBy: "created_at", sortDir: "desc", limit: 10 });
   const pastQuotes = pastQuotesRes?.data ?? [];
+
+
+  // A quote started on the landing page before sign-in (lib/pending-intent.ts)
+  // arrives here after login/register — prefill the form with it.
+  function applyDraft(draft: QuoteDraft) {
+    setCustomerName(draft.customerName);
+    
+    setCustomerEmail(draft.customerEmail);
+    setCustomerPhone(draft.customerPhone);
+    const toParts = (a: QuoteDraft["origin"]): AddressParts => ({
+      address: a.address, coords: { lat: a.lat, lng: a.lng }, city: a.city, state: a.state, postcode: a.postcode,
+    });
+    setOrigin(toParts(draft.origin));
+    setDestination(toParts(draft.destination));
+    setServiceType(draft.serviceType);
+    setServiceLevel(draft.serviceLevel);
+    setCargoDescription(draft.cargoDescription);
+    setPieces(draft.pieces);
+    setWeightKg(draft.weightKg);
+    setPreferredDeliveryDate(draft.preferredDeliveryDate);
+    setNotes(draft.notes);
+  }
+
+  // Residential quotes are only persisted when accepted/declined, so there is
+  // no "requested" quote to list — the landing-page details just prefill the form.
+  const pendingHandled = useRef(false);
+  useEffect(() => {
+    if (pendingHandled.current) return;
+    pendingHandled.current = true;
+    const draft = takePendingQuote();
+    if (draft) {
+      applyDraft(draft);
+      toast.success("We've filled in the quote you started — review it and get your price");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!meRes?.data) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, MapPin, Loader2, FileQuestion, PackageSearch, AlertCircle } from "lucide-react";
@@ -23,6 +23,7 @@ import { useCalculatePrice } from "@/hooks/use-pricing";
 import { useMe } from "@/hooks/use-users";
 import { useMyProfile } from "@/hooks/use-accounts";
 import { useRequestCorporateQuote, useDecideCorporateQuote } from "@/hooks/use-quotations";
+import { takePendingQuote, type QuoteDraft } from "@/lib/pending-intent";
 import type { CorporateQuoteRequestDto, DecideAutoQuoteDto, PriceBreakdown } from "@/types/api.types";
 
 type AddressParts = { address: string; coords: Coordinates | null; city: string; state: string; postcode: string };
@@ -78,6 +79,70 @@ export default function RequestCorporateQuotePage() {
   const requestMut  = useRequestCorporateQuote();
   const calculateMut = useCalculatePrice();
   const decideMut    = useDecideCorporateQuote();
+
+
+  // A quote started on the landing page before sign-in (lib/pending-intent.ts)
+  // arrives here after login/register — prefill the form with it.
+  function applyDraft(draft: QuoteDraft) {
+    setCustomerName(draft.customerName);
+    setCustomerCompany(draft.customerCompany);
+    setCustomerEmail(draft.customerEmail);
+    setCustomerPhone(draft.customerPhone);
+    const toParts = (a: QuoteDraft["origin"]): AddressParts => ({
+      address: a.address, coords: { lat: a.lat, lng: a.lng }, city: a.city, state: a.state, postcode: a.postcode,
+    });
+    setOrigin(toParts(draft.origin));
+    setDestination(toParts(draft.destination));
+    setServiceType(draft.serviceType);
+    setServiceLevel(draft.serviceLevel);
+    setCargoDescription(draft.cargoDescription);
+    setPieces(draft.pieces);
+    setWeightKg(draft.weightKg);
+    setPreferredDeliveryDate(draft.preferredDeliveryDate);
+    setNotes(draft.notes);
+  }
+
+  // Corporate: the visitor already supplied everything, so submit it as a
+  // quote request straight away and open it in the quotations list. If that
+  // isn't possible (e.g. not a company admin) the prefilled form is left to edit.
+  const pendingHandled = useRef(false);
+  useEffect(() => {
+    if (pendingHandled.current) return;
+    pendingHandled.current = true;
+    const draft = takePendingQuote();
+    if (!draft) return;
+    applyDraft(draft);
+
+    const toFields = (a: QuoteDraft["origin"]) => ({ address: a.address, lat: a.lat, lng: a.lng, city: a.city, state: a.state, postcode: a.postcode });
+    const o = toFields(draft.origin);
+    const d = toFields(draft.destination);
+    const dto: CorporateQuoteRequestDto = {
+      customerName: draft.customerName,
+      customerCompany: draft.customerCompany || null,
+      customerEmail: draft.customerEmail,
+      customerPhone: draft.customerPhone,
+      originAddress: o.address, originLat: o.lat, originLng: o.lng,
+      originCity: o.city, originState: o.state, originPostcode: o.postcode,
+      destinationAddress: d.address, destinationLat: d.lat, destinationLng: d.lng,
+      destinationCity: d.city, destinationState: d.state, destinationPostcode: d.postcode,
+      serviceType: draft.serviceType, serviceLevel: draft.serviceLevel,
+      cargoDescription: draft.cargoDescription,
+      pieces: Number(draft.pieces), weightKg: Number(draft.weightKg),
+      preferredDeliveryDate: dateInputValueToIso(draft.preferredDeliveryDate)!,
+      notes: draft.notes || null,
+      additionalChargeKeys: [],
+    };
+    requestMut
+      .mutateAsync(dto)
+      .then((res) => {
+        toast.success("Quote request submitted");
+        router.replace(`/corporate/quotations?details=${res.data.id}`);
+      })
+      .catch((err) => {
+        toast.error(`We couldn't submit your quote automatically: ${(err as Error).message}`);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!meRes?.data) return;

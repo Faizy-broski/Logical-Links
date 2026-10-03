@@ -11,7 +11,8 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
     const category = typeof categoryParam === 'string' && categoryParam in NOTIFICATION_CATEGORIES
       ? (categoryParam as NotificationCategory)
       : undefined
-    const result = await notificationsService.getMyNotifications(req.user!.id, page, limit, unreadOnly, category)
+    const archived = req.query['archived'] === 'true'
+    const result = await notificationsService.getMyNotifications(req.user!.id, page, limit, unreadOnly, category, archived)
     res.status(200).json({
       success: true,
       data: result.notifications,
@@ -50,6 +51,33 @@ export async function createAlert(req: Request, res: Response, next: NextFunctio
   try {
     const result = await notificationsService.createAlert(req.body as CreateAlertDto)
     ok(res, result, `Alert sent to ${result.sent} recipient${result.sent === 1 ? '' : 's'}`)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function archive(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await notificationsService.archive(req.body as MarkReadDto, req.user!.id)
+    noContent(res)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function unarchive(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await notificationsService.unarchive(req.body as MarkReadDto, req.user!.id)
+    noContent(res)
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await notificationsService.remove(req.body as MarkReadDto, req.user!.id)
+    noContent(res)
   } catch (err) {
     next(err)
   }

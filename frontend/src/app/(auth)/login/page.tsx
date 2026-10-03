@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { api, type ApiResponse } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
-import { dashboardPathForRole } from '@/lib/utils/dashboard-path'
+import { postAuthPath } from '@/lib/pending-intent'
 import type { LoginResult } from '@/types/api.types'
 import GoogleButton, { AuthDivider } from '@/components/auth/GoogleButton'
 import { takePendingMfaChallenge } from '@/lib/google-auth'
@@ -27,7 +27,7 @@ function LoginForm() {
   useEffect(() => {
     if (!_hasHydrated) return
     if (isAuthenticated && user) {
-      router.replace(dashboardPathForRole(user.role))
+      router.replace(postAuthPath(user.role))
     }
   }, [isAuthenticated, user, _hasHydrated, router])
 
@@ -53,7 +53,7 @@ function LoginForm() {
     const { accessToken, refreshToken, expiresIn, user } = res.data
     setAuth({ accessToken, refreshToken, expiresIn, user })
 
-    router.push(dashboardPathForRole(user.role))
+    router.push(postAuthPath(user.role))
     router.refresh()
   }
 

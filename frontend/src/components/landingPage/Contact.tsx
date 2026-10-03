@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
@@ -14,6 +16,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuoteGate } from "@/hooks/use-quote-gate";
+import { useDeliveryRates } from "@/hooks/use-delivery-rates";
+import { useServiceLevels } from "@/hooks/use-service-levels";
+import { useAuthStore } from "@/store/auth.store";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import {
+  geocodeAddressFull,
+  type AddressSuggestion,
+  type Coordinates,
+} from "@/lib/utils/geocode";
+import { clearPendingQuote, quotePathForRole, writePendingQuote, writePendingSupport } from "@/lib/pending-intent";
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 import {
   CONTACT_OPEN_EVENT,
@@ -85,7 +97,7 @@ export default function Contact() {
       />
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
-        <div className="grid w-full items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-0">
+        <div className="grid w-full items-stretch gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-0">
           {/* Options column — sits on top so the chosen form slides out from
               underneath its edge, like the nav on the Services page. */}
           <motion.div
@@ -122,7 +134,7 @@ export default function Contact() {
 
           {/* Form column — the selected form slides out from the options
               column; overflow is clipped so it emerges from the seam. */}
-          <div className="relative z-10 overflow-hidden lg:min-h-[640px]">
+          <div className="relative z-10 overflow-hidden">
             <AnimatePresence mode="wait">
               {active && (
                 <motion.div
@@ -131,7 +143,7 @@ export default function Contact() {
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: "-100%", opacity: 0 }}
                   transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-full rounded-sm border border-white/30 bg-white/10 p-8 backdrop-blur-xl"
+                  className="flex min-h-full w-full flex-col rounded-sm border border-white/30 bg-white/10 p-8 backdrop-blur-xl"
                 >
                   {active === "quote" ? (
                     <QuoteForm />
@@ -194,39 +206,215 @@ function OptionCard({
   );
 }
 
+type QuoteAddress = {
+  address: string;
+  coords: Coordinates | null;
+  city: string;
+  state: string;
+  postcode: string;
+};
+
+const EMPTY_ADDRESS: QuoteAddress = { address: "", coords: null, city: "", state: "", postcode: "" };
+
+const SELECT_CLASS =
+  "h-9 w-full rounded-xs border border-white/10 bg-white px-3 text-sm text-black outline-none focus:border-primary";
+
+// Collects the same fields as the dashboard quote request. Nothing is sent from
+// here: the draft is stashed and the dashboard quote page (corporate: submits it
+// as a quote request; residential: prefills the instant quote) takes over after
+// sign-in, so the visitor lands on the Get a Quote page with it already there.
 function QuoteForm() {
   const requestQuote = useQuoteGate();
+  const router = useRouter();
+  const role = useAuthStore((s) => s.user?.role);
+
+  const { data: ratesRes } = useDeliveryRates();
+  const rates = (ratesRes?.data ?? []).filter((r) => r.is_active);
+  const { data: levelsRes } = useServiceLevels();
+  const levels = (levelsRes?.data ?? []).filter((l) => l.is_active);
+
+  const [customerName, setCustomerName] = useState("");
+  const [customerCompany, setCustomerCompany] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [origin, setOrigin] = useState<QuoteAddress>(EMPTY_ADDRESS);
+  const [destination, setDestination] = useState<QuoteAddress>(EMPTY_ADDRESS);
+  const [serviceType, setServiceType] = useState("");
+  const [serviceLevel, setServiceLevel] = useState("");
+  const [cargoDescription, setCargoDescription] = useState("");
+  const [pieces, setPieces] = useState("");
+  const [weightKg, setWeightKg] = useState("");
+  const [preferredDeliveryDate, setPreferredDeliveryDate] = useState("");
+  const [notes, setNotes] = useState("");
+  const [geocoding, setGeocoding] = useState<"origin" | "destination" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!serviceLevel && levels.length > 0) {
+      setServiceLevel((levels.find((l) => l.slug === "standard") ?? levels[0]).slug);
+    }
+  }, [levels, serviceLevel]);
+
+  async function handleAddressBlur(field: "origin" | "destination", address: string) {
+    if (!address.trim()) return;
+    setGeocoding(field);
+    const result = await geocodeAddressFull(address);
+    const setter = field === "origin" ? setOrigin : setDestination;
+    setter((prev) => ({
+      ...prev,
+      coords: result?.center ?? prev.coords,
+      city: prev.city || result?.context?.city || "",
+      state: prev.state || result?.context?.region || "",
+      postcode: prev.postcode || result?.context?.postcode || "",
+    }));
+    setGeocoding(null);
+  }
+
+  function handleAddressSelect(field: "origin" | "destination", suggestion: AddressSuggestion) {
+    const setter = field === "origin" ? setOrigin : setDestination;
+    setter({
+      address: suggestion.placeName,
+      coords: suggestion.center,
+      city: suggestion.context?.city ?? "",
+      state: suggestion.context?.region ?? "",
+      postcode: suggestion.context?.postcode ?? "",
+    });
+  }
+
+  function firstProblem(): string | null {
+    if (!customerName.trim()) return "Enter a contact name";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) return "Enter a valid email address";
+    if (!customerPhone.trim()) return "Enter a phone number";
+    for (const [label, a] of [["pickup", origin], ["delivery", destination]] as const) {
+      if (!a.address) return `Enter a ${label} address`;
+      if (!a.coords || !a.city || !a.state || !a.postcode) {
+        return `The ${label} address isn't fully recognised — pick it from the suggestions`;
+      }
+    }
+    if (!serviceType) return "Choose a service type";
+    if (!serviceLevel) return "Choose a service level";
+    if (cargoDescription.trim().length < 3) return "Describe what needs to be shipped";
+    if (!(Number(pieces) >= 1)) return "Enter the number of packages";
+    if (!(Number(weightKg) > 0)) return "Enter the weight";
+    if (!preferredDeliveryDate) return "Choose a preferred delivery date";
+    return null;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const problem = firstProblem();
+    setError(problem);
+    if (problem) return;
+
+    const toDraftAddress = (a: QuoteAddress) => ({
+      address: a.address,
+      lat: a.coords!.lat,
+      lng: a.coords!.lng,
+      city: a.city,
+      state: a.state,
+      postcode: a.postcode,
+    });
+
+    writePendingQuote({
+      customerName: customerName.trim(),
+      customerCompany: customerCompany.trim(),
+      customerEmail: customerEmail.trim(),
+      customerPhone: customerPhone.trim(),
+      origin: toDraftAddress(origin),
+      destination: toDraftAddress(destination),
+      serviceType,
+      serviceLevel,
+      cargoDescription: cargoDescription.trim(),
+      pieces,
+      weightKg,
+      preferredDeliveryDate,
+      notes: notes.trim(),
+    });
+
+    // Not signed in → /login (then straight to the quote page afterwards).
+    // Signed in → go there now. Admins have no quote page; drop the stash.
+    requestQuote(() => {
+      const path = quotePathForRole(role);
+      if (path) router.push(path);
+      else clearPendingQuote();
+    });
+  }
 
   return (
     <>
       <p className="text-2xl font-semibold text-white">Get Your Quote</p>
       <p className="mt-2 text-sm text-white/70">
-        Tell us about your FTL, dedicated trucking, or RUSH delivery needs and
-        we&apos;ll get back to you within 24 hours.
+        Tell us about your shipment and we&apos;ll take you straight to your
+        quote once you&apos;re signed in.
       </p>
 
-      <form
-        className="mt-8 space-y-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          requestQuote(() => {});
-        }}
-      >
+      <form className="mt-8 space-y-4" onSubmit={handleSubmit} noValidate>
         <div className="grid gap-4 md:grid-cols-2">
-          <Input placeholder="First Name" className={FIELD_CLASS} />
-          <Input placeholder="Last Name" className={FIELD_CLASS} />
+          <Input placeholder="Contact Name" className={FIELD_CLASS} value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          <Input placeholder="Company (optional)" className={FIELD_CLASS} value={customerCompany} onChange={(e) => setCustomerCompany(e.target.value)} />
         </div>
-        <Input placeholder="Email Address" type="email" className={FIELD_CLASS} />
-        <Input placeholder="Company Name" className={FIELD_CLASS} />
         <div className="grid gap-4 md:grid-cols-2">
-          <Input placeholder="Service Type" className={FIELD_CLASS} />
-          <Input placeholder="Package Volume" className={FIELD_CLASS} />
+          <Input placeholder="Email Address" type="email" className={FIELD_CLASS} value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+          <Input placeholder="Phone Number" type="tel" className={FIELD_CLASS} value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
         </div>
-        <Textarea
-          placeholder="Tell us about your logistics needs..."
-          className={`min-h-30 ${FIELD_CLASS}`}
+
+        <AddressAutocomplete
+          value={origin.address}
+          onChange={(v) => setOrigin((prev) => ({ ...prev, address: v }))}
+          onBlur={() => handleAddressBlur("origin", origin.address)}
+          onSelect={(sg) => handleAddressSelect("origin", sg)}
+          placeholder="Pickup address"
         />
+        <AddressAutocomplete
+          value={destination.address}
+          onChange={(v) => setDestination((prev) => ({ ...prev, address: v }))}
+          onBlur={() => handleAddressBlur("destination", destination.address)}
+          onSelect={(sg) => handleAddressSelect("destination", sg)}
+          placeholder="Delivery address"
+        />
+        {geocoding && (
+          <p className="text-xs text-white/60">Locating {geocoding} address…</p>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <select aria-label="Service Type" className={SELECT_CLASS} value={serviceType} onChange={(e) => setServiceType(e.target.value)}>
+            <option value="">Service Type</option>
+            {rates.map((r) => (
+              <option key={r.service_type} value={r.service_type}>{r.label}</option>
+            ))}
+          </select>
+          <select aria-label="Service Level" className={SELECT_CLASS} value={serviceLevel} onChange={(e) => setServiceLevel(e.target.value)}>
+            <option value="">Service Level</option>
+            {levels.map((l) => (
+              <option key={l.slug} value={l.slug}>{l.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <Textarea
+          placeholder="What needs to be shipped?"
+          className={`min-h-20 ${FIELD_CLASS}`}
+          value={cargoDescription}
+          onChange={(e) => setCargoDescription(e.target.value)}
+        />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Input placeholder="Packages" type="number" min={1} step={1} className={FIELD_CLASS} value={pieces} onChange={(e) => setPieces(e.target.value)} />
+          <Input placeholder="Weight (kg)" type="number" min={0.1} step={0.1} className={FIELD_CLASS} value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
+          <Input aria-label="Preferred Delivery Date" type="date" className={FIELD_CLASS} value={preferredDeliveryDate} onChange={(e) => setPreferredDeliveryDate(e.target.value)} />
+        </div>
+
+        <Textarea
+          placeholder="Special instructions (optional)"
+          className={`min-h-16 ${FIELD_CLASS}`}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+
+        {error && <p className="text-sm text-red-300">{error}</p>}
+
         <Button
+          type="submit"
           size="lg"
           className="h-12 w-full bg-primary font-semibold text-white hover:bg-primary-dark"
         >
@@ -325,6 +513,13 @@ function MessageForm({ kind }: { kind: "support" | "inquiry" }) {
         subject: detail ? `${copy.subjectPrefix}: ${detail}` : copy.subjectPrefix,
         message: form.message.trim(),
       });
+      // Support requests can be turned into a trackable ticket after sign-in.
+      if (kind === "support") {
+        writePendingSupport({
+          subject: detail ? `${copy.subjectPrefix}: ${detail}` : copy.subjectPrefix,
+          description: form.message.trim(),
+        });
+      }
       setSubmitted(true);
       setForm(EMPTY_MESSAGE_FORM);
     } catch (err) {
@@ -348,6 +543,14 @@ function MessageForm({ kind }: { kind: "support" | "inquiry" }) {
         <p className="max-w-xs text-sm text-white/70">
           Thanks for reaching out — our team will get back to you shortly.
         </p>
+        {kind === "support" && (
+          <p className="max-w-xs text-sm text-white/70">
+            <Link href="/login" className="font-semibold text-primary underline">
+              Sign in
+            </Link>{" "}
+            to track this request as a support ticket in your dashboard.
+          </p>
+        )}
         <Button
           type="button"
           variant="outline"
@@ -365,7 +568,11 @@ function MessageForm({ kind }: { kind: "support" | "inquiry" }) {
       <p className="text-2xl font-semibold text-white">{copy.title}</p>
       <p className="mt-2 text-sm text-white/70">{copy.intro}</p>
 
-      <form className="mt-8 space-y-4" onSubmit={handleSubmit} noValidate>
+      <form
+        className="mt-8 flex flex-1 flex-col gap-4"
+        onSubmit={handleSubmit}
+        noValidate
+      >
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <Input
@@ -417,10 +624,10 @@ function MessageForm({ kind }: { kind: "support" | "inquiry" }) {
           </div>
         )}
 
-        <div>
+        <div className="flex flex-1 flex-col">
           <Textarea
             placeholder={copy.messagePlaceholder}
-            className={`min-h-30 ${FIELD_CLASS}`}
+            className={`min-h-30 flex-1 ${FIELD_CLASS}`}
             value={form.message}
             onChange={(e) => update("message", e.target.value)}
           />

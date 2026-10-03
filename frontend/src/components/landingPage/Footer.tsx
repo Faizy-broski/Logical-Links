@@ -403,12 +403,13 @@ const services = [
   { label: "Full Truckload (FTL)", href: "/services#ftl" },
   { label: "Less Than Truckload (LTL)", href: "/services#ltl" },
   { label: "Dedicated Freight", href: "/services#dedicated" },
-  { label: "Special & Heavy Transport", href: "/services#heavy" },
-  { label: "Auto Haul", href: "/services#auto" },
-  { label: "Courier & Last-Mile Delivery", href: "/services#courier" },
-  { label: "Medical Delivery", href: "/services#medics" },
+  { label: "Specialty & Heavy Transport", href: "/services#heavy" },
+  { label: "Auto Transport", href: "/services#auto" },
+  { label: "RUHSH | Courier", href: "/services#courier" },
+  { label: "RUHSH | Medical", href: "/services#medics" },
+  { label: "RUHSH | E-Commerce Delivery", href: "/services#ecommerce" },
   { label: "Air Freight", href: "/services#air" },
-  { label: "Logistics Consulting", href: "/services#consultancy" },
+  { label: "Consultancy & Advisory Services", href: "/services#consultancy" },
 ];
 
 const company = [

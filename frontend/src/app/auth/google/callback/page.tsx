@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { api, type ApiResponse } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth.store";
-import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
+import { postAuthPath } from "@/lib/pending-intent";
 import { savePendingGoogleSignup, savePendingMfaChallenge } from "@/lib/google-auth";
 import type { GoogleAuthResult } from "@/types/api.types";
 
@@ -85,7 +85,7 @@ export default function GoogleCallbackPage() {
 
       const { accessToken, refreshToken, expiresIn, user } = result;
       setAuth({ accessToken, refreshToken, expiresIn, user });
-      router.replace(dashboardPathForRole(user.role));
+      router.replace(postAuthPath(user.role));
       router.refresh();
     })();
   }, [router, setAuth]);

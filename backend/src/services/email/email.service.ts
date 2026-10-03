@@ -17,6 +17,7 @@ export type EmailMessage = {
   subject: string
   html:    string
   text:    string
+  replyTo?: string
 }
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null
@@ -41,6 +42,7 @@ export async function sendEmail(message: EmailMessage): Promise<void> {
     subject: message.subject,
     html:    message.html,
     text:    message.text,
+    ...(message.replyTo && { replyTo: message.replyTo }),
   })
 
   if (error) {

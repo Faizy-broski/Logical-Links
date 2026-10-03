@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
-import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
+import { postAuthPath } from "@/lib/pending-intent";
 import GoogleButton, { AuthDivider } from "@/components/auth/GoogleButton";
 import {
   clearPendingGoogleSignup,
@@ -245,7 +245,7 @@ export default function RegisterPage() {
         user:         res.data.user,
       });
 
-      router.push(dashboardPathForRole(res.data.user.role));
+      router.push(postAuthPath(res.data.user.role));
     } catch (err) {
       if (err instanceof ApiError) {
         // Map backend error codes to field-level errors where possible

@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Mail, X } from "lucide-react";
+import { Archive, ArchiveRestore, Mail, Send, X } from "lucide-react";
+import { toast } from "sonner";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 import { ContactMessageStatusBadge } from "@/components/documents/document-status-badge";
 import { Sheet } from "@/components/ui/sheet";
 import { usePermission } from "@/hooks/use-permission";
-import { useContactMessages, useUpdateContactMessageStatus } from "@/hooks/use-contact";
+import {
+  useArchiveContactMessage,
+  useContactMessage,
+  useContactMessages,
+  useReplyToContactMessage,
+  useUpdateContactMessageStatus,
+} from "@/hooks/use-contact";
 import {
   CONTACT_MESSAGE_STATUS_LABELS,
   type ContactMessage,
@@ -32,6 +39,41 @@ function MessageDetailsSheet({
   canReply: boolean;
 }) {
   const statusMut = useUpdateContactMessageStatus();
+  const replyMut = useReplyToContactMessage();
+  const archiveMut = useArchiveContactMessage();
+  const [replyText, setReplyText] = useState("");
+  const { data: detailRes } = useContactMessage(message?.id ?? null);
+  const replies = detailRes?.data?.replies ?? [];
+  // The list row can be stale after a status/archive change; prefer fresh detail.
+  const current = detailRes?.data ?? message;
+
+  function handleSend() {
+    if (!message || !replyText.trim()) return;
+    replyMut.mutate(
+      { id: message.id, body: replyText.trim() },
+      {
+        onSuccess: () => {
+          setReplyText("");
+          toast.success(`Reply sent to ${message.email}`);
+        },
+        onError: (err) => toast.error((err as Error).message),
+      },
+    );
+  }
+
+  function handleArchive(archived: boolean) {
+    if (!message) return;
+    archiveMut.mutate(
+      { id: message.id, archived },
+      {
+        onSuccess: () => {
+          toast.success(archived ? "Message archived" : "Message restored");
+          onClose();
+        },
+        onError: (err) => toast.error((err as Error).message),
+      },
+    );
+  }
 
   return (
     <Sheet open={!!message} onClose={onClose} size="lg">
@@ -61,7 +103,7 @@ function MessageDetailsSheet({
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted">Status</p>
-                <div className="mt-1"><ContactMessageStatusBadge status={message.status} /></div>
+                <div className="mt-1"><ContactMessageStatusBadge status={(current ?? message).status} /></div>
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted">Email</p>
@@ -84,6 +126,44 @@ function MessageDetailsSheet({
               </p>
             </div>
 
+            {replies.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Replies</p>
+                {replies.map((r) => (
+                  <div key={r.id} className="rounded-xl border border-card-border bg-card-border/10 p-4">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{r.body}</p>
+                    <p className="mt-2 text-[11px] text-muted">
+                      {fmtDateTime(r.created_at)} ·{" "}
+                      {r.email_status === "sent" ? "Emailed to customer" : `Email failed${r.email_error ? `: ${r.email_error}` : ""}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {canReply && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Reply to {message.email}</p>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={5}
+                  maxLength={5000}
+                  placeholder="Type your response — it will be emailed to the customer."
+                  className="mt-2 w-full rounded-xl border border-card-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={replyMut.isPending || !replyText.trim()}
+                  className="mt-2 flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-sidebar transition-colors hover:bg-primary/85 disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                  {replyMut.isPending ? "Sending…" : "Send Reply"}
+                </button>
+              </div>
+            )}
+
             {canReply && (
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted">Update status</p>
@@ -92,10 +172,10 @@ function MessageDetailsSheet({
                     <button
                       key={s}
                       type="button"
-                      disabled={statusMut.isPending || s === message.status}
+                      disabled={statusMut.isPending || s === (current ?? message).status}
                       onClick={() => statusMut.mutate({ id: message.id, dto: { status: s } })}
                       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default ${
-                        s === message.status
+                        s === (current ?? message).status
                           ? "border-primary bg-primary/10 text-primary"
                           : "border-card-border text-muted hover:bg-card-border/30"
                       }`}
@@ -104,6 +184,36 @@ function MessageDetailsSheet({
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {canReply && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">Archive</p>
+                {(current ?? message).archived_at ? (
+                  <button
+                    type="button"
+                    onClick={() => handleArchive(false)}
+                    disabled={archiveMut.isPending}
+                    className="mt-2 flex items-center gap-2 rounded-xl border border-card-border px-4 py-2 text-sm font-medium text-foreground hover:bg-card-border/30 disabled:opacity-50"
+                  >
+                    <ArchiveRestore className="h-4 w-4" /> Restore to inbox
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleArchive(true)}
+                      disabled={archiveMut.isPending || (current ?? message).status !== "resolved"}
+                      className="mt-2 flex items-center gap-2 rounded-xl border border-card-border px-4 py-2 text-sm font-medium text-foreground hover:bg-card-border/30 disabled:opacity-50"
+                    >
+                      <Archive className="h-4 w-4" /> Archive
+                    </button>
+                    {(current ?? message).status !== "resolved" && (
+                      <p className="mt-1 text-xs text-muted">Mark the message as Resolved to archive it. Archived messages are kept, not deleted.</p>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -118,8 +228,9 @@ export default function AdminContactMessagesPage() {
   const canReply = usePermission("support.reply");
 
   const [activeMessage, setActiveMessage] = useState<ContactMessage | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
-  const { data: res, isLoading } = useContactMessages({ page: 1, limit: 50 });
+  const { data: res, isLoading } = useContactMessages({ page: 1, limit: 50, archived: showArchived });
   const messages = res?.data ?? [];
 
   const columns: ColumnDef<ContactMessage>[] = [
@@ -177,8 +288,25 @@ export default function AdminContactMessagesPage() {
           </p>
         </div>
 
+        <div className="flex gap-2">
+          {([false, true] as const).map((archived) => (
+            <button
+              key={String(archived)}
+              type="button"
+              onClick={() => setShowArchived(archived)}
+              className={`rounded-xl border px-4 py-1.5 text-sm font-medium transition-colors ${
+                showArchived === archived
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-card-border bg-card text-muted hover:bg-primary/5 hover:text-foreground"
+              }`}
+            >
+              {archived ? "Archived" : "Inbox"}
+            </button>
+          ))}
+        </div>
+
         <DataTable<ContactMessage>
-          title="Inbox"
+          title={showArchived ? "Archived" : "Inbox"}
           columns={columns}
           data={messages}
           isLoading={isLoading}

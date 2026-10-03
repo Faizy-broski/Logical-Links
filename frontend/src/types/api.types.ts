@@ -1445,9 +1445,22 @@ export type ContactMessage = {
   subject:    string;
   message:    string;
   status:     ContactMessageStatus;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export type ContactMessageReply = {
+  id:           string;
+  message_id:   string;
+  admin_id:     string | null;
+  body:         string;
+  email_status: "sent" | "failed";
+  email_error:  string | null;
+  created_at:   string;
+};
+
+export type ContactMessageWithReplies = ContactMessage & { replies: ContactMessageReply[] };
 
 export type SubmitContactMessageDto = {
   name:    string;
@@ -1466,4 +1479,5 @@ export type ListContactMessagesQuery = {
   limit?:  number;
   status?: ContactMessageStatus;
   search?: string;
+  archived?: boolean;
 };

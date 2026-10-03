@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
 const services = [
-  { id: "01", title: "LLC", image: "/s1.svg", href: "/llc" },
-  { id: "02", title: "SERVICES", image: "/s2.svg", href: "/services" },
-  { id: "03", title: "Access Hub", image: "/s3.svg", href: "/access-hub" },
+  { id: "01", title: "LLC", image: "/llc-card-1.jpg", position: "50% 30%", href: "/llc" },
+  { id: "02", title: "SERVICES", image: "/llc-card-2.jpg", position: "50% 55%", href: "/services" },
+  { id: "03", title: "Access Hub", image: "/llc-card-3.jpg", position: "50% 45%", href: "/access-hub" },
 ];
 
 const offerStatements = [
@@ -177,11 +177,13 @@ export default function Offerings() {
 
 function ServiceCard({
   image,
+  position,
   title,
   id,
   href,
 }: {
   image: string;
+  position: string;
   title: string;
   id: string;
   href: string;
@@ -197,6 +199,7 @@ function ServiceCard({
           alt={title}
           fill
           className="object-cover transition duration-500 group-hover:scale-105"
+          style={{ objectPosition: position }}
         />
         <div className="absolute left-5 right-5 top-3 flex items-center justify-between">
           <div className="flex p-1 items-center justify-center rounded-full border border-white/60 backdrop-blur-sm">

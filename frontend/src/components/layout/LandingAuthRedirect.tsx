@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
+import { postAuthPath } from "@/lib/pending-intent";
 
 /**
  * Drop into the root landing page to silently redirect authenticated users to
@@ -19,8 +20,7 @@ export default function LandingAuthRedirect() {
   useEffect(() => {
     if (!_hasHydrated) return;
     if (isAuthenticated && user) {
-      const dest = user.role === "admin" ? "/admin/dashboard" : "/corporate/dashboard";
-      router.replace(dest);
+      router.replace(postAuthPath(user.role));
     }
   }, [isAuthenticated, user, _hasHydrated, router]);
 

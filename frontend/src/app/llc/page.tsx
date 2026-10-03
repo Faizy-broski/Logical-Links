@@ -57,7 +57,7 @@ const pillars: Pillar[] = [
   {
     id: "vision",
     title: "Our Vision",
-    image: "/values-bg.svg",
+    image: "/vision.png",
     paragraphs: [
       "Our vision is to create a more connected, efficient, and dependable future for logistics and transportation.",
       "We aim to become a trusted partner for businesses and customers by combining technology, operational expertise, and customer-focused service to create smarter solutions for an evolving world.",
@@ -67,7 +67,7 @@ const pillars: Pillar[] = [
   {
     id: "values",
     title: "Our Values",
-    image: "/values.png",
+    image: "/value.png",
     paragraphs: [
       "Our values shape how we operate, how we serve our customers, and how we approach every movement we manage.",
     ],
@@ -106,7 +106,7 @@ export default function LLCPage() {
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="text-base sm:text-xl font-medium text-black max-w-xl"
           >
-            The company behind the gold standard in Canadian logistics.
+            Setting a higher standard in Canadian logistics.
           </motion.p>
         </section>
       </div>
@@ -157,10 +157,8 @@ export default function LLCPage() {
             solutions that work.
           </p>
           <p className="text-black leading-relaxed font-semibold">
-            Choose confidence. Choose innovation.
-          </p>
-          <p className="text-black leading-relaxed font-semibold">
-            Choose LLC &mdash; where reliability is built into every move.
+            Choose confidence, choose innovation, choose LLC &mdash; where
+            reliability is built into every move.
           </p>
 
           <Link

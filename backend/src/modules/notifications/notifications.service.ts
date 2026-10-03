@@ -10,9 +10,10 @@ export async function getMyNotifications(
   limit: number,
   unreadOnly: boolean,
   category?: NotificationCategory,
+  archived = false,
 ) {
   const types = category ? NOTIFICATION_CATEGORIES[category] : undefined
-  const { data, count, error } = await notificationsRepo.findByUser(userId, page, limit, unreadOnly, types, category)
+  const { data, count, error } = await notificationsRepo.findByUser(userId, page, limit, unreadOnly, types, category, archived)
   if (error) throw AppError.internal('Failed to fetch notifications', error)
 
   const { count: unreadCount } = await notificationsRepo.countUnread(userId)
@@ -41,6 +42,21 @@ export async function createNotification(dto: CreateNotificationDto) {
 export async function markRead(dto: MarkReadDto, userId: string) {
   const { error } = await notificationsRepo.markAsRead(dto.notificationIds, userId)
   if (error) throw AppError.internal('Failed to mark notifications as read', error)
+}
+
+export async function archive(dto: MarkReadDto, userId: string) {
+  const { error } = await notificationsRepo.setArchived(dto.notificationIds, userId, true)
+  if (error) throw AppError.internal('Failed to archive notifications', error)
+}
+
+export async function unarchive(dto: MarkReadDto, userId: string) {
+  const { error } = await notificationsRepo.setArchived(dto.notificationIds, userId, false)
+  if (error) throw AppError.internal('Failed to restore notifications', error)
+}
+
+export async function remove(dto: MarkReadDto, userId: string) {
+  const { error } = await notificationsRepo.deleteByIds(dto.notificationIds, userId)
+  if (error) throw AppError.internal('Failed to delete notifications', error)
 }
 
 export async function markAllRead(userId: string) {

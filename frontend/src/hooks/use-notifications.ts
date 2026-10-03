@@ -11,6 +11,7 @@ export type Notification = {
   entity_id: string | null;
   is_read: boolean;
   read_at: string | null;
+  archived_at: string | null;
   created_at: string;
   severity: "info" | "warning" | "critical" | null;
   category: NotificationCategory | null;
@@ -32,7 +33,7 @@ export type NotificationCategory = "deliveries" | "invoices" | "quotes" | "suppo
 
 const KEYS = {
   all:  ["notifications"] as const,
-  list: (q: { page?: number; limit?: number; unreadOnly?: boolean; category?: NotificationCategory }) =>
+  list: (q: { page?: number; limit?: number; unreadOnly?: boolean; category?: NotificationCategory; archived?: boolean }) =>
     ["notifications", "list", q] as const,
 };
 
@@ -45,7 +46,7 @@ const KEYS = {
 const REALTIME_POLL_MS = 15_000;
 
 export function useNotifications(
-  query: { page?: number; limit?: number; unreadOnly?: boolean; category?: NotificationCategory } = {},
+  query: { page?: number; limit?: number; unreadOnly?: boolean; category?: NotificationCategory; archived?: boolean } = {},
   options: { poll?: boolean } = {},
 ) {
   const params = new URLSearchParams();
@@ -53,6 +54,7 @@ export function useNotifications(
   if (query.limit)      params.set("limit", String(query.limit));
   if (query.unreadOnly) params.set("unreadOnly", "true");
   if (query.category)   params.set("category", query.category);
+  if (query.archived)   params.set("archived", "true");
   const qs = params.toString() ? `?${params.toString()}` : "";
 
   return useQuery({
@@ -77,6 +79,29 @@ export function useMarkNotificationsRead() {
   return useMutation({
     mutationFn: (ids: string[]) =>
       api.patch<ApiResponse<null>>("/api/v1/notifications/read", { notificationIds: ids }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+// Archive hides an alert (kept for 30 days, then auto-deleted); Delete removes
+// it immediately. Both are separate from Read.
+export function useArchiveNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, archived }: { ids: string[]; archived: boolean }) =>
+      api.patch<ApiResponse<null>>(
+        `/api/v1/notifications/${archived ? "archive" : "unarchive"}`,
+        { notificationIds: ids },
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+export function useDeleteNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      api.delete<ApiResponse<null>>("/api/v1/notifications", { notificationIds: ids }),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   });
 }
