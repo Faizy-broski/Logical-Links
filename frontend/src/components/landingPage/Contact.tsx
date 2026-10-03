@@ -287,8 +287,10 @@ function QuoteForm() {
     if (!customerPhone.trim()) return "Enter a phone number";
     for (const [label, a] of [["pickup", origin], ["delivery", destination]] as const) {
       if (!a.address) return `Enter a ${label} address`;
-      if (!a.coords || !a.city || !a.state || !a.postcode) {
-        return `The ${label} address isn't fully recognised — pick it from the suggestions`;
+      if (!a.coords) return `We couldn't locate the ${label} address — pick it from the suggestions`;
+      const missing = [!a.city && "city", !a.state && "province", !a.postcode && "postal code"].filter(Boolean);
+      if (missing.length > 0) {
+        return `The ${label} address is missing a ${missing.join(" and ")} — enter a full street address and pick it from the suggestions`;
       }
     }
     if (!serviceType) return "Choose a service type";
@@ -333,11 +335,14 @@ function QuoteForm() {
 
     // Not signed in → /login (then straight to the quote page afterwards).
     // Signed in → go there now. Admins have no quote page; drop the stash.
-    requestQuote(() => {
-      const path = quotePathForRole(role);
-      if (path) router.push(path);
-      else clearPendingQuote();
-    });
+    requestQuote(
+      () => {
+        const path = quotePathForRole(role);
+        if (path) router.push(path);
+        else clearPendingQuote();
+      },
+      "Your quote details are saved. Sign in or create an account to continue to your quote.",
+    );
   }
 
   return (

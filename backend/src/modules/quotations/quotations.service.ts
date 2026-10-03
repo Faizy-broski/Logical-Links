@@ -486,8 +486,15 @@ export async function updateQuotation(
 
   // Accepted/Rejected are recorded exclusively via the corporate's /accept and
   // /decline endpoints — this PATCH route is admin-only, so it may only move
-  // a quotation between Draft and Sent.
-  if (dto.status !== undefined && dto.status !== 'draft' && dto.status !== 'sent') {
+  // a quotation between Draft and Sent. Re-submitting the quotation's current
+  // status is a no-op (the editor posts it back unchanged, e.g. while pricing a
+  // 'requested' quote), so it is allowed.
+  if (
+    dto.status !== undefined &&
+    dto.status !== existing.status &&
+    dto.status !== 'draft' &&
+    dto.status !== 'sent'
+  ) {
     throw AppError.forbidden('Status can only be set to Draft or Sent here — Accepted/Declined are set by the corporate')
   }
 

@@ -11,12 +11,12 @@ export function useQuoteGate() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  return function requestQuote(onAuthenticated: () => void) {
+  return function requestQuote(
+    onAuthenticated: () => void,
+    unauthenticatedMessage = "You need to be logged in to request a quote.",
+  ) {
     if (!isAuthenticated) {
-      toastInfo(
-        "Login required",
-        "You need to be logged in to request a quote.",
-      );
+      toastInfo("Login required", unauthenticatedMessage);
       router.push("/login");
       return;
     }

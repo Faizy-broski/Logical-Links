@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginSchema } from '@/lib/validations/auth'
 import { api, type ApiResponse } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
-import { postAuthPath } from '@/lib/pending-intent'
+import { peekPendingQuote, postAuthPath } from '@/lib/pending-intent'
 import type { LoginResult } from '@/types/api.types'
 import GoogleButton, { AuthDivider } from '@/components/auth/GoogleButton'
 import { takePendingMfaChallenge } from '@/lib/google-auth'
@@ -35,6 +35,8 @@ function LoginForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof LoginSchema, string>>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [hasPendingQuote, setHasPendingQuote] = useState(false)
+  useEffect(() => setHasPendingQuote(!!peekPendingQuote()), [])
   const [error, setError] = useState<string | null>(null)
 
   // MFA challenge step — set once the password step reports mfaRequired.
@@ -192,6 +194,11 @@ function LoginForm() {
             <p className="mt-2 text-sm text-muted">
               Sign in to access your dashboard
             </p>
+            {hasPendingQuote && (
+              <p className="mt-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
+                Your quote request is saved. Sign in (or create an account) and we&apos;ll take you straight to it.
+              </p>
+            )}
           </div>
 
           <GoogleButton />
