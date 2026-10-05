@@ -179,8 +179,8 @@ export function CreateDeliverySheet({ open, onClose, context, presetCustomerId, 
       if (assignedDriverId) {
         try {
           await api.post<ApiResponse<Delivery>>(
-            `/api/v1/deliveries/${created.data.shipment_id}/assign-driver`,
-            { employeeId: assignedDriverId },
+            `/api/v1/deliveries/${created.data.shipment_id}/assign-employees`,
+            { employeeIds: [assignedDriverId] },
           );
         } catch (err) {
           toast.error(`Delivery created, but assigning the driver failed: ${(err as Error).message}`);
