@@ -59,10 +59,20 @@ export default function ResidentialCustomerDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  async function saveEdit(values: { fullName?: string; phone?: string }) {
+  async function saveEdit(values: { fullName?: string; phone?: string; email?: string }) {
     try {
       await updateMut.mutateAsync(values);
-      toast.success("Customer updated");
+      if (values.email) {
+        // Email the customer a link to choose a password (existing reset flow).
+        await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: values.email }),
+        }).catch(() => undefined);
+        toast.success(`Customer updated — a link to set a password was emailed to ${values.email}`);
+      } else {
+        toast.success("Customer updated");
+      }
       setEditOpen(false);
     } catch (err) {
       toast.error((err as Error).message);
@@ -267,6 +277,7 @@ export default function ResidentialCustomerDetailPage() {
         initial={{ fullName: customer?.fullName, phone: customer?.phone }}
         loading={updateMut.isPending}
         title="Edit customer"
+        showEmail={customer?.hasLogin === false}
       />
       <ConfirmDialog
         open={deleteOpen}

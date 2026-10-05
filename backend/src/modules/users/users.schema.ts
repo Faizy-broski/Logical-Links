@@ -3,6 +3,8 @@ import { z } from 'zod'
 export const updateProfileSchema = z.object({
   fullName: z.string().min(2).optional(),
   phone: z.string().optional(),
+  // Only honoured for a phone-only customer with no email yet (see updateProfile).
+  email: z.string().trim().email('Enter a valid email').max(320).optional(),
   avatarUrl: z.string().url().optional(),
   // YYYY-MM-DD — used only for the residential Rewards birthday bonus.
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date').optional(),

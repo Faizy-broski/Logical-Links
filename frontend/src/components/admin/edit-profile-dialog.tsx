@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type SaveValues = { fullName?: string; phone?: string; password?: string };
+type SaveValues = { fullName?: string; phone?: string; password?: string; email?: string };
 
 type Props = {
   open: boolean;
@@ -22,6 +22,8 @@ type Props = {
   initial: { fullName?: string | null; phone?: string | null };
   loading?: boolean;
   title?: string;
+  /** Show an optional email box (phone-only customers) so they can be given online access. */
+  showEmail?: boolean;
   /** Show a "Reset password" section (employees only, gated by employees.reset_password). */
   showPasswordReset?: boolean;
 };
@@ -43,9 +45,11 @@ export function EditProfileDialog({
   loading = false,
   title = "Edit profile",
   showPasswordReset = false,
+  showEmail = false,
 }: Props) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -54,6 +58,7 @@ export function EditProfileDialog({
     if (open) {
       setFullName(initial.fullName ?? "");
       setPhone(initial.phone ?? "");
+      setEmail("");
       setPassword("");
       setConfirm("");
       setShowPw(false);
@@ -73,6 +78,7 @@ export function EditProfileDialog({
       fullName: nameChanged ? fullName.trim() : undefined,
       phone: phoneChanged ? phone.trim() || undefined : undefined,
       password: showPasswordReset && password ? password : undefined,
+      email: showEmail && email.trim() ? email.trim() : undefined,
     });
   }
 
@@ -104,6 +110,23 @@ export function EditProfileDialog({
               placeholder="Optional"
             />
           </div>
+
+          {showEmail && (
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-profile-email">Email <span className="font-normal text-muted">(optional)</span></Label>
+              <Input
+                id="edit-profile-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="rounded-lg"
+                placeholder="Add so they can sign in online"
+              />
+              <p className="text-[11px] text-muted">
+                We&apos;ll email them a link to set a password. Leave blank for a phone-only customer.
+              </p>
+            </div>
+          )}
 
           {showPasswordReset && (
             <div className="space-y-2 rounded-xl border border-card-border bg-background/60 p-3">

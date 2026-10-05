@@ -50,6 +50,24 @@ export async function updateProfile(id: string, dto: UpdateProfileDto) {
     assertDateOfBirthValid(dto.dateOfBirth)
   }
 
+  // A phone-only customer (placeholder email) can be given a real email so
+  // they can sign in. Real emails are never changed through this path.
+  if (dto.email) {
+    const { data: current } = await supabase.auth.admin.getUserById(id)
+    if (!isPlaceholderEmail(current.user?.email)) {
+      throw AppError.badRequest('This customer already has an email')
+    }
+    const { error: emailError } = await supabase.auth.admin.updateUserById(id, {
+      email: dto.email,
+      email_confirm: true,
+    })
+    if (emailError) {
+      const msg = emailError.message.toLowerCase()
+      if (msg.includes('already')) throw AppError.conflict('A customer with this email already exists')
+      throw AppError.badRequest(emailError.message)
+    }
+  }
+
   const { data, error } = await usersRepo.updateById(id, {
     ...(dto.fullName !== undefined && { full_name: dto.fullName }),
     ...(dto.phone    !== undefined && { phone: dto.phone }),
