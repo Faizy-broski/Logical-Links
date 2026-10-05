@@ -154,6 +154,7 @@ export async function createAccount(dto: CreateAccountDto, createdBy: string) {
     contact_name:     dto.contactName,
     contact_email:    dto.contactEmail,
     contact_phone:    dto.contactPhone,
+    contact_phone_type: dto.contactPhoneType,
     address_line1:    dto.addressLine1,
     address_city:     dto.addressCity,
     address_state:    dto.addressState,
@@ -214,6 +215,7 @@ export async function updateAccount(id: string, dto: UpdateAccountDto, changedBy
   if (dto.contactName     !== undefined) updates.contact_name     = dto.contactName
   if (dto.contactEmail    !== undefined) updates.contact_email    = dto.contactEmail
   if (dto.contactPhone    !== undefined) updates.contact_phone    = dto.contactPhone
+  if (dto.contactPhoneType !== undefined) updates.contact_phone_type = blankToNull(dto.contactPhoneType)
   if (dto.addressLine1    !== undefined) updates.address_line1    = dto.addressLine1
   if (dto.addressCity     !== undefined) updates.address_city     = dto.addressCity
   if (dto.addressState    !== undefined) updates.address_state    = dto.addressState
@@ -481,6 +483,7 @@ export async function updateOwnCompany(userId: string, dto: UpdateOwnCompanyDto)
   if (dto.contactName           !== undefined) updates.contact_name           = dto.contactName
   if (dto.contactEmail          !== undefined) updates.contact_email          = blankToNull(dto.contactEmail)
   if (dto.contactPhone          !== undefined) updates.contact_phone          = dto.contactPhone
+  if (dto.contactPhoneType      !== undefined) updates.contact_phone_type     = blankToNull(dto.contactPhoneType)
   if (dto.billingEmail          !== undefined) updates.billing_email          = blankToNull(dto.billingEmail)
   if (dto.accountsPayableEmail  !== undefined) updates.accounts_payable_email = blankToNull(dto.accountsPayableEmail)
   if (dto.businessType          !== undefined) updates.business_type          = blankToNull(dto.businessType)

@@ -12,6 +12,7 @@ const ACCOUNT_SELECT = `
   contact_name,
   contact_email,
   contact_phone,
+  contact_phone_type,
   address_line1,
   address_city,
   address_state,

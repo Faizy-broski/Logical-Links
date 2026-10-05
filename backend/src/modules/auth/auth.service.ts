@@ -650,6 +650,7 @@ async function completeSignup(
       contact_name:     dto.fullName,
       contact_email:    email,
       contact_phone:    clean(dto.phone),
+      contact_phone_type: clean(dto.phoneType),
       billing_email:          clean(dto.billingEmail),
       accounts_payable_email: clean(dto.accountsPayableEmail),
     })

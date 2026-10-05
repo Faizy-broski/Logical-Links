@@ -9,6 +9,9 @@ import { z } from "zod";
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 import { useAuthStore } from "@/store/auth.store";
 import { postAuthPath } from "@/lib/pending-intent";
+import { CompanyOptionSelect } from "@/components/ui/company-option-select";
+import { ProvinceCitySelect } from "@/components/ui/province-city-select";
+import { ORGANIZATION_TYPES, PHONE_TYPES } from "@/lib/corporate-options";
 import GoogleButton, { AuthDivider } from "@/components/auth/GoogleButton";
 import {
   clearPendingGoogleSignup,
@@ -30,6 +33,7 @@ const profileFields = z.object({
     .min(7, "Phone number is too short")
     .regex(/^[0-9+()\-\s]+$/, "Invalid phone number format"),
   email: z.string().email("Invalid email address"),
+  phoneType: corpText,
   // Corporate company profile (parity with the admin review + company pages)
   businessType: corpText,
   industry: corpText,
@@ -130,6 +134,7 @@ export default function RegisterPage() {
     lastName: "",
     company: "",
     phone: "",
+    phoneType: "",
     businessType: "",
     industry: "",
     abn: "",
@@ -210,6 +215,7 @@ export default function RegisterPage() {
         phone: result.data.phone,
         ...(result.data.accountType === "corporate"
           ? {
+              phoneType:            result.data.phoneType,
               company:              result.data.company,
               businessType:         result.data.businessType,
               industry:             result.data.industry,
@@ -399,8 +405,9 @@ export default function RegisterPage() {
                     <IconInput icon={Briefcase} name="businessType" value={form.businessType ?? ""} onChange={handleChange} placeholder="e.g. Corporation" error={fieldErrors.businessType} />
                   </div>
                   <div>
-                    <FieldLabel>Industry</FieldLabel>
-                    <IconInput icon={Factory} name="industry" value={form.industry ?? ""} onChange={handleChange} placeholder="e.g. Logistics" error={fieldErrors.industry} />
+                    <FieldLabel>Organization Type</FieldLabel>
+                    <CompanyOptionSelect value={form.industry ?? ""} onChange={(v) => setForm((p) => ({ ...p, industry: v }))} options={ORGANIZATION_TYPES} placeholder="Select organization type" />
+                    {fieldErrors.industry && <p className="mt-1 text-xs text-danger">{fieldErrors.industry}</p>}
                   </div>
                 </div>
 
@@ -418,15 +425,16 @@ export default function RegisterPage() {
                 <div>
                   <FieldLabel>Business Address</FieldLabel>
                   <IconInput icon={MapPin} name="addressLine1" value={form.addressLine1 ?? ""} onChange={handleChange} placeholder="Street address" error={fieldErrors.addressLine1} />
+                  <ProvinceCitySelect
+                    province={form.addressState ?? ""}
+                    city={form.addressCity ?? ""}
+                    onProvinceChange={(v) => setForm((p) => ({ ...p, addressState: v }))}
+                    onCityChange={(v) => setForm((p) => ({ ...p, addressCity: v }))}
+                    labelClassName="sr-only"
+                    wrapperClassName="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2"
+                    error={{ province: fieldErrors.addressState, city: fieldErrors.addressCity }}
+                  />
                   <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <div>
-                      <input name="addressCity" value={form.addressCity ?? ""} onChange={handleChange} placeholder="City" className={plainInputCls} />
-                      {fieldErrors.addressCity && <p className="mt-1 text-xs text-danger">{fieldErrors.addressCity}</p>}
-                    </div>
-                    <div>
-                      <input name="addressState" value={form.addressState ?? ""} onChange={handleChange} placeholder="State / Province" className={plainInputCls} />
-                      {fieldErrors.addressState && <p className="mt-1 text-xs text-danger">{fieldErrors.addressState}</p>}
-                    </div>
                     <div>
                       <input name="addressPostcode" value={form.addressPostcode ?? ""} onChange={handleChange} placeholder="Postcode" className={plainInputCls} />
                       {fieldErrors.addressPostcode && <p className="mt-1 text-xs text-danger">{fieldErrors.addressPostcode}</p>}
@@ -469,6 +477,13 @@ export default function RegisterPage() {
               </div>
               {fieldErrors.phone && <p className="mt-1 text-xs text-danger">{fieldErrors.phone}</p>}
             </div>
+
+            {isCorporate && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">Phone Type</label>
+                <CompanyOptionSelect value={form.phoneType ?? ""} onChange={(v) => setForm((p) => ({ ...p, phoneType: v }))} options={PHONE_TYPES} placeholder="Select phone type" />
+              </div>
+            )}
 
             {/* Email */}
             <div>

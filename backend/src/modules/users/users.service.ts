@@ -4,13 +4,23 @@ import * as usersRepo from './users.repository'
 import * as notificationsService from '../notifications/notifications.service'
 import * as accountsService from '../accounts/accounts.service'
 import * as accountsRepo from '../accounts/accounts.repository'
-import type { UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
+import { randomBytes, randomUUID } from 'crypto'
+import type { CreateResidentialCustomerDto, UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
 
 // Maps a raw profiles row to the camelCase shape the frontend expects.
 // Email is not stored in profiles — callers should pass it when available,
 // otherwise it is omitted (undefined).
-function formatProfile(row: Record<string, unknown>, email?: string) {
+// Customers added by an admin without an email get a system-generated address
+// on a reserved, undeliverable domain (the account needs *some* email) and a
+// random password nobody knows — so they can never sign in. It is hidden
+// everywhere: the API reports email '' and hasLogin false.
+const NO_EMAIL_DOMAIN = '@no-email.invalid'
+const isPlaceholderEmail = (email?: string | null) => !!email && email.endsWith(NO_EMAIL_DOMAIN)
+
+function formatProfile(row: Record<string, unknown>, rawEmail?: string) {
+  const email = isPlaceholderEmail(rawEmail) ? '' : rawEmail
   return {
+    hasLogin:    !isPlaceholderEmail(rawEmail),
     id:          row.id as string,
     email:       email ?? (row.email as string | undefined) ?? '',
     role:        row.role as string,
@@ -221,4 +231,36 @@ export async function approveUser(id: string, dto: ApproveUserDto, adminId?: str
 
   const { data: authUser } = await supabase.auth.admin.getUserById(id)
   return formatProfile(data as Record<string, unknown>, authUser.user?.email)
+}
+
+// ── Admin: add a residential customer (phone bookings, no email needed) ──────
+export async function createResidentialCustomer(dto: CreateResidentialCustomerDto) {
+  const email = dto.email?.trim() ? dto.email.trim() : `phone-${randomUUID()}${NO_EMAIL_DOMAIN}`
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password: randomBytes(32).toString('hex'),
+    email_confirm: true,
+    user_metadata: { full_name: dto.fullName },
+  })
+  if (error || !data.user) {
+    const msg = (error?.message ?? '').toLowerCase()
+    if (msg.includes('already')) throw AppError.conflict('A customer with this email already exists')
+    throw AppError.badRequest(error?.message ?? 'Failed to create customer')
+  }
+
+  const userId = data.user.id
+  const { data: profile, error: profileError } = await usersRepo.updateById(userId, {
+    role:             'residential',
+    full_name:        dto.fullName,
+    phone:            dto.phone,
+    signup_completed: true,
+    updated_at:       new Date().toISOString(),
+  })
+  if (profileError || !profile) {
+    await supabase.auth.admin.deleteUser(userId).catch(() => undefined)
+    throw AppError.internal('Failed to create customer', profileError)
+  }
+
+  return formatProfile(profile as Record<string, unknown>, email)
 }

@@ -1,5 +1,8 @@
 'use client'
 
+import { CompanyOptionSelect } from '@/components/ui/company-option-select'
+import { ProvinceCitySelect } from '@/components/ui/province-city-select'
+import { ORGANIZATION_TYPES, PHONE_TYPES } from '@/lib/corporate-options'
 import { useState, useEffect } from 'react'
 import {
   Building2, Save, Calendar, Hash, Globe, MapPin,
@@ -45,6 +48,7 @@ type PrimaryContactForm = {
   contactName: string
   contactEmail: string
   contactPhone: string
+  contactPhoneType: string
 }
 
 type BillingContactForm = {
@@ -79,7 +83,7 @@ export default function CompanyProfilePage() {
     addressLine1: '', addressCity: '', addressState: '', addressPostcode: '', addressCountry: '',
   })
   const [primaryContact, setPrimaryContact] = useState<PrimaryContactForm>({
-    contactName: '', contactEmail: '', contactPhone: '',
+    contactName: '', contactEmail: '', contactPhone: '', contactPhoneType: '',
   })
   const [billingContact, setBillingContact] = useState<BillingContactForm>({
     billingEmail: '', accountsPayableEmail: '',
@@ -103,6 +107,7 @@ export default function CompanyProfilePage() {
       contactName:  account.contact_name ?? '',
       contactEmail: account.contact_email ?? '',
       contactPhone: account.contact_phone ?? '',
+      contactPhoneType: account.contact_phone_type ?? '',
     })
     setBillingContact({
       billingEmail:         account.billing_email ?? '',
@@ -273,17 +278,13 @@ export default function CompanyProfilePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Industry</label>
-                <div className="relative">
-                  <Factory className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                  <input
-                    type="text"
-                    value={companyInfo.industry}
-                    onChange={(e) => setCompanyInfo({ ...companyInfo, industry: e.target.value })}
-                    placeholder="e.g. Logistics"
-                    className={inputClass}
-                  />
-                </div>
+                <label className="text-sm font-medium text-foreground">Organization Type</label>
+                <CompanyOptionSelect
+                  value={companyInfo.industry}
+                  onChange={(v) => setCompanyInfo({ ...companyInfo, industry: v })}
+                  options={ORGANIZATION_TYPES}
+                  placeholder="Select organization type"
+                />
               </div>
             </div>
 
@@ -327,21 +328,14 @@ export default function CompanyProfilePage() {
                   className={inputClass}
                 />
               </div>
+              <ProvinceCitySelect
+                province={companyInfo.addressState}
+                city={companyInfo.addressCity}
+                onProvinceChange={(v) => setCompanyInfo((c) => ({ ...c, addressState: v }))}
+                onCityChange={(v) => setCompanyInfo((c) => ({ ...c, addressCity: v }))}
+                wrapperClassName="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2"
+              />
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <input
-                  type="text"
-                  value={companyInfo.addressCity}
-                  onChange={(e) => setCompanyInfo({ ...companyInfo, addressCity: e.target.value })}
-                  placeholder="City"
-                  className="rounded-xl border border-card-border bg-background py-2.5 px-3 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-                <input
-                  type="text"
-                  value={companyInfo.addressState}
-                  onChange={(e) => setCompanyInfo({ ...companyInfo, addressState: e.target.value })}
-                  placeholder="State"
-                  className="rounded-xl border border-card-border bg-background py-2.5 px-3 text-sm text-foreground placeholder:text-muted focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
                 <input
                   type="text"
                   value={companyInfo.addressPostcode}
@@ -413,6 +407,16 @@ export default function CompanyProfilePage() {
                   className={inputClass}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Phone Type</label>
+              <CompanyOptionSelect
+                value={primaryContact.contactPhoneType}
+                onChange={(v) => setPrimaryContact({ ...primaryContact, contactPhoneType: v })}
+                options={PHONE_TYPES}
+                placeholder="Select phone type"
+              />
             </div>
 
             <button

@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, type ApiResponse } from "@/lib/api";
 
-const SUPPORT_PHONE = "1300 000 000";
-const SUPPORT_EMAIL = "support@logicallinks.com.au";
+const SUPPORT_PHONE = "437-335-6305";
+const SUPPORT_EMAIL = "logicallinkscorp@gmail.com";
 
 interface FormState {
   name: string;
@@ -72,7 +72,7 @@ export default function ContactSupportPage() {
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
       <Header />
-      <div className="relative isolate flex flex-col bg-[url('/hero2.png')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[55.83vw] pt-10">
+      <div className="relative isolate flex flex-col bg-[url('/support.png')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[55.83vw] pt-10">
         <HeroScrim />
 
         <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">

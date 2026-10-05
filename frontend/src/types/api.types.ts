@@ -116,6 +116,7 @@ export type Account = {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  contact_phone_type: string | null;
   address_line1: string | null;
   address_city: string | null;
   address_state: string | null;
@@ -184,6 +185,7 @@ export type CreateAccountDto = {
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  contactPhoneType?: string;
   addressLine1?: string;
   addressCity?: string;
   addressState?: string;
@@ -223,6 +225,7 @@ export type UpdateOwnCompanyDto = {
   contactName?: string;
   contactEmail?: string;
   contactPhone?: string;
+  contactPhoneType?: string;
   billingEmail?: string;
   accountsPayableEmail?: string;
   businessType?: string;
@@ -247,6 +250,8 @@ export type ListAccountsQuery = {
 export type UserProfile = {
   id:          string;
   email:       string;
+  /** false for phone-only customers added by an admin with no email. */
+  hasLogin?:   boolean;
   role:        UserRole;
   companyRole: CompanyRole;
   adminRole:   AdminRole;

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/deliveries/kpi-card";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 import { useTableFilters } from "@/hooks/use-table-filters";
+import { AddResidentialCustomerSheet } from "@/components/accounts/add-residential-customer-sheet";
 import { CreateDeliverySheet } from "@/components/deliveries/sheets/create-delivery-sheet";
 
 import { useUsers } from "@/hooks/use-users";
@@ -33,6 +34,8 @@ export default function ResidentialCustomersPage() {
   const router = useRouter();
   const canCreate = usePermission("deliveries.create");
   const canView = usePermission("customers.view");
+  const canAddCustomer = usePermission("customers.create");
+  const [addOpen, setAddOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
   const { filters, setFilter } = useTableFilters(FILTER_DEFAULTS);
@@ -70,7 +73,7 @@ export default function ResidentialCustomersPage() {
               <div>
                 <p className="text-sm font-semibold text-foreground">{u.fullName ?? "No name"}</p>
                 <p className="flex items-center gap-1 text-xs text-muted">
-                  <Mail className="h-3 w-3 shrink-0" />{u.email}
+                  <Mail className="h-3 w-3 shrink-0" />{u.email || "No email — books by phone"}
                 </p>
               </div>
             </div>
@@ -143,16 +146,25 @@ export default function ResidentialCustomersPage() {
             </div>
           }
           headerActions={
-            canCreate && (
-              <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
-                <Plus className="h-4 w-4" />
-                Create a Delivery
-              </Button>
-            )
+            <div className="flex items-center gap-2">
+              {canAddCustomer && (
+                <Button variant="outline" onClick={() => setAddOpen(true)} className="rounded-lg">
+                  <Plus className="h-4 w-4" />
+                  Add Customer
+                </Button>
+              )}
+              {canCreate && (
+                <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
+                  <Plus className="h-4 w-4" />
+                  Create a Delivery
+                </Button>
+              )}
+            </div>
           }
         />
       </div>
 
+      <AddResidentialCustomerSheet open={addOpen} onClose={() => setAddOpen(false)} />
       <CreateDeliverySheet open={createOpen} onClose={() => setCreateOpen(false)} context="residential" />
     </div>
   );

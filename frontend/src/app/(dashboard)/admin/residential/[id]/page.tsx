@@ -162,7 +162,7 @@ export default function ResidentialCustomerDetailPage() {
                   </span>
                   <div className="grid gap-2 pt-2 sm:grid-cols-3">
                     <p className="flex items-center gap-1.5 text-sm text-muted">
-                      <Mail className="h-3.5 w-3.5 shrink-0" />{customer.email}
+                      <Mail className="h-3.5 w-3.5 shrink-0" />{customer.email || "No email — books by phone"}
                     </p>
                     {customer.phone && (
                       <p className="flex items-center gap-1.5 text-sm text-muted">

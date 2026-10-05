@@ -37,6 +37,7 @@ const signupProfileFields = {
   accountType: z.enum(['corporate', 'residential']).default('corporate'),
   company: z.string().min(2, 'Company name is required').max(200).optional(),
   phone: z.string().trim().min(7, 'Phone number is required').max(30),
+  phoneType: optionalTrimmed,
 
   // ── Corporate company profile — captured at sign-up so the admin review
   //    and the customer's own company page have the full picture from day

@@ -95,3 +95,12 @@ export function useApproveUser(id: string) {
     },
   });
 }
+
+export function useCreateResidentialCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: { fullName: string; phone: string; email?: string }) =>
+      api.post<ApiResponse<UserProfile>>("/api/v1/users/residential", dto),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}

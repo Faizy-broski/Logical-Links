@@ -10,12 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateAccount } from "@/hooks/use-accounts";
+import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api";
 import {
   CORPORATE_PIPELINE_STATUSES,
   CORPORATE_PIPELINE_STATUS_META,
   type CorporatePipelineStatus,
   type CreateAccountDto,
 } from "@/types/api.types";
+
+import { CompanyOptionSelect } from "@/components/ui/company-option-select";
+import { ProvinceCitySelect } from "@/components/ui/province-city-select";
+import { PHONE_TYPES } from "@/lib/corporate-options";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -24,7 +30,9 @@ const EMPTY = {
   contactName: "",
   contactEmail: "",
   contactPhone: "",
+  contactPhoneType: "",
   website: "",
+  note: "",
   addressCity: "",
   addressState: "",
 };
@@ -56,6 +64,7 @@ export function AddCorporateCustomerSheet({ open, onClose }: Props) {
       ...(form.contactName.trim() && { contactName: form.contactName.trim() }),
       ...(form.contactEmail.trim() && { contactEmail: form.contactEmail.trim() }),
       ...(form.contactPhone.trim() && { contactPhone: form.contactPhone.trim() }),
+      ...(form.contactPhoneType && { contactPhoneType: form.contactPhoneType }),
       ...(form.website.trim() && { website: form.website.trim() }),
       ...(form.addressCity.trim() && { addressCity: form.addressCity.trim() }),
       ...(form.addressState.trim() && { addressState: form.addressState.trim() }),
@@ -66,6 +75,13 @@ export function AddCorporateCustomerSheet({ open, onClose }: Props) {
       reset();
       onClose();
       const id = res?.data?.account_id;
+      // The note is saved as a regular account note, so it shows in the
+      // customer's Notes section.
+      if (id && form.note.trim()) {
+        await api
+          .post("/api/v1/notes", { entityType: "account", entityId: id, content: form.note.trim() })
+          .catch(() => toast.error("Customer added, but the note could not be saved"));
+      }
       if (id) router.push(`/admin/corporate-customers/${id}`);
     } catch (err) {
       toast.error((err as Error).message ?? "Failed to add corporate customer");
@@ -138,16 +154,24 @@ export function AddCorporateCustomerSheet({ open, onClose }: Props) {
               <Input id="acc-contact-phone" value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} className="rounded-lg" />
             </div>
             <div className="space-y-1.5">
+              <Label>Phone type</Label>
+              <CompanyOptionSelect value={form.contactPhoneType} onChange={(v) => set("contactPhoneType", v)} options={PHONE_TYPES} placeholder="Select phone type" />
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="acc-website">Website</Label>
               <Input id="acc-website" placeholder="https://" value={form.website} onChange={(e) => set("website", e.target.value)} className="rounded-lg" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="acc-city">City</Label>
-              <Input id="acc-city" value={form.addressCity} onChange={(e) => set("addressCity", e.target.value)} className="rounded-lg" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="acc-state">State</Label>
-              <Input id="acc-state" value={form.addressState} onChange={(e) => set("addressState", e.target.value)} className="rounded-lg" />
+            <ProvinceCitySelect
+              province={form.addressState}
+              city={form.addressCity}
+              onProvinceChange={(v) => set("addressState", v)}
+              onCityChange={(v) => set("addressCity", v)}
+              labelClassName="text-sm font-medium leading-none"
+              wrapperClassName="contents"
+            />
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="acc-note">Note</Label>
+              <Textarea id="acc-note" rows={4} maxLength={5000} placeholder="Internal note about this customer (optional)" value={form.note} onChange={(e) => set("note", e.target.value)} className="rounded-lg" />
             </div>
           </div>
         </div>

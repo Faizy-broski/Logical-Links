@@ -17,8 +17,8 @@ import { usePermission } from "@/hooks/use-permission";
 import { KNOWLEDGE_BASE_ARTICLES } from "@/lib/knowledge-base";
 import type { SupportCase } from "@/types/api.types";
 
-const SUPPORT_PHONE = "1300 000 000";
-const SUPPORT_EMAIL = "support@logicallinks.com.au";
+const SUPPORT_PHONE = "437-335-6305";
+const SUPPORT_EMAIL = "logicallinkscorp@gmail.com";
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });

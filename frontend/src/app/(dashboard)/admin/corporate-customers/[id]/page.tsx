@@ -1,5 +1,7 @@
 "use client";
 
+import { CompanyOptionSelect } from "@/components/ui/company-option-select";
+import { ORGANIZATION_TYPES } from "@/lib/corporate-options";
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -541,12 +543,15 @@ function CompanyInfoCard({ account, canEdit }: { account: Account; canEdit: bool
         {editing ? (
           <>
             <LabeledInput icon={<Briefcase className="h-4 w-4" />} label="Business Type" value={businessType} onChange={setBusinessType} placeholder="e.g. Corporation" />
-            <LabeledInput icon={<Factory className="h-4 w-4" />} label="Industry" value={industry} onChange={setIndustry} placeholder="e.g. Logistics" />
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Organization Type</p>
+              <CompanyOptionSelect value={industry} onChange={setIndustry} options={ORGANIZATION_TYPES} placeholder="Select organization type" />
+            </div>
           </>
         ) : (
           <>
             <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Business Type" value={account.business_type || "—"} />
-            <InfoRow icon={<Factory className="h-4 w-4" />} label="Industry" value={account.industry || "—"} />
+            <InfoRow icon={<Factory className="h-4 w-4" />} label="Organization Type" value={account.industry || "—"} />
           </>
         )}
         {account.abn && <InfoRow icon={<Hash className="h-4 w-4" />} label="Business Number" value={account.abn} />}

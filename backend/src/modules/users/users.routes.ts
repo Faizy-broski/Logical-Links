@@ -7,6 +7,7 @@ import {
   listUsersQuerySchema,
   updateUserRoleSchema,
   approveUserSchema,
+  createResidentialCustomerSchema,
 } from './users.schema'
 import * as usersController from './users.controller'
 
@@ -35,6 +36,15 @@ usersRouter.get(
   requirePermission('customers.view'),
   validate(listUsersQuerySchema, 'query'),
   usersController.listUsers,
+)
+
+usersRouter.post(
+  '/residential',
+  authMiddleware,
+  requireRole('admin'),
+  requirePermission('customers.create'),
+  validate(createResidentialCustomerSchema),
+  usersController.createResidentialCustomer,
 )
 
 usersRouter.get(

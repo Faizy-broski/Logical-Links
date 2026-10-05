@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import * as usersService from './users.service'
 import { AppError } from '../../lib/errors'
-import { ok, paginated, parsePagination } from '../../lib/response'
+import { ok, created, paginated, parsePagination } from '../../lib/response'
 import { param } from '../../lib/params'
-import type { UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
+import type { CreateResidentialCustomerDto, UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
 
 export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -108,6 +108,15 @@ export async function approveUser(req: Request, res: Response, next: NextFunctio
   try {
     const updated = await usersService.approveUser(param(req, 'id'), req.body as ApproveUserDto, req.user!.id)
     ok(res, updated, 'Approval status updated')
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function createResidentialCustomer(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await usersService.createResidentialCustomer(req.body as CreateResidentialCustomerDto)
+    created(res, result, 'Customer added')
   } catch (err) {
     next(err)
   }

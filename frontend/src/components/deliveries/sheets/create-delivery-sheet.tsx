@@ -78,8 +78,8 @@ export function CreateDeliverySheet({ open, onClose, context, presetCustomerId, 
   const customerOptions = useMemo(
     () => customers.map((u) => ({
       value: u.id,
-      label: u.fullName ?? u.email,
-      description: u.fullName ? u.email : undefined,
+      label: u.fullName ?? (u.email || "Unnamed customer"),
+      description: u.email || u.phone || undefined,
       icon: <UserAvatar name={u.fullName} avatarUrl={u.avatarUrl} size="xs" rounded="lg" />,
     })),
     [customers],

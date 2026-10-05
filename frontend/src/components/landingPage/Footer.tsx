@@ -415,7 +415,6 @@ const services = [
 const company = [
   { label: "About Us", href: "/llc" },
   { label: "How It Works", href: "/#hiw" },
-  { label: "Partner Tiers", href: "/tiers" },
   { label: "Careers", href: "#" },
 ];
 
@@ -542,6 +541,12 @@ export default function Footer() {
                       if (href === "/#quote" && pathname === "/") {
                         e.preventDefault();
                         openContactForm("quote");
+                      }
+                      // Already on that page: a same-route link does nothing
+                      // visible, so scroll back to the top instead.
+                      if (href === pathname) {
+                        e.preventDefault();
+                        window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
                     className="flex items-center gap-3 text-sm text-white/70 transition-colors hover:text-primary"
