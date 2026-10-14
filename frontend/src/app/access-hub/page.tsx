@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogIn, UserPlus, Truck, HeadphonesIcon, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { BrandIcons } from "@/components/ui/brand-icons";
 import { motion } from "framer-motion";
 import Header from "@/components/landingPage/Header";
 import HeroScrim from "@/components/landingPage/HeroScrim";
@@ -10,28 +11,28 @@ import Footer from "@/components/landingPage/Footer";
 
 const hubLinks = [
   {
-    icon: LogIn,
+    icon: BrandIcons.login,
     title: "Sign In",
     description: "Access your dashboard to manage deliveries, quotations, and invoices.",
     href: "/login",
     cta: "Log In",
   },
   {
-    icon: UserPlus,
+    icon: BrandIcons.userAdd,
     title: "Create an Account",
     description: "Set up your company account to start booking and tracking freight.",
     href: "/register",
     cta: "Sign Up",
   },
   {
-    icon: Truck,
+    icon: BrandIcons.fastDelivery,
     title: "Track a Delivery",
     description: "Sign in to view real-time status and delivery updates on your deliveries.",
     href: "/register",
     cta: "Track Delivery",
   },
   {
-    icon: HeadphonesIcon,
+    icon: BrandIcons.support,
     title: "Talk to Support",
     description: "Have a question about an order or need a custom quote? We're here to help.",
     href: "/#quote",
@@ -81,7 +82,7 @@ export default function AccessHubPage() {
               className="group relative overflow-hidden rounded-xs border border-gray-100 p-8 shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="mb-5 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <link.icon className="h-6 w-6" />
+                <link.icon className="h-9 w-9" />
               </div>
               <h3 className="text-xl font-semibold text-black mb-2">
                 {link.title}

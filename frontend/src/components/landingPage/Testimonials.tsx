@@ -1,68 +1,56 @@
 "use client";
 
-import {
-  Monitor,
-  CheckCircle2,
-  ScanSearch,
-  Network,
-  Globe,
-  Truck,
-  Users,
-  Route,
-  Zap,
-  Search,
-  type LucideIcon,
-} from "lucide-react";
+import { BrandIcons, type BrandIcon } from "@/components/ui/brand-icons";
 import { motion } from "framer-motion";
 
 const intelligence: {
-  icon: LucideIcon;
+  icon: BrandIcon;
   label: string;
   status: string;
 }[] = [
-  { icon: Monitor, label: "Live Shipment Visibility", status: "Active" },
-  { icon: CheckCircle2, label: "Dispatch System", status: "Operational" },
-  { icon: ScanSearch, label: "Tracking System", status: "Real-Time" },
-  { icon: Network, label: "Network Coordination", status: "Enabled" },
+  { icon: BrandIcons.dashboard, label: "Live Shipment Visibility", status: "Active" },
+  { icon: BrandIcons.checklist, label: "Dispatch System", status: "Operational" },
+  { icon: BrandIcons.location, label: "Tracking System", status: "Real-Time" },
+  { icon: BrandIcons.network, label: "Network Coordination", status: "Enabled" },
 ];
 
 const services: {
-  icon: LucideIcon;
+  icon: BrandIcon;
   title: string;
   description: string;
 }[] = [
   {
-    icon: Globe,
+    icon: BrandIcons.freight,
     title: "Freight Brokerage",
     description:
       "Connecting businesses with the right capacity through our trusted carrier network.",
   },
   {
-    icon: Truck,
+    icon: BrandIcons.truck,
     title: "Transport Execution",
     description:
       "Reliable transportation solutions executed with precision and efficiency.",
   },
   {
-    icon: Users,
+    icon: BrandIcons.handshake,
     title: "Logistics Coordination",
     description:
       "End-to-end coordination that ensures smooth movement across the supply chain.",
   },
   {
-    icon: Route,
+    icon: BrandIcons.map,
     title: "Dispatch & Route Management",
     description:
       "Optimized dispatching and routing for faster deliveries and reduced operational costs.",
   },
   {
-    icon: Zap,
+    icon: BrandIcons.fastDelivery,
     title: "Last-Mile Delivery",
     description:
       "Seamless last-mile delivery solutions built for speed and customer satisfaction.",
   },
   {
-    icon: Search,
+    icon: BrandIcons.packageTracking,
     title: "Real-Time Shipment Tracking",
     description:
       "Complete visibility into shipments with real-time updates at every stage.",
@@ -106,7 +94,7 @@ export default function Testimonials() {
                 className="flex items-center gap-4 lg:pl-8 lg:first:pl-0"
               >
                 <div className="p-4 rounded-sm bg-primary-light/10 flex items-center justify-center shrink-0">
-                  <Icon className="h-7 w-7 text-primary" strokeWidth={2} />
+                  <Icon className="h-10 w-10" />
                 </div>
                 <div>
                   <p className="text-primary font-medium leading-snug">
@@ -149,7 +137,7 @@ export default function Testimonials() {
               className="flex flex-col h-full border border-primary rounded-xs bg-white py-8 px-4 text-center"
             >
               <div className="p-5 rounded-sm bg-primary-light/10 flex items-center justify-center mx-auto mb-10">
-                <Icon className="h-8 w-8 text-primary" strokeWidth={2} />
+                <Icon className="h-12 w-12" />
               </div>
               <h3 className="text-xl text-primary mb-6">{title}</h3>
               <p className="text-black text-sm">{description}</p>

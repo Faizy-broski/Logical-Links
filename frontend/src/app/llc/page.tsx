@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShieldCheck, Users, Target, Globe2 } from "lucide-react";
+import { BrandIcons } from "@/components/ui/brand-icons";
 import { motion } from "framer-motion";
 import Header from "@/components/landingPage/Header";
 import HeroScrim from "@/components/landingPage/HeroScrim";
@@ -10,25 +10,25 @@ import Footer from "@/components/landingPage/Footer";
 
 const drivers = [
   {
-    icon: ShieldCheck,
+    icon: BrandIcons.shield,
     title: "Reliability",
     description:
       "We understand that timing and dependability matter. Every movement is managed with care, communication, and attention to detail.",
   },
   {
-    icon: Target,
+    icon: BrandIcons.target,
     title: "Precision Execution",
     description:
       "Effective logistics requires planning and coordination. We combine operational discipline with technology to keep services organized and on track.",
   },
   {
-    icon: Users,
+    icon: BrandIcons.handshake,
     title: "Genuine Partnership",
     description:
       "You're more than a customer. We take the time to understand your needs and work with you to develop the right solution.",
   },
   {
-    icon: Globe2,
+    icon: BrandIcons.map,
     title: "Continuous Growth",
     description:
       "We continue to improve our technology, processes, and capabilities so we can respond to changing customer needs and the evolving logistics landscape.",
@@ -246,7 +246,7 @@ export default function LLCPage() {
                 className="rounded-xs border border-gray-100 p-6 shadow-sm"
               >
                 <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <driver.icon className="h-6 w-6" />
+                  <driver.icon className="h-9 w-9" />
                 </div>
                 <h3 className="text-lg font-semibold text-black mb-2">
                   {driver.title}

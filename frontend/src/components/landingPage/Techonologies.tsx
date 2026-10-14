@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { Smartphone, BarChart3, ShieldCheck, Zap, LucideIcon } from "lucide-react";
+import { BrandIcons } from "@/components/ui/brand-icons";
+import type { BrandIcon } from "@/components/ui/brand-icons";
 import { motion } from "framer-motion";
 
 interface FeatureCardProps {
-  icon: LucideIcon;
+  icon: BrandIcon;
   title: string;
   description: string;
   index: number;
@@ -13,22 +14,22 @@ interface FeatureCardProps {
 
 const features = [
   {
-    icon: Smartphone,
+    icon: BrandIcons.deviceTracking,
     title: "Real-Time Tracking",
     description: "Live GPS tracking with push notifications and delivery updates.",
   },
   {
-    icon: BarChart3,
+    icon: BrandIcons.dashboard,
     title: "Analytics Dashboard",
     description: "Comprehensive insights into your shipping patterns and costs.",
   },
   {
-    icon: ShieldCheck,
+    icon: BrandIcons.shieldTime,
     title: "Proof of Delivery",
     description: "Digital signatures, photos, and timestamp verification.",
   },
   {
-    icon: Zap,
+    icon: BrandIcons.fastDelivery,
     title: "API Integration",
     description: "Seamless integration with your existing e-commerce platform.",
   },
@@ -99,7 +100,7 @@ function FeatureCard({ icon: Icon, title, description, index }: FeatureCardProps
       {/* <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/15" /> */}
       {/* <div className="absolute -right-2 top-4 h-24 w-24 rounded-full bg-white/20" /> */}
       <div className="relative z-10">
-        <Icon className="mb-2 h-6 w-6" strokeWidth={2} />
+        <div className="mb-3 flex size-14 items-center justify-center rounded-sm bg-white"><Icon className="h-10 w-10" /></div>
         <p className="mb-1 text-lg font-semibold">{title}</p>
         <p className="text-xs leading-relaxed text-white/90">{description}</p>
       </div>

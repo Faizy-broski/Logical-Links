@@ -44,7 +44,12 @@ const cardVariants = {
 export default function Services() {
   return (
     <section id="services" className="relative overflow-hidden py-24">
-      <Image src="/services.svg" alt="" fill className="object-cover" />
+      <Image src="/services.png" alt="" fill className="object-cover" />
+      {/* Dark gradient over the photo so the white copy stays readable */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-black/60 md:bg-transparent md:bg-linear-to-r md:from-black/85 md:via-black/60 md:via-50% md:to-black/20"
+      />
 
       <div className="max-w-6xl mx-auto">
         <ArrowUpRight className="absolute right-3 top-16 size-48 text-white/10 stroke-3" />

@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowUpRight, Route, MapPinned, Truck, BarChart3 } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { BrandIcons } from "@/components/ui/brand-icons";
 import { motion } from "framer-motion";
 
 const milestones = [
@@ -112,10 +113,10 @@ function FeaturedCard() {
             faster, safer road deliveries.
           </p>
           <div className="space-y-2 sm:space-y-3">
-            <FeatureItem icon={<Route className="w-4 h-4 sm:w-5 sm:h-5" />} text="AI-powered route & delivery optimization." />
-            <FeatureItem icon={<MapPinned className="w-4 h-4 sm:w-5 sm:h-5" />} text="Real-time GPS tracking & ePOD." />
-            <FeatureItem icon={<Truck className="w-4 h-4 sm:w-5 sm:h-5" />} text="Smart dock & yard scheduling." />
-            <FeatureItem icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />} text="Predictive ETAs & demand forecasting." />
+            <FeatureItem icon={<BrandIcons.map className="w-6 h-6 sm:w-8 sm:h-8" />} text="AI-powered route & delivery optimization." />
+            <FeatureItem icon={<BrandIcons.location className="w-6 h-6 sm:w-8 sm:h-8" />} text="Real-time GPS tracking & ePOD." />
+            <FeatureItem icon={<BrandIcons.fastDelivery className="w-6 h-6 sm:w-8 sm:h-8" />} text="Smart dock & yard scheduling." />
+            <FeatureItem icon={<BrandIcons.growth className="w-6 h-6 sm:w-8 sm:h-8" />} text="Predictive ETAs & demand forecasting." />
           </div>
         </div>
       </div>

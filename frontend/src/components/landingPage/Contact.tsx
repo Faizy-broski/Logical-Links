@@ -7,11 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ChevronRight,
-  FileText,
-  Headset,
-  MessageCircleQuestion,
-  type LucideIcon,
 } from "lucide-react";
+import { BrandIcons, type BrandIcon } from "@/components/ui/brand-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,27 +38,27 @@ const OPTIONS: {
   kind: ContactFormKind;
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: BrandIcon;
 }[] = [
   {
     kind: "quote",
     title: "Request a Quote",
     description:
       "Need pricing for an upcoming shipment or logistics requirement?",
-    icon: FileText,
+    icon: BrandIcons.checklist,
   },
   {
     kind: "support",
     title: "Customer Support",
     description:
       "Already have a shipment or need assistance with an existing delivery?",
-    icon: Headset,
+    icon: BrandIcons.support,
   },
   {
     kind: "inquiry",
     title: "General Inquiry",
     description: "Have a question about Logical Links or our services?",
-    icon: MessageCircleQuestion,
+    icon: BrandIcons.mail,
   },
 ];
 
@@ -169,7 +166,7 @@ function OptionCard({
 }: {
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: BrandIcon;
   active: boolean;
   onClick: () => void;
 }) {
@@ -189,7 +186,7 @@ function OptionCard({
           active ? "bg-primary text-white" : "bg-white/15 text-white"
         }`}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-8 w-8" />
       </span>
       <span className="flex-1">
         <span className="block text-base font-semibold text-white">

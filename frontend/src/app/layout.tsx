@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Inter, EB_Garamond, Noto_Serif } from 'next/font/google'
+import { Cormorant_Garamond, Inter, EB_Garamond, Noto_Serif, Caudex } from 'next/font/google'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import NavigationProgress from '@/components/NavigationProgress'
@@ -34,6 +34,13 @@ const droidSerif = Noto_Serif({
   weight: ["400", "500", "600", "700"],
 });
 
+// Caudex is used for every heading and title across the app.
+const caudex = Caudex({
+  subsets: ["latin"],
+  variable: "--font-caudex",
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
   title: {
     default: 'Logical Links',
@@ -58,7 +65,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} ${ebGaramond.variable} ${droidSerif.variable} antialiased`}>
+      <body suppressHydrationWarning className={`${cormorant.variable} ${inter.variable} ${ebGaramond.variable} ${droidSerif.variable} ${caudex.variable} antialiased`}>
         <ThemeProvider>
           <AppearanceProvider>
             <NavigationProgress />

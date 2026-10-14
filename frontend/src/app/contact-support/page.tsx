@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Mail, Phone, Send } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
+import { BrandIcons } from "@/components/ui/brand-icons";
 import Header from "@/components/landingPage/Header";
 import HeroScrim from "@/components/landingPage/HeroScrim";
 import Footer from "@/components/landingPage/Footer";
@@ -72,7 +73,7 @@ export default function ContactSupportPage() {
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
       <Header />
-      <div className="relative isolate flex flex-col bg-[url('/support.png')] bg-[length:100%_100%] bg-center bg-no-repeat min-h-[55.83vw] pt-10">
+      <div className="relative isolate flex flex-col bg-[#f7f3ee] bg-[url('/support.png')] bg-[length:auto_100%] bg-right bg-no-repeat min-h-[42vw] pt-10">
         <HeroScrim />
 
         <section className="w-full max-w-6xl mx-auto my-auto pt-24 pb-12 px-6 text-start">
@@ -124,7 +125,7 @@ export default function ContactSupportPage() {
 
             <div className="flex items-center gap-3 rounded-xs border border-gray-100 p-4">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Phone className="h-4 w-4" />
+                <BrandIcons.phone className="h-7 w-7" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-black">Call Support</p>
@@ -134,7 +135,7 @@ export default function ContactSupportPage() {
 
             <div className="flex items-center gap-3 rounded-xs border border-gray-100 p-4">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Mail className="h-4 w-4" />
+                <BrandIcons.mail className="h-7 w-7" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-black">Email Support</p>
@@ -156,9 +157,9 @@ export default function ContactSupportPage() {
                   <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <CheckCircle2 className="h-6 w-6" />
                   </div>
-                  <p className="text-lg font-semibold text-black">
+                  <h3 className="text-lg font-semibold text-black">
                     Message sent
-                  </p>
+                  </h3>
                   <p className="max-w-xs text-sm text-gray-600">
                     Thanks for reaching out — our team will get back to you
                     shortly.
@@ -174,9 +175,9 @@ export default function ContactSupportPage() {
                 </div>
               ) : (
                 <>
-                  <p className="text-2xl font-semibold text-black">
+                  <h3 className="text-2xl font-semibold text-black">
                     Send a Message
-                  </p>
+                  </h3>
                   <p className="mt-2 text-sm text-gray-600">
                     Fill out the form below and we&apos;ll be in touch.
                   </p>

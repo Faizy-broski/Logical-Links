@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ClipboardList, Truck, Package } from "lucide-react";
+import { BrandIcons } from "@/components/ui/brand-icons";
 import { motion } from "framer-motion";
 
 const steps = [
@@ -10,21 +10,21 @@ const steps = [
     title: "Book Your Delivery",
     description:
       "Simple online booking with instant quotes and flexible scheduling options to fit your timeline.",
-    icon: ClipboardList,
+    icon: BrandIcons.checklist,
   },
   {
     number: 2,
     title: "We Pick Up",
     description:
       "Professional drivers collect your delivery with real-time GPS tracking from pickup to delivery.",
-    icon: Truck,
+    icon: BrandIcons.truck,
   },
   {
     number: 3,
     title: "Delivered with Care",
     description:
       "Secure delivery with proof of delivery confirmation and end-to-end delivery visibility.",
-    icon: Package,
+    icon: BrandIcons.packageTracking,
   },
 ];
 
@@ -83,7 +83,7 @@ export default function HowItWorks() {
                     {step.number}
                   </div>
                   <div className="p-5 rounded-sm bg-primary-light/10 flex items-center justify-center mx-auto mb-10">
-                    <Icon className="h-8 w-8 text-primary" strokeWidth={2} />
+                    <Icon className="h-12 w-12" />
                   </div>
                   <h3 className="text-xl text-primary mb-6">{step.title}</h3>
                   <p className="text-black text-sm">{step.description}</p>
