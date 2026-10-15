@@ -113,10 +113,10 @@ function FeaturedCard() {
             faster, safer road deliveries.
           </p>
           <div className="space-y-2 sm:space-y-3">
-            <FeatureItem icon={<BrandIcons.map className="w-6 h-6 sm:w-8 sm:h-8" />} text="AI-powered route & delivery optimization." />
-            <FeatureItem icon={<BrandIcons.location className="w-6 h-6 sm:w-8 sm:h-8" />} text="Real-time GPS tracking & ePOD." />
-            <FeatureItem icon={<BrandIcons.fastDelivery className="w-6 h-6 sm:w-8 sm:h-8" />} text="Smart dock & yard scheduling." />
-            <FeatureItem icon={<BrandIcons.growth className="w-6 h-6 sm:w-8 sm:h-8" />} text="Predictive ETAs & demand forecasting." />
+            <FeatureItem icon={<BrandIcons.map className="w-10 h-10 sm:w-14 sm:h-14" />} text="AI-powered route & delivery optimization." />
+            <FeatureItem icon={<BrandIcons.location className="w-10 h-10 sm:w-14 sm:h-14" />} text="Real-time GPS tracking & ePOD." />
+            <FeatureItem icon={<BrandIcons.fastDelivery className="w-10 h-10 sm:w-14 sm:h-14" />} text="Smart dock & yard scheduling." />
+            <FeatureItem icon={<BrandIcons.growth className="w-10 h-10 sm:w-14 sm:h-14" />} text="Predictive ETAs & demand forecasting." />
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ import Footer from "@/components/landingPage/Footer";
 
 const drivers = [
   {
-    icon: BrandIcons.shield,
+    icon: BrandIcons.shieldTime,
     title: "Reliability",
     description:
       "We understand that timing and dependability matter. Every movement is managed with care, communication, and attention to detail.",
@@ -28,7 +28,7 @@ const drivers = [
       "You're more than a customer. We take the time to understand your needs and work with you to develop the right solution.",
   },
   {
-    icon: BrandIcons.map,
+    icon: BrandIcons.growth,
     title: "Continuous Growth",
     description:
       "We continue to improve our technology, processes, and capabilities so we can respond to changing customer needs and the evolving logistics landscape.",
@@ -47,7 +47,7 @@ const pillars: Pillar[] = [
   {
     id: "mission",
     title: "Our Mission",
-    image: "/mission.jpg",
+    image: "/mission.png",
     paragraphs: [
       "Our mission is to provide reliable, efficient, and technology-driven logistics and transportation solutions that keep what matters moving safely and efficiently.",
       "We serve businesses, organizations, and individuals through freight, courier, medical delivery, and specialized transportation services, with a focus on safety, precision, transparency, and responsive service.",
@@ -245,8 +245,8 @@ export default function LLCPage() {
                 transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
                 className="rounded-xs border border-gray-100 p-6 shadow-sm"
               >
-                <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <driver.icon className="h-9 w-9" />
+                <div className="mb-4 flex h-20 items-center justify-start">
+                  <driver.icon className="h-16 w-16" />
                 </div>
                 <h3 className="text-lg font-semibold text-black mb-2">
                   {driver.title}

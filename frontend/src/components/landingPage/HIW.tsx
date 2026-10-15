@@ -10,21 +10,21 @@ const steps = [
     title: "Book Your Delivery",
     description:
       "Simple online booking with instant quotes and flexible scheduling options to fit your timeline.",
-    icon: BrandIcons.checklist,
+    icon: BrandIcons.bookDelivery,
   },
   {
     number: 2,
     title: "We Pick Up",
     description:
       "Professional drivers collect your delivery with real-time GPS tracking from pickup to delivery.",
-    icon: BrandIcons.truck,
+    icon: BrandIcons.pickup,
   },
   {
     number: 3,
     title: "Delivered with Care",
     description:
       "Secure delivery with proof of delivery confirmation and end-to-end delivery visibility.",
-    icon: BrandIcons.packageTracking,
+    icon: BrandIcons.deliveredCare,
   },
 ];
 
@@ -82,8 +82,8 @@ export default function HowItWorks() {
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-xl font-medium">
                     {step.number}
                   </div>
-                  <div className="p-5 rounded-sm bg-primary-light/10 flex items-center justify-center mx-auto mb-10">
-                    <Icon className="h-12 w-12" />
+                  <div className="flex items-center justify-center mx-auto mb-8">
+                    <Icon className="h-14 w-14" />
                   </div>
                   <h3 className="text-xl text-primary mb-6">{step.title}</h3>
                   <p className="text-black text-sm">{step.description}</p>

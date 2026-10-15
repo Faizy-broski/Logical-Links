@@ -8,8 +8,8 @@ const intelligence: {
   label: string;
   status: string;
 }[] = [
-  { icon: BrandIcons.dashboard, label: "Live Shipment Visibility", status: "Active" },
-  { icon: BrandIcons.checklist, label: "Dispatch System", status: "Operational" },
+  { icon: BrandIcons.deviceTracking, label: "Live Shipment Visibility", status: "Active" },
+  { icon: BrandIcons.dashboard, label: "Dispatch System", status: "Operational" },
   { icon: BrandIcons.location, label: "Tracking System", status: "Real-Time" },
   { icon: BrandIcons.network, label: "Network Coordination", status: "Enabled" },
 ];
@@ -20,37 +20,37 @@ const services: {
   description: string;
 }[] = [
   {
-    icon: BrandIcons.freight,
+    icon: BrandIcons.freightBrokerage,
     title: "Freight Brokerage",
     description:
       "Connecting businesses with the right capacity through our trusted carrier network.",
   },
   {
-    icon: BrandIcons.truck,
+    icon: BrandIcons.transportTruck,
     title: "Transport Execution",
     description:
       "Reliable transportation solutions executed with precision and efficiency.",
   },
   {
-    icon: BrandIcons.handshake,
+    icon: BrandIcons.coordination,
     title: "Logistics Coordination",
     description:
       "End-to-end coordination that ensures smooth movement across the supply chain.",
   },
   {
-    icon: BrandIcons.map,
+    icon: BrandIcons.dispatchRoute,
     title: "Dispatch & Route Management",
     description:
       "Optimized dispatching and routing for faster deliveries and reduced operational costs.",
   },
   {
-    icon: BrandIcons.fastDelivery,
+    icon: BrandIcons.lastMile,
     title: "Last-Mile Delivery",
     description:
       "Seamless last-mile delivery solutions built for speed and customer satisfaction.",
   },
   {
-    icon: BrandIcons.packageTracking,
+    icon: BrandIcons.shipmentTracking,
     title: "Real-Time Shipment Tracking",
     description:
       "Complete visibility into shipments with real-time updates at every stage.",
@@ -93,8 +93,8 @@ export default function Testimonials() {
                 key={label}
                 className="flex items-center gap-4 lg:pl-8 lg:first:pl-0"
               >
-                <div className="p-4 rounded-sm bg-primary-light/10 flex items-center justify-center shrink-0">
-                  <Icon className="h-10 w-10" />
+                <div className="size-20 rounded-sm bg-primary-light/10 flex items-center justify-center shrink-0">
+                  <Icon className="h-16 w-16 object-contain" />
                 </div>
                 <div>
                   <p className="text-primary font-medium leading-snug">
@@ -136,8 +136,8 @@ export default function Testimonials() {
               transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
               className="flex flex-col h-full border border-primary rounded-xs bg-white py-8 px-4 text-center"
             >
-              <div className="p-5 rounded-sm bg-primary-light/10 flex items-center justify-center mx-auto mb-10">
-                <Icon className="h-12 w-12" />
+              <div className="flex items-center justify-center mx-auto mb-8">
+                <Icon className="h-20 w-20" />
               </div>
               <h3 className="text-xl text-primary mb-6">{title}</h3>
               <p className="text-black text-sm">{description}</p>

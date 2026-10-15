@@ -81,8 +81,8 @@ export default function AccessHubPage() {
               transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
               className="group relative overflow-hidden rounded-xs border border-gray-100 p-8 shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="mb-5 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <link.icon className="h-9 w-9" />
+              <div className="mb-5 flex h-20 items-center justify-start">
+                <link.icon className="h-16 w-16" />
               </div>
               <h3 className="text-xl font-semibold text-black mb-2">
                 {link.title}

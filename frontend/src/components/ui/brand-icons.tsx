@@ -46,4 +46,13 @@ export const BrandIcons = {
   target: make(19),
   handshake: make(20),
   growth: make(21),
+  bookDelivery: make(22),
+  pickup: make(23),
+  deliveredCare: make(24),
+  freightBrokerage: make(25),
+  transportTruck: make(26),
+  coordination: make(27),
+  dispatchRoute: make(28),
+  lastMile: make(29),
+  shipmentTracking: make(30),
 } satisfies Record<string, BrandIcon>;

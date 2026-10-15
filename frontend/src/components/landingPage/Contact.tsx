@@ -8,7 +8,8 @@ import {
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
-import { BrandIcons, type BrandIcon } from "@/components/ui/brand-icons";
+
+import { LineIcons, type LineIcon } from "@/components/ui/line-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,33 +33,33 @@ import {
 
 // Placeholder background — swap for the dedicated Contact/Help image once it's
 // supplied.
-const CONTACT_BG = "/quoteBg.svg";
+const CONTACT_BG = "/contact-bg.png";
 
 const OPTIONS: {
   kind: ContactFormKind;
   title: string;
   description: string;
-  icon: BrandIcon;
+  icon: LineIcon;
 }[] = [
   {
     kind: "quote",
     title: "Request a Quote",
     description:
       "Need pricing for an upcoming shipment or logistics requirement?",
-    icon: BrandIcons.checklist,
+    icon: LineIcons.clipboardDollar,
   },
   {
     kind: "support",
     title: "Customer Support",
     description:
       "Already have a shipment or need assistance with an existing delivery?",
-    icon: BrandIcons.support,
+    icon: LineIcons.agentHeadset,
   },
   {
     kind: "inquiry",
     title: "General Inquiry",
     description: "Have a question about Logical Links or our services?",
-    icon: BrandIcons.mail,
+    icon: LineIcons.gearQuestion,
   },
 ];
 
@@ -89,7 +90,7 @@ export default function Contact() {
       className="relative min-h-screen overflow-hidden"
     >
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 bg-cover bg-[position:72%_center] lg:bg-center bg-no-repeat"
         style={{ backgroundImage: `url('${CONTACT_BG}')` }}
       />
 
@@ -166,7 +167,7 @@ function OptionCard({
 }: {
   title: string;
   description: string;
-  icon: BrandIcon;
+  icon: LineIcon;
   active: boolean;
   onClick: () => void;
 }) {
@@ -186,7 +187,7 @@ function OptionCard({
           active ? "bg-primary text-white" : "bg-white/15 text-white"
         }`}
       >
-        <Icon className="h-8 w-8" />
+        <Icon className="h-5 w-5" />
       </span>
       <span className="flex-1">
         <span className="block text-base font-semibold text-white">

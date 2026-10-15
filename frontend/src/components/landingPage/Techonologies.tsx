@@ -100,7 +100,7 @@ function FeatureCard({ icon: Icon, title, description, index }: FeatureCardProps
       {/* <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/15" /> */}
       {/* <div className="absolute -right-2 top-4 h-24 w-24 rounded-full bg-white/20" /> */}
       <div className="relative z-10">
-        <div className="mb-3 flex size-14 items-center justify-center rounded-sm bg-white"><Icon className="h-10 w-10" /></div>
+        <div className="mb-3 flex size-20 items-center justify-center rounded-sm bg-white"><Icon className="h-16 w-16" /></div>
         <p className="mb-1 text-lg font-semibold">{title}</p>
         <p className="text-xs leading-relaxed text-white/90">{description}</p>
       </div>

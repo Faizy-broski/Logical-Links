@@ -124,8 +124,8 @@ export default function ContactSupportPage() {
             </div>
 
             <div className="flex items-center gap-3 rounded-xs border border-gray-100 p-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <BrandIcons.phone className="h-7 w-7" />
+              <div className="flex size-16 shrink-0 items-center justify-center">
+                <BrandIcons.phone className="h-11 w-11" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-black">Call Support</p>
@@ -134,8 +134,8 @@ export default function ContactSupportPage() {
             </div>
 
             <div className="flex items-center gap-3 rounded-xs border border-gray-100 p-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <BrandIcons.mail className="h-7 w-7" />
+              <div className="flex size-16 shrink-0 items-center justify-center">
+                <BrandIcons.mail className="h-11 w-11" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-black">Email Support</p>
