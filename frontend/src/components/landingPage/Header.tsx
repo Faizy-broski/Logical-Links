@@ -69,7 +69,7 @@ export default function Header() {
       className={`fixed left-0 right-0 z-50 w-full transition-[top,padding] ${HEADER_EASE} ${
         scrolled
           ? "top-0 px-0 py-0"
-          : `${pathname === "/" ? "top-10" : "top-2"} px-6 py-4`
+          : "top-2 px-6 py-4"
       }`}
     >
       <div
@@ -85,7 +85,7 @@ export default function Header() {
           aria-label="Go to top"
           className="focus:outline-none"
         >
-          <Image src="/logo.svg" alt="Logical Links" width={100} height={50} />
+          <Image src="/logo-gold.png" alt="Logical Links" width={100} height={77} />
         </button>
 
         {/* Desktop nav */}

@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons, type DashboardIcon } from "@/components/ui/dashboard-icons";
 import { cn } from "@/lib/utils/cn";
 
 import {
@@ -57,6 +58,32 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
 
 function roleIcon(slug: string): LucideIcon {
   return ROLE_ICONS[slug] ?? ShieldCheck;
+}
+
+// Portrait artwork for the role KPI cards. Custom roles are created from the UI
+// with arbitrary slugs, so those are matched on keywords in the slug / label.
+const ROLE_ARTWORK: Record<string, DashboardIcon> = {
+  ceo: DashboardIcons.ceo,
+  vp: DashboardIcons.vp,
+  manager: DashboardIcons.manager,
+  assistant: DashboardIcons.assistant,
+  driver: DashboardIcons.driver,
+};
+
+const ROLE_ARTWORK_KEYWORDS: [RegExp, DashboardIcon][] = [
+  [/\bcsr\b|customer.?service|support/i, DashboardIcons.csr],
+  [/sales|marketing/i, DashboardIcons.salesMarketing],
+  [/account|financ|bookkeep/i, DashboardIcons.accountant],
+  [/operation|dispatch/i, DashboardIcons.operations],
+  [/driver|courier/i, DashboardIcons.driver],
+  [/manager/i, DashboardIcons.manager],
+  [/assistant/i, DashboardIcons.assistant],
+];
+
+function roleArtwork(role: AdminRoleDef): LucideIcon | DashboardIcon {
+  if (ROLE_ARTWORK[role.slug]) return ROLE_ARTWORK[role.slug];
+  const text = `${role.slug} ${role.label}`;
+  return ROLE_ARTWORK_KEYWORDS.find(([re]) => re.test(text))?.[1] ?? roleIcon(role.slug);
 }
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -310,7 +337,7 @@ export default function RolesPermissionsPage() {
               title={role.label}
               value={roleCounts[role.slug] ?? 0}
               subtitle={`of ${permissions.length} permissions granted`}
-              icon={roleIcon(role.slug)}
+              icon={roleArtwork(role)}
               chartColor="#C89B3C"
               isLoading={isLoading}
             />

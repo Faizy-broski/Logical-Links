@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, AlertTriangle, FileText, Send, DollarSign, AlertCircle, Award } from 'lucide-react'
+import { ArrowUpRight, Clock3, AlertTriangle, Send } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useDeliveries } from '@/hooks/use-deliveries'
 import { useQuotations } from '@/hooks/use-quotations'
@@ -11,6 +11,7 @@ import { useTiers } from '@/hooks/use-tiers'
 import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/deliveries/status-badge'
 import { KpiCard } from '@/components/deliveries/kpi-card'
+import { DashboardIcons } from '@/components/ui/dashboard-icons'
 import { TierDetailsSheet } from '@/components/deliveries/sheets/tier-details-sheet'
 import { getTierProgress } from '@/lib/tiers'
 import { DeliveryLiveUpdates } from '@/components/deliveries/delivery-live-updates'
@@ -61,7 +62,7 @@ export default function CorporateDashboard() {
     {
       title:      'Total Deliveries',
       value:      totalDeliveries,
-      icon:       Package,
+      icon:       DashboardIcons.totalDelivered,
       chartColor: '#C89B3C',
       data:       sparkline,
       growth:     growth.pct,
@@ -72,21 +73,21 @@ export default function CorporateDashboard() {
     {
       title:      'Active',
       value:      activeDeliveries,
-      icon:       Truck,
+      icon:       DashboardIcons.activeDeliveriesFast,
       chartColor: '#3B82F6',
       isLoading:  statsLoading,
     },
     {
       title:      'Delivered',
       value:      delivered,
-      icon:       CheckCircle2,
+      icon:       DashboardIcons.deliveredAlt,
       chartColor: '#10B981',
       isLoading:  statsLoading,
     },
     {
       title:      'Invoices Due',
       value:      iStats.sent + iStats.overdue,
-      icon:       DollarSign,
+      icon:       DashboardIcons.invoicesDue,
       chartColor: '#F59E0B',
       valueColor: '#7B1E3A',
       isLoading:  invoicesLoading,
@@ -99,7 +100,7 @@ export default function CorporateDashboard() {
   const tierKpi = {
     title:      'Partner Tier',
     value:      tierProgress?.current.name ?? '—',
-    icon:       Award,
+    icon:       DashboardIcons.membership,
     chartColor: '#8B5CF6',
     subtitle:   tierProgress?.next
       ? `${tierProgress.deliveriesToNext} to ${tierProgress.next.name}`
@@ -185,10 +186,10 @@ export default function CorporateDashboard() {
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4 sm:p-5">
-            <KpiCard title="Total"    value={qStats.total}    icon={FileText}     chartColor="#C89B3C" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Total"    value={qStats.total}    icon={DashboardIcons.quotationTotal}     chartColor="#C89B3C" isLoading={quotationsLoading} subtitle="" />
             <KpiCard title="Draft"    value={qStats.draft}    icon={Clock3}       chartColor="#6B7280" isLoading={quotationsLoading} subtitle="" />
             <KpiCard title="Sent"     value={qStats.sent}     icon={Send}         chartColor="#3B82F6" isLoading={quotationsLoading} subtitle="" />
-            <KpiCard title="Accepted" value={qStats.accepted} icon={CheckCircle2} chartColor="#22C55E" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Accepted" value={qStats.accepted} icon={DashboardIcons.quotationAccepted} chartColor="#22C55E" isLoading={quotationsLoading} subtitle="" />
           </div>
         </div>
 
@@ -208,11 +209,11 @@ export default function CorporateDashboard() {
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-5 sm:p-5">
-            <KpiCard title="Total"   value={iStats.total}   icon={FileText}     chartColor="#C89B3C" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Total"   value={iStats.total}   icon={DashboardIcons.invoiceTotal}     chartColor="#C89B3C" isLoading={invoicesLoading} subtitle="" />
             <KpiCard title="Draft"   value={iStats.draft}   icon={Clock3}       chartColor="#6B7280" isLoading={invoicesLoading} subtitle="" />
             <KpiCard title="Sent"    value={iStats.sent}    icon={Send}         chartColor="#3B82F6" isLoading={invoicesLoading} subtitle="" />
-            <KpiCard title="Paid"    value={iStats.paid}    icon={DollarSign}   chartColor="#22C55E" isLoading={invoicesLoading} subtitle="" />
-            <KpiCard title="Overdue" value={iStats.overdue} icon={AlertCircle}  chartColor="#EF4444" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Paid"    value={iStats.paid}    icon={DashboardIcons.invoicePaid}   chartColor="#22C55E" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Overdue" value={iStats.overdue} icon={DashboardIcons.invoiceOverdue}  chartColor="#EF4444" isLoading={invoicesLoading} subtitle="" />
           </div>
         </div>
 

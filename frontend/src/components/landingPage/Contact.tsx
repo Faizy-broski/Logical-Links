@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ChevronRight,
+  Headset,
+  type LucideIcon,
 } from "lucide-react";
 
 import { LineIcons, type LineIcon } from "@/components/ui/line-icons";
@@ -35,11 +37,18 @@ import {
 // supplied.
 const CONTACT_BG = "/contact-bg.png";
 
+// Desktop: the artwork is drawn at 85vw, bottom-right, so its left edge (the
+// chat bubble, ~44% across the image) stays clear of the options column. The
+// backdrop continues the image's own wall/desk colours; the desk band height
+// is the image's below-horizon share (31%) of its rendered height (85vw × 672/1536).
+const CONTACT_BACKDROP =
+  "linear-gradient(to top, #3e3c3a 0, #4b4641 10.8vw, #111111 11.6vw)";
+
 const OPTIONS: {
   kind: ContactFormKind;
   title: string;
   description: string;
-  icon: LineIcon;
+  icon: LineIcon | LucideIcon;
 }[] = [
   {
     kind: "quote",
@@ -53,7 +62,7 @@ const OPTIONS: {
     title: "Customer Support",
     description:
       "Already have a shipment or need assistance with an existing delivery?",
-    icon: LineIcons.agentHeadset,
+    icon: Headset,
   },
   {
     kind: "inquiry",
@@ -90,9 +99,24 @@ export default function Contact() {
       className="relative min-h-screen overflow-hidden"
     >
       <div
-        className="absolute inset-0 bg-cover bg-[position:72%_center] lg:bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-[position:72%_center] bg-no-repeat lg:hidden"
         style={{ backgroundImage: `url('${CONTACT_BG}')` }}
       />
+      <div
+        className="absolute inset-0 hidden lg:block"
+        style={{ background: CONTACT_BACKDROP }}
+      >
+        <div
+          className="absolute bottom-0 right-0 aspect-1536/672 w-[85vw] bg-contain bg-no-repeat"
+          style={{
+            backgroundImage: `url('${CONTACT_BG}')`,
+            // Fade the left and top edges into the backdrop so the image has no seam.
+            maskImage:
+              "linear-gradient(to right, transparent, black 8%), linear-gradient(to bottom, transparent, black 20%)",
+            maskComposite: "intersect",
+          }}
+        />
+      </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
         <div className="grid w-full items-stretch gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-0">
@@ -167,7 +191,7 @@ function OptionCard({
 }: {
   title: string;
   description: string;
-  icon: LineIcon;
+  icon: LineIcon | LucideIcon;
   active: boolean;
   onClick: () => void;
 }) {

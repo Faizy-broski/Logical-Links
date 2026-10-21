@@ -3,8 +3,9 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { FileText, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import {  } from "lucide-react";
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { InvoicesList } from "@/components/documents/documents-list";
 import { TableFilters } from "@/components/ui/table-filters";
 import type { FilterDef } from "@/components/ui/table-filters";
@@ -156,10 +157,10 @@ export default function CorporateInvoicesPage() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard title="Total"   value={stats.total}   icon={FileText}     chartColor="#C89B3C" isLoading={isLoading} />
-          <KpiCard title="Unpaid"  value={stats.unpaid}  icon={Clock}        chartColor="#EAB308" isLoading={isLoading} />
-          <KpiCard title="Overdue" value={stats.overdue} icon={AlertCircle}  chartColor="#EF4444" isLoading={isLoading} />
-          <KpiCard title="Paid"    value={stats.paid}    icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
+          <KpiCard title="Total"   value={stats.total}   icon={DashboardIcons.invoiceTotal}     chartColor="#C89B3C" isLoading={isLoading} />
+          <KpiCard title="Unpaid"  value={stats.unpaid}  icon={DashboardIcons.invoiceUnpaid}        chartColor="#EAB308" isLoading={isLoading} />
+          <KpiCard title="Overdue" value={stats.overdue} icon={DashboardIcons.invoiceOverdue}  chartColor="#EF4444" isLoading={isLoading} />
+          <KpiCard title="Paid"    value={stats.paid}    icon={DashboardIcons.invoicePaid} chartColor="#22C55E" isLoading={isLoading} />
         </div>
 
         <InvoicesList

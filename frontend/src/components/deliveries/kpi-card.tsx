@@ -10,6 +10,7 @@ import {
   type TooltipProps,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { isDashboardIcon, type DashboardIcon } from "@/components/ui/dashboard-icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ export interface KpiDataPoint {
 export interface KpiCardProps {
   title: string;
   value: number | string;
-  icon: LucideIcon;
+  icon: LucideIcon | DashboardIcon;
   growth?: string;
   trend?: "up" | "down";
   subtitle?: string;
@@ -167,18 +168,23 @@ export function KpiCard({
           <p className="mt-1 text-[11px] text-muted sm:mt-1.5">{subtitle}</p>
         </div>
 
-        {/* Icon badge */}
-        <div
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-13 sm:rounded-2xl"
-          style={{
-            background: `${chartColor}0d`,
-            border: `1px solid ${chartColor}22`,
-            color: chartColor,
-            boxShadow: `0 2px 8px ${chartColor}18`,
-          }}
-        >
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" size={20} />
-        </div>
+        {/* Icon badge — full-colour artwork carries its own colour and depth,
+            so it sits on its own instead of inside the tinted chip. */}
+        {isDashboardIcon(Icon) ? (
+          <Icon className="size-12 drop-shadow-sm sm:size-16" />
+        ) : (
+          <div
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-13 sm:rounded-2xl"
+            style={{
+              background: `${chartColor}0d`,
+              border: `1px solid ${chartColor}22`,
+              color: chartColor,
+              boxShadow: `0 2px 8px ${chartColor}18`,
+            }}
+          >
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6" size={20} />
+          </div>
+        )}
       </div>
 
       {/* Progress bar */}

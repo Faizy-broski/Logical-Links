@@ -375,20 +375,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { openContactForm } from "@/lib/contact-section";
-import { LineIcons } from "@/components/ui/line-icons";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  ChevronRight,
-  ArrowRight,
-} from "lucide-react";
-import {
-  FaFacebookF,
-  FaInstagram,
-  FaLinkedinIn,
-  FaXTwitter,
-} from "react-icons/fa6";
+import { FooterIcons } from "@/components/ui/footer-icons";
+import { ChevronRight, ArrowRight } from "lucide-react";
 
 // ── Content wired to the actual app routes / sections ──────────────────────────
 const services = [
@@ -411,23 +399,23 @@ const company = [
 ];
 
 const quickAccess = [
-  { label: "Track a Delivery", href: "/access-hub", icon: LineIcons.boxSpeed },
-  { label: "Request a Quote", href: "/#quote", icon: LineIcons.clipboardDollar },
-  { label: "Book a Delivery", href: "/register", icon: LineIcons.calendarPackage },
-  { label: "Access Hub", href: "/access-hub", icon: LineIcons.keyholeUser },
+  { label: "Track a Delivery", href: "/access-hub", icon: FooterIcons.trackDelivery },
+  { label: "Request a Quote", href: "/#quote", icon: FooterIcons.quote },
+  { label: "Book a Delivery", href: "/register", icon: FooterIcons.bookDelivery },
+  { label: "Access Hub", href: "/access-hub", icon: FooterIcons.accessHub },
 ];
 
 const highlights = [
-  { label: "Reliable Connections", icon: LineIcons.shieldHandshake },
-  { label: "Smarter Solutions", icon: LineIcons.bulbPuzzle },
-  { label: "Stronger Partnerships", icon: LineIcons.userLink },
+  { label: "Reliable Connections", icon: FooterIcons.connections },
+  { label: "Smarter Solutions", icon: FooterIcons.innovation },
+  { label: "Stronger Partnerships", icon: FooterIcons.partnerships },
 ];
 
 const socials = [
-  { Icon: FaFacebookF, label: "Facebook", href: "#" },
-  { Icon: FaXTwitter, label: "X", href: "#" },
-  { Icon: FaLinkedinIn, label: "LinkedIn", href: "#" },
-  { Icon: FaInstagram, label: "Instagram", href: "https://www.instagram.com/logicallinks/" },
+  { Icon: FooterIcons.facebook, label: "Facebook", href: "#" },
+  { Icon: FooterIcons.x, label: "X", href: "#" },
+  { Icon: FooterIcons.linkedin, label: "LinkedIn", href: "#" },
+  { Icon: FooterIcons.instagram, label: "Instagram", href: "https://www.instagram.com/logicallinks/" },
 ];
 
 const legal = [
@@ -461,10 +449,10 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <Image
-              src="/logo_white.svg"
+              src="/logo-champagne.png"
               alt="Logical Links"
               width={150}
-              height={64}
+              height={120}
               className="mb-6"
             />
             <p className="max-w-xs text-sm leading-relaxed text-white/60">
@@ -474,8 +462,8 @@ export default function Footer() {
             <ul className="mt-8 space-y-4">
               {highlights.map(({ label, icon: Icon }) => (
                 <li key={label} className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary">
-                    <Icon className="h-4 w-4" />
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-primary/50">
+                    <Icon className="h-6 w-6" />
                   </span>
                   <span className="text-sm text-white/80">{label}</span>
                 </li>
@@ -543,9 +531,7 @@ export default function Footer() {
                     }}
                     className="flex items-center gap-3 text-sm text-white/70 transition-colors hover:text-primary"
                   >
-                    <span className="text-primary">
-                      <Icon className="h-4 w-4" />
-                    </span>
+                    <Icon className="h-6 w-6" />
                     {label}
                   </Link>
                 </li>
@@ -558,7 +544,7 @@ export default function Footer() {
             <ColumnHeading>Get in Touch</ColumnHeading>
             <ul className="space-y-5 text-sm">
               <li className="flex gap-3">
-                <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                <FooterIcons.address className="h-6 w-6" />
                 <span className="text-white/70">
                   123 Logistics Way
                   <br />
@@ -566,7 +552,7 @@ export default function Footer() {
                 </span>
               </li>
               <li className="flex gap-3">
-                <Phone className="h-4 w-4 shrink-0 text-primary" />
+                <FooterIcons.phone className="h-6 w-6" />
                 <a
                   href="tel:+14373356305"
                   className="text-white/70 transition-colors hover:text-primary"
@@ -575,7 +561,7 @@ export default function Footer() {
                 </a>
               </li>
               <li className="flex gap-3">
-                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <FooterIcons.email className="h-6 w-6" />
                 <a
                   href="mailto:info@logicallinks.ca"
                   className="text-white/70 transition-colors hover:text-primary"
@@ -584,7 +570,7 @@ export default function Footer() {
                 </a>
               </li>
               <li className="flex gap-3">
-                <LineIcons.clockStopwatch className="h-4 w-4 shrink-0 text-primary" />
+                <FooterIcons.hours className="h-6 w-6" />
                 <span className="text-white/70">
                   Mon – Fri: 8:00 AM – 6:00 PM
                   <br />
@@ -599,9 +585,9 @@ export default function Footer() {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/40 text-primary transition hover:bg-primary hover:text-[#0b0b0d]"
+                  className="flex h-10 w-10 items-center justify-center rounded-md border border-primary/40 transition hover:border-primary hover:bg-primary/15"
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-6 w-6" />
                 </a>
               ))}
             </div>
@@ -613,8 +599,8 @@ export default function Footer() {
       <div className="border-y border-white/10 bg-[#131110]">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-5">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary">
-              <LineIcons.agentHeadset className="h-6 w-6" />
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-primary/50">
+              <FooterIcons.support className="h-9 w-9" />
             </span>
             <div>
               <p className="text-lg font-semibold text-primary">

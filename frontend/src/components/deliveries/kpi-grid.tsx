@@ -1,11 +1,12 @@
-import { Truck, Clock3, CheckCircle2, AlertTriangle } from "lucide-react";
+import {  } from "lucide-react";
 import { KpiCard, type KpiDataPoint } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 
 const kpiItems = [
-  { title: "Total Deliveries",  key: "total",      icon: Truck,          chartColor: "#C89B3C" },
-  { title: "In Transit",   key: "transit",     icon: Clock3,         chartColor: "#3B82F6" },
-  { title: "Delivered",    key: "delivered",   icon: CheckCircle2,   chartColor: "#10B981" },
-  { title: "Exceptions",   key: "exceptions",  icon: AlertTriangle,  chartColor: "#EF4444" },
+  { title: "Total Deliveries",  key: "total",      icon: DashboardIcons.totalDeliveries,          chartColor: "#C89B3C" },
+  { title: "In Transit",   key: "transit",     icon: DashboardIcons.inTransit,         chartColor: "#3B82F6" },
+  { title: "Delivered",    key: "delivered",   icon: DashboardIcons.deliveredTransit,   chartColor: "#10B981" },
+  { title: "Exceptions",   key: "exceptions",  icon: DashboardIcons.exceptions,  chartColor: "#EF4444" },
 ];
 
 interface KpiGridStats {

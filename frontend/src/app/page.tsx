@@ -24,10 +24,6 @@ export default function LandingPage() {
       <LandingAuthRedirect />
       <ScrollToHash />
       <Header />
-      <div className="text-center bg-primary text-white py-2 text-xs">
-        <span className="underline">Important Note:</span>{" "}
-        <span>if you completely feel secure then transfer your delivery.</span>
-      </div>
       <div
         className="relative isolate bg-no-repeat bg-center min-h-[50vw] pt-10"
         style={{

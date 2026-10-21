@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 
 import { useAdminEmployees, useUpdateAdminEmployee, useDeleteAdminEmployee } from "@/hooks/use-admin-employees";
@@ -407,9 +408,9 @@ export default function AdminEmployeesPage() {
 
         {/* KPI cards */}
         <div className="grid gap-5 sm:grid-cols-3">
-          <KpiCard title="Total Employees" value={stats.total}    icon={Users}         chartColor="#C89B3C" isLoading={isLoading} />
-          <KpiCard title="Active"          value={stats.active}   icon={CheckCircle2}  chartColor="#22C55E" isLoading={isLoading} />
-          <KpiCard title="Disabled"        value={stats.disabled} icon={XCircle}       chartColor="#EF4444" isLoading={isLoading} />
+          <KpiCard title="Total Employees" value={stats.total}    icon={DashboardIcons.totalEmployees}         chartColor="#C89B3C" isLoading={isLoading} />
+          <KpiCard title="Active"          value={stats.active}   icon={DashboardIcons.employeesActive}  chartColor="#22C55E" isLoading={isLoading} />
+          <KpiCard title="Disabled"        value={stats.disabled} icon={DashboardIcons.employeeDisabled}       chartColor="#EF4444" isLoading={isLoading} />
         </div>
 
         {/* Table */}

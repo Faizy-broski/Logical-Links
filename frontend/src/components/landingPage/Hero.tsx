@@ -86,7 +86,7 @@ export default function Hero() {
             href="/register"
             className="px-6 py-3 text-base font-semibold text-white bg-primary hover:bg-primary-dark rounded-[8px] shadow-sm transition-colors"
           >
-            Track Shippment
+            Track Shipment
           </Link>
           {/* <Link
             href="/login"

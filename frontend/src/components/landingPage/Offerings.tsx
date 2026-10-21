@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
 const services = [
-  { id: "01", title: "LLC", image: "/llc-card-1.jpg", position: "50% 30%", href: "/llc" },
-  { id: "02", title: "SERVICES", image: "/llc-card-2.jpg", position: "50% 55%", href: "/services" },
+  { id: "01", title: "LLC", image: "/offerings-llc.jpg", position: "50% 26%", href: "/llc" },
+  { id: "02", title: "SERVICES", image: "/offerings-services.jpg", position: "50% 34%", href: "/services" },
   { id: "03", title: "Access Hub", image: "/llc-card-3.jpg", position: "50% 45%", href: "/access-hub" },
 ];
 

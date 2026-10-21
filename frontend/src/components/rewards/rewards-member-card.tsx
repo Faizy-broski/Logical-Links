@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Award, Gift } from "lucide-react";
+import { ArrowRight, Award } from "lucide-react";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { useRewardsCreditSummary } from "@/hooks/use-rewards-credit";
 
 // The residential "Get a Quote"/dashboard KPI card for the Rewards Member
@@ -26,9 +27,7 @@ export function RewardsMemberCard() {
             Rewards Member
           </p>
         </div>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Gift className="h-4 w-4" />
-        </div>
+        <DashboardIcons.membership className="size-12 sm:size-16" />
       </div>
 
       {isLoading ? (

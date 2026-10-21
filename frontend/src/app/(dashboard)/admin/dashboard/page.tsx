@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Package, Truck, CheckCircle2, Clock3, ShieldAlert, Receipt } from 'lucide-react'
+import { ArrowUpRight, Clock3, ShieldAlert } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { usePermission } from '@/hooks/use-permission'
 import { useDeliveries } from '@/hooks/use-deliveries'
@@ -12,6 +12,7 @@ import {
 } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/deliveries/status-badge'
 import { KpiCard } from '@/components/deliveries/kpi-card'
+import { DashboardIcons } from '@/components/ui/dashboard-icons'
 import { CompanyLogo } from '@/components/ui/company-logo'
 
 export default function AdminDashboard() {
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
     {
       title:      'Total Deliveries',
       value:      totalDeliveries,
-      icon:       Package,
+      icon:       DashboardIcons.totalDelivered,
       chartColor: '#C89B3C',
       data:       sparkline,
       growth:     growth.pct,
@@ -53,19 +54,19 @@ export default function AdminDashboard() {
     {
       title:      'Active Deliveries',
       value:      activeDeliveries,
-      icon:       Truck,
+      icon:       DashboardIcons.activeDeliveriesFast,
       chartColor: '#3B82F6',
     },
     {
       title:      'Delivered',
       value:      delivered,
-      icon:       CheckCircle2,
+      icon:       DashboardIcons.deliveredAlt,
       chartColor: '#10B981',
     },
     {
       title:      'Invoices Due',
       value:      invoicesDue,
-      icon:       Receipt,
+      icon:       DashboardIcons.invoicesDue,
       chartColor: '#8B5CF6',
     },
   ]

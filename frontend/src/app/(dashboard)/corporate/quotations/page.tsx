@@ -3,9 +3,10 @@
 import { useMemo, useRef, useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { FileText, CheckCircle2, Clock, AlertTriangle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { useAuthStore } from "@/store/auth.store";
 import { QuotationsList } from "@/components/documents/documents-list";
 import { TableFilters } from "@/components/ui/table-filters";
@@ -173,10 +174,10 @@ export default function CorporateQuotationsPage() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard title="Total Quotations" value={stats.total}         icon={FileText}      chartColor="#C89B3C" isLoading={statsLoading} />
-          <KpiCard title="Pending Review"   value={stats.pendingReview} icon={Clock}         chartColor="#3B82F6" isLoading={statsLoading} />
-          <KpiCard title="Accepted"         value={stats.accepted}      icon={CheckCircle2}  chartColor="#22C55E" isLoading={statsLoading} />
-          <KpiCard title="Expired"          value={stats.expired}       icon={AlertTriangle} chartColor="#F59E0B" isLoading={statsLoading} />
+          <KpiCard title="Total Quotations" value={stats.total}         icon={DashboardIcons.quotationTotal}      chartColor="#C89B3C" isLoading={statsLoading} />
+          <KpiCard title="Pending Review"   value={stats.pendingReview} icon={DashboardIcons.quotationPending}         chartColor="#3B82F6" isLoading={statsLoading} />
+          <KpiCard title="Accepted"         value={stats.accepted}      icon={DashboardIcons.quotationAccepted}  chartColor="#22C55E" isLoading={statsLoading} />
+          <KpiCard title="Expired"          value={stats.expired}       icon={DashboardIcons.quotationExpired} chartColor="#F59E0B" isLoading={statsLoading} />
         </div>
 
         <QuotationsList

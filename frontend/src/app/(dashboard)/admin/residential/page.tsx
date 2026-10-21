@@ -7,6 +7,7 @@ import { UserCircle2, Mail, Phone, Calendar, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 import { useTableFilters } from "@/hooks/use-table-filters";
 import { AddResidentialCustomerSheet } from "@/components/accounts/add-residential-customer-sheet";
@@ -123,7 +124,7 @@ export default function ResidentialCustomersPage() {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-1 max-w-xs">
-          <KpiCard title="Total Customers" value={totalCount} icon={UserCircle2} chartColor="#C89B3C" isLoading={isLoading} />
+          <KpiCard title="Total Customers" value={totalCount} icon={DashboardIcons.totalCustomers} chartColor="#C89B3C" isLoading={isLoading} />
         </div>
 
         <DataTable<UserProfile>

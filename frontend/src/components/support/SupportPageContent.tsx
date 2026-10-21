@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PlusCircle, Phone, Mail, LifeBuoy, ChevronDown, ChevronUp } from "lucide-react";
+import { LifeBuoy, ChevronDown, ChevronUp } from "lucide-react";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 import { SupportCaseStatusBadge } from "@/components/documents/document-status-badge";
 import { NewCaseDialog } from "@/components/support/new-case-dialog";
@@ -180,9 +181,7 @@ export function SupportPageContent() {
               onClick={() => setCreateOpen(true)}
               className="flex items-center gap-3 rounded-2xl border border-card-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-primary/5"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <PlusCircle className="h-5 w-5" />
-              </div>
+              <DashboardIcons.newSupport className="h-12 w-12" />
               <div>
                 <p className="text-sm font-semibold text-foreground">New Support Request</p>
                 <p className="text-xs text-muted">Open a new case</p>
@@ -193,9 +192,7 @@ export function SupportPageContent() {
               href={`tel:${SUPPORT_PHONE.replace(/\s+/g, "")}`}
               className="flex items-center gap-3 rounded-2xl border border-card-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-primary/5"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Phone className="h-5 w-5" />
-              </div>
+              <DashboardIcons.callSupport className="h-12 w-12" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Call Support</p>
                 <p className="text-xs text-muted">{SUPPORT_PHONE}</p>
@@ -206,9 +203,7 @@ export function SupportPageContent() {
               href={`mailto:${SUPPORT_EMAIL}`}
               className="flex items-center gap-3 rounded-2xl border border-card-border bg-card p-4 text-left shadow-sm transition-colors hover:bg-primary/5"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Mail className="h-5 w-5" />
-              </div>
+              <DashboardIcons.emailSupport className="h-12 w-12" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Email Support</p>
                 <p className="text-xs text-muted">{SUPPORT_EMAIL}</p>

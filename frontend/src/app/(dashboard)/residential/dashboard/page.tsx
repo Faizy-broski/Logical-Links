@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Package, Truck, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useDeliveries } from '@/hooks/use-deliveries'
 import { useDashboardStats, periodGrowth, trendToSparkline } from '@/hooks/use-dashboard'
 import { StatusBadge } from '@/components/deliveries/status-badge'
 import { KpiCard } from '@/components/deliveries/kpi-card'
+import { DashboardIcons } from '@/components/ui/dashboard-icons'
 import { RewardsMemberCard } from '@/components/rewards/rewards-member-card'
 import { DeliveryLiveUpdates } from '@/components/deliveries/delivery-live-updates'
 
@@ -32,7 +33,7 @@ export default function ResidentialDashboard() {
     {
       title:      'Total Deliveries',
       value:      totalDeliveries,
-      icon:       Package,
+      icon:       DashboardIcons.totalDeliveriesMap,
       chartColor: '#C89B3C',
       data:       sparkline,
       growth:     growth.pct,
@@ -43,14 +44,14 @@ export default function ResidentialDashboard() {
     {
       title:      'Active',
       value:      activeDeliveries,
-      icon:       Truck,
+      icon:       DashboardIcons.activeDeliveries,
       chartColor: '#3B82F6',
       isLoading:  statsLoading,
     },
     {
       title:      'Delivered',
       value:      delivered,
-      icon:       CheckCircle2,
+      icon:       DashboardIcons.delivered,
       chartColor: '#10B981',
       isLoading:  statsLoading,
     },

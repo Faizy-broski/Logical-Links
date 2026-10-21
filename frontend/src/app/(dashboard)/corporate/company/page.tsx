@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import {
   Building2, Save, Calendar, Hash, Globe, MapPin,
   User, Mail, Phone, Receipt, Briefcase, Factory,
-  Package, Truck, FileText, DollarSign, Award,
+  Award,
 } from 'lucide-react'
 import {
   useMyProfile, useUpdateMyCompanyLogo, useUpdateMyCompany,
@@ -16,6 +16,7 @@ import {
 import { useTiers } from '@/hooks/use-tiers'
 import { getTierProgress } from '@/lib/tiers'
 import { KpiCard } from '@/components/deliveries/kpi-card'
+import { DashboardIcons } from '@/components/ui/dashboard-icons'
 import { TierDetailsSheet } from '@/components/deliveries/sheets/tier-details-sheet'
 import { ActivityFeed } from '@/components/accounts/activity-feed'
 import { AvatarUpload } from '@/components/ui/avatar-upload'
@@ -211,10 +212,10 @@ export default function CompanyProfilePage() {
 
           {/* Account overview — stats */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <KpiCard title="Total Shipments"  value={stats?.totalShipments ?? 0}  icon={Package}    chartColor="#C89B3C" isLoading={!stats} subtitle="" />
-            <KpiCard title="Active Shipments" value={stats?.activeShipments ?? 0} icon={Truck}      chartColor="#3B82F6" isLoading={!stats} subtitle="" />
-            <KpiCard title="Open Quotes"      value={stats?.openQuotes ?? 0}      icon={FileText}   chartColor="#8B5CF6" isLoading={!stats} subtitle="" />
-            <KpiCard title="Total Spend"      value={stats ? money(stats.totalSpend) : '—'} icon={DollarSign} chartColor="#22C55E" isLoading={!stats} subtitle="" />
+            <KpiCard title="Total Shipments"  value={stats?.totalShipments ?? 0}  icon={DashboardIcons.totalDelivered}    chartColor="#C89B3C" isLoading={!stats} subtitle="" />
+            <KpiCard title="Active Shipments" value={stats?.activeShipments ?? 0} icon={DashboardIcons.activeDeliveriesFast}      chartColor="#3B82F6" isLoading={!stats} subtitle="" />
+            <KpiCard title="Open Quotes"      value={stats?.openQuotes ?? 0}      icon={DashboardIcons.quotationPending}   chartColor="#8B5CF6" isLoading={!stats} subtitle="" />
+            <KpiCard title="Total Spend"      value={stats ? money(stats.totalSpend) : '—'} icon={DashboardIcons.invoiceTotal} chartColor="#22C55E" isLoading={!stats} subtitle="" />
           </div>
 
           {/* Partner Tier */}

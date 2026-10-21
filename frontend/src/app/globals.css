@@ -190,7 +190,8 @@ h6,
 
 /* ── Landing-page typography ─────────────────────────────────────────────────
    Scoped to the public marketing pages via the .landing-page wrapper class.
-   Headings: Caudex.  Body copy: Droid Serif (Noto Serif fallback). */
+   Headings: Caudex.  Body copy, nav tabs and buttons: Droid Serif (Noto Serif
+   fallback), so links/buttons match the paragraph text. */
 .landing-page h1,
 .landing-page h2,
 .landing-page h3,
@@ -203,7 +204,9 @@ h6,
 
 .landing-page p,
 .landing-page li,
-.landing-page blockquote {
+.landing-page blockquote,
+.landing-page a,
+.landing-page button {
   font-family: "Droid Serif", var(--font-droid-serif), Georgia, serif;
 }
 

@@ -6,11 +6,9 @@ import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Building2,
-  CheckCircle2,
   MoreVertical,
   Plus,
   Trash2,
-  TrendingUp,
   XCircle,
 } from "lucide-react";
 
@@ -27,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 import { TableSortHeader } from "@/components/ui/table-sort-header";
 import { TableFilters } from "@/components/ui/table-filters";
@@ -440,9 +439,9 @@ export default function CorporateCustomersPage() {
 
         {!isRejectedView && (
           <div className="grid gap-5 sm:grid-cols-3">
-            <KpiCard title="Total Corporate Customers" value={stats.total}      icon={Building2}    chartColor="#C89B3C" isLoading={isLoading} />
-            <KpiCard title="Active"                     value={stats.active}     icon={CheckCircle2} chartColor="#22C55E" isLoading={isLoading} />
-            <KpiCard title="In Pipeline"                value={stats.inPipeline} icon={TrendingUp}   chartColor="#8B5CF6" isLoading={isLoading} />
+            <KpiCard title="Total Corporate Customers" value={stats.total}      icon={DashboardIcons.corporateCustomers}    chartColor="#C89B3C" isLoading={isLoading} />
+            <KpiCard title="Active"                     value={stats.active}     icon={DashboardIcons.customerActive} chartColor="#22C55E" isLoading={isLoading} />
+            <KpiCard title="In Pipeline"                value={stats.inPipeline} icon={DashboardIcons.pipeline}   chartColor="#8B5CF6" isLoading={isLoading} />
           </div>
         )}
 

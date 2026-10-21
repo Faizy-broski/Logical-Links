@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Mail, Phone, Calendar, XCircle, RotateCcw, PauseCircle, PowerOff,
   ChevronRight, Building2, UserCircle2, Globe, Hash, MapPin, Trash2,
-  Briefcase, Factory, Package, Truck, FileText, DollarSign, Award, Users, Pencil,
+  Briefcase, Factory, Award, Users, Pencil,
   CalendarClock, UserCog, PhoneCall,
 } from "lucide-react";
 
@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { KpiCard } from "@/components/deliveries/kpi-card";
+import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { TierDetailsSheet } from "@/components/deliveries/sheets/tier-details-sheet";
 import { getTierProgress } from "@/lib/tiers";
 import {
@@ -364,10 +365,10 @@ export default function AdminCorporateCustomerDetailPage({
         {isActive && (
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <KpiCard title="Total Shipments" value={stats?.totalShipments ?? 0} icon={Package} chartColor="#C89B3C" isLoading={!stats} subtitle="" />
-              <KpiCard title="Active Shipments" value={stats?.activeShipments ?? 0} icon={Truck} chartColor="#3B82F6" isLoading={!stats} subtitle="" />
-              <KpiCard title="Open Quotes" value={stats?.openQuotes ?? 0} icon={FileText} chartColor="#8B5CF6" isLoading={!stats} subtitle="" />
-              <KpiCard title="Total Spend" value={stats ? money(stats.totalSpend) : "—"} icon={DollarSign} chartColor="#22C55E" valueColor="#7B1E3A" isLoading={!stats} subtitle="" />
+              <KpiCard title="Total Shipments" value={stats?.totalShipments ?? 0} icon={DashboardIcons.totalDelivered} chartColor="#C89B3C" isLoading={!stats} subtitle="" />
+              <KpiCard title="Active Shipments" value={stats?.activeShipments ?? 0} icon={DashboardIcons.activeDeliveriesFast} chartColor="#3B82F6" isLoading={!stats} subtitle="" />
+              <KpiCard title="Open Quotes" value={stats?.openQuotes ?? 0} icon={DashboardIcons.quotationPending} chartColor="#8B5CF6" isLoading={!stats} subtitle="" />
+              <KpiCard title="Total Spend" value={stats ? money(stats.totalSpend) : "—"} icon={DashboardIcons.invoiceTotal} chartColor="#22C55E" valueColor="#7B1E3A" isLoading={!stats} subtitle="" />
             </div>
 
             {tierProgress && (
