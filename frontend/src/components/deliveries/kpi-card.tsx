@@ -171,7 +171,7 @@ export function KpiCard({
         {/* Icon badge — full-colour artwork carries its own colour and depth,
             so it sits on its own instead of inside the tinted chip. */}
         {isDashboardIcon(Icon) ? (
-          <Icon className="size-12 drop-shadow-sm sm:size-16" />
+          <Icon className="h-12 w-15 drop-shadow-sm sm:h-16 sm:w-20" />
         ) : (
           <div
             className="flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-13 sm:rounded-2xl"

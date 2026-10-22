@@ -25,6 +25,7 @@ import {
   Gift,
   DollarSign,
   Mail,
+  Container,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getSidebarTheme, getSidebarThemeById } from "@/lib/utils/sidebar-theme";
@@ -47,6 +48,7 @@ const baseNavigation = [
   { label: "Deliveries", href: "/admin/deliveries", icon: Truck, permission: "deliveries.view" },
   { label: "Residential Customers", href: "/admin/residential", icon: UserCircle2, permission: "customers.view" },
   { label: "Corporate Customers", href: "/admin/corporate-customers", icon: Building2, permission: "customers.view" },
+  { label: "Carriers", href: "/admin/carriers", icon: Container, permission: "carriers.view" },
   { label: "Quotations", href: "/admin/quotations", icon: FileQuestion, permission: "quotations.view" },
   { label: "Invoices", href: "/admin/invoices", icon: FileText, permission: "invoices.view" },
   { label: "Rewards", href: "/admin/rewards", icon: Gift, permission: "rewards.view" },
@@ -80,6 +82,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
   const canViewTiers = usePermission("tiers.view");
   const canViewRewards = usePermission("rewards.view");
   const canViewPricing = usePermission("pricing.view");
+  const canViewCarriers = usePermission("carriers.view");
 
   const permissionMap: Record<string, boolean> = {
     "deliveries.view": canViewDeliveries,
@@ -90,15 +93,16 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
     "settings.general": canManageSettings,
     "tiers.view": canViewTiers,
     "rewards.view": canViewRewards,
+    "carriers.view": canViewCarriers,
   };
 
   const navigation = [
     ...baseNavigation.slice(0, 2),
     ...(canViewEmployees ? [{ label: "Employees", href: "/admin/employees", icon: Shield }] : []),
-    ...baseNavigation.slice(2, 11),
+    ...baseNavigation.slice(2, 12),
     ...(canViewPricing ? [{ label: "Pricing Settings", href: "/admin/settings/delivery-rates", icon: DollarSign }] : []),
     ...(canManagePermissions ? [{ label: "Roles & Permissions", href: "/admin/settings/roles", icon: Settings }] : []),
-    ...baseNavigation.slice(11),
+    ...baseNavigation.slice(12),
   ].filter((item) => !("permission" in item) || item.permission === null || permissionMap[item.permission]);
 
   const [mode, setMode] = useState<SidebarMode>("expanded");

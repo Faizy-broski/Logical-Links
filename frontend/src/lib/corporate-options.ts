@@ -3,6 +3,9 @@
 // Values are stored as the plain label text, so existing free-text records keep
 // working — CompanyOptionSelect adds a stored value that isn't in the list.
 
+// Every list ends with "Other" and "N/A" so a field can always be answered.
+export const NOT_APPLICABLE = "N/A";
+
 export const ORGANIZATION_TYPES = [
   "Hospital / Healthcare",
   "Pharmacy",
@@ -28,6 +31,7 @@ export const ORGANIZATION_TYPES = [
   "Hospitality",
   "Real Estate / Property Management",
   "Other",
+  NOT_APPLICABLE,
 ] as const;
 
 export const PHONE_TYPES = [
@@ -38,6 +42,8 @@ export const PHONE_TYPES = [
   "Dispatch",
   "General",
   "Reception",
+  "Other",
+  NOT_APPLICABLE,
 ] as const;
 
 // Canadian provinces and territories (the app is Canada-only).
@@ -56,6 +62,9 @@ export const PROVINCES = [
   "Saskatchewan",
   "Yukon",
 ] as const;
+
+// Province dropdown options: the provinces/territories plus N/A.
+export const PROVINCE_OPTIONS = [...PROVINCES, NOT_APPLICABLE] as const;
 
 export const OTHER_CITY = "Other";
 

@@ -1,7 +1,5 @@
 "use client";
 
-import { CompanyOptionSelect } from "@/components/ui/company-option-select";
-import { ORGANIZATION_TYPES } from "@/lib/corporate-options";
 import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -34,6 +32,7 @@ import { ActivityFeed } from "@/components/accounts/activity-feed";
 import { PipelineStatusBadge } from "@/components/accounts/pipeline-status-badge";
 import { PipelineStatusSelect } from "@/components/accounts/pipeline-status-select";
 import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
+import { EditCorporateCustomerSheet } from "@/components/accounts/edit-corporate-customer-sheet";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
@@ -134,6 +133,7 @@ export default function AdminCorporateCustomerDetailPage({
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [purgeOpen, setPurgeOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const statusMut = useSetAccountPipelineStatus(id);
   const deleteMut = useDeleteAccount();
@@ -210,6 +210,9 @@ export default function AdminCorporateCustomerDetailPage({
   };
 
   const displayId = isActive ? account.customer_id : account.request_id;
+  // Admin-added companies have no login, so fall back to the company record.
+  const contactName = account.contact_name || admin?.full_name || null;
+  const contactPhone = account.contact_phone || admin?.phone || null;
   const tierProgress = tiers.length > 0 ? getTierProgress(stats?.deliveredShipments ?? 0, tiers) : null;
 
   return (
@@ -244,8 +247,18 @@ export default function AdminCorporateCustomerDetailPage({
             <CompanyLogo name={account.account_name} logoUrl={account.logo_url} size="xl" rounded="2xl" />
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-2xl font-bold text-foreground">{account.account_name}</h2>
-              <p className="mt-0.5 text-sm text-muted">Customer ID: {displayId}</p>
-              <p className="mt-0.5 text-sm text-muted">Added {fmtDate(account.created_at, true)}</p>
+              <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                <IdentityRow icon={<UserCircle2 className="h-4 w-4" />} label="Contact" value={contactName} />
+                <IdentityRow icon={<Mail className="h-4 w-4" />} label="Email" value={account.contact_email} href={account.contact_email ? `mailto:${account.contact_email}` : undefined} />
+                <IdentityRow
+                  icon={<Phone className="h-4 w-4" />}
+                  label="Phone"
+                  value={contactPhone ? `${contactPhone}${account.contact_phone_type && account.contact_phone_type !== "N/A" ? ` · ${account.contact_phone_type}` : ""}` : null}
+                  href={contactPhone ? `tel:${contactPhone.replace(/\s+/g, "")}` : undefined}
+                />
+                <IdentityRow icon={<Hash className="h-4 w-4" />} label="Customer ID" value={displayId} />
+                <IdentityRow icon={<Calendar className="h-4 w-4" />} label="Date added" value={fmtDate(account.created_at, true)} />
+              </dl>
               {isActive && tierProgress && (
                 <span className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info/10 px-3 py-1 text-xs font-semibold text-blue-700">
                   <Award className="h-3 w-3" /> {tierProgress.current.name}
@@ -255,6 +268,11 @@ export default function AdminCorporateCustomerDetailPage({
 
             {/* Actions */}
             <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+              {canEdit && (
+                <Button variant="outline" onClick={() => setEditOpen(true)} className="rounded-lg px-5 text-sm">
+                  <Pencil className="mr-1.5 h-4 w-4" /> Edit Profile
+                </Button>
+              )}
               {isRejected ? (
                 <>
                   {canEdit && (
@@ -395,20 +413,24 @@ export default function AdminCorporateCustomerDetailPage({
         )}
 
         {/* Company / Application information */}
-        <CompanyInfoCard account={account} canEdit={canEdit} />
+        <CompanyInfoCard account={account} canEdit={canEdit} onEdit={() => setEditOpen(true)} />
 
         {/* Primary contact */}
-        {(admin?.full_name || account.contact_email || admin?.phone || account.contact_phone) && (
-          <Card title="Primary contact">
-            <div className="space-y-3">
-              {admin?.full_name && <InfoRow icon={<UserCircle2 className="h-4 w-4" />} label="Contact Name" value={admin.full_name} />}
-              {account.contact_email && <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={account.contact_email} />}
-              {(admin?.phone || account.contact_phone) && (
-                <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={(admin?.phone || account.contact_phone)!} />
-              )}
-            </div>
-          </Card>
-        )}
+        <Card
+          title="Primary contact"
+          action={canEdit && (
+            <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+            </Button>
+          )}
+        >
+          <div className="space-y-3">
+            <InfoRow icon={<UserCircle2 className="h-4 w-4" />} label="Contact Name" value={contactName || "—"} />
+            <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={account.contact_email || "—"} />
+            <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={contactPhone || "—"} />
+            <InfoRow icon={<PhoneCall className="h-4 w-4" />} label="Phone Type" value={account.contact_phone_type || "—"} />
+          </div>
+        </Card>
 
         {/* Activity */}
         <ActivityFeed
@@ -427,6 +449,8 @@ export default function AdminCorporateCustomerDetailPage({
         delivered={stats?.deliveredShipments ?? 0}
         tiers={tiers}
       />
+
+      <EditCorporateCustomerSheet open={editOpen} onClose={() => setEditOpen(false)} account={account} />
 
       <ManageAccessSheet
         open={accessOpen}
@@ -507,58 +531,50 @@ export default function AdminCorporateCustomerDetailPage({
   );
 }
 
-/* ─── Company information card (inline edit for business type / industry) ──── */
+/* ─── Header identity row ──────────────────────────────────────────────────── */
 
-function CompanyInfoCard({ account, canEdit }: { account: Account; canEdit: boolean }) {
-  const [editing, setEditing] = useState(false);
-  const [businessType, setBusinessType] = useState(account.business_type ?? "");
-  const [industry, setIndustry] = useState(account.industry ?? "");
-  const updateMut = useUpdateAccount(account.account_id);
+function IdentityRow({ icon, label, value, href }: {
+  icon: React.ReactNode; label: string; value: string | null; href?: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center justify-center gap-2 sm:justify-start">
+      <span className="shrink-0 text-primary">{icon}</span>
+      <dt className="sr-only">{label}</dt>
+      <dd className="min-w-0 truncate">
+        {!value ? (
+          <span className="text-muted">No {label.toLowerCase()}</span>
+        ) : href ? (
+          <a href={href} className="font-medium text-foreground hover:text-primary">{value}</a>
+        ) : (
+          <span className="font-medium text-foreground">{value}</span>
+        )}
+      </dd>
+    </div>
+  );
+}
 
-  async function save() {
-    try {
-      await updateMut.mutateAsync({ businessType, industry });
-      toast.success("Company information updated");
-      setEditing(false);
-    } catch (err) { toast.error((err as Error).message); }
-  }
+/* ─── Company information card (read-only; Edit opens the full profile sheet) ─ */
 
+function CompanyInfoCard({ account, canEdit, onEdit }: { account: Account; canEdit: boolean; onEdit: () => void }) {
   return (
     <Card
       title="Company Information"
       action={canEdit && (
-        editing ? (
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-            <Button size="sm" onClick={save} disabled={updateMut.isPending}>Save</Button>
-          </div>
-        ) : (
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
-          </Button>
-        )
+        <Button size="sm" variant="outline" onClick={onEdit}>
+          <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
+        </Button>
       )}
     >
       <div className="space-y-3">
         <InfoRow icon={<Building2 className="h-4 w-4" />} label="Legal Business Name" value={account.account_name} />
-        {editing ? (
-          <>
-            <LabeledInput icon={<Briefcase className="h-4 w-4" />} label="Business Type" value={businessType} onChange={setBusinessType} placeholder="e.g. Corporation" />
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">Organization Type</p>
-              <CompanyOptionSelect value={industry} onChange={setIndustry} options={ORGANIZATION_TYPES} placeholder="Select organization type" />
-            </div>
-          </>
-        ) : (
-          <>
-            <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Business Type" value={account.business_type || "—"} />
-            <InfoRow icon={<Factory className="h-4 w-4" />} label="Organization Type" value={account.industry || "—"} />
-          </>
-        )}
-        {account.abn && <InfoRow icon={<Hash className="h-4 w-4" />} label="Business Number" value={account.abn} />}
-        {account.website && <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={account.website} />}
-        {formatAddress(account) && <InfoRow icon={<MapPin className="h-4 w-4" />} label="Business Address" value={formatAddress(account)!} />}
-        <InfoRow icon={<Calendar className="h-4 w-4" />} label="Registered" value={fmtDate(account.created_at, true)} />
+        <InfoRow icon={<Factory className="h-4 w-4" />} label="Organization Type" value={account.industry || "—"} />
+        <InfoRow icon={<Briefcase className="h-4 w-4" />} label="Business Type" value={account.business_type || "—"} />
+        <InfoRow icon={<Hash className="h-4 w-4" />} label="Business Number" value={account.abn || "—"} />
+        <InfoRow icon={<Globe className="h-4 w-4" />} label="Website" value={account.website || "—"} />
+        <InfoRow icon={<MapPin className="h-4 w-4" />} label="Business Address" value={formatAddress(account) || "—"} />
+        <InfoRow icon={<Mail className="h-4 w-4" />} label="Billing Email" value={account.billing_email || "—"} />
+        <InfoRow icon={<Mail className="h-4 w-4" />} label="Accounts Payable Email" value={account.accounts_payable_email || "—"} />
+        <InfoRow icon={<Calendar className="h-4 w-4" />} label="Date Added" value={fmtDate(account.created_at, true)} />
       </div>
     </Card>
   );

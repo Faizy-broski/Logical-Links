@@ -4,11 +4,12 @@ import { useState } from "react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
 import { CompanyOptionSelect } from "@/components/ui/company-option-select";
-import { OTHER_CITY, PROVINCES, citiesForProvince } from "@/lib/corporate-options";
+import { NOT_APPLICABLE, OTHER_CITY, PROVINCE_OPTIONS, citiesForProvince } from "@/lib/corporate-options";
 
 // Province dropdown plus a City dropdown filtered to that province. Picking
 // "Other" (or an existing city that isn't in the list) shows a text box so any
-// city can still be entered.
+// city can still be entered. "N/A" is offered for both; an N/A province sets
+// the city to N/A too.
 export function ProvinceCitySelect({
   province,
   city,
@@ -32,7 +33,7 @@ export function ProvinceCitySelect({
 }) {
   const cities = citiesForProvince(province);
   const [pickedOther, setPickedOther] = useState(false);
-  const isCustom = pickedOther || (city !== "" && !cities.includes(city));
+  const isCustom = pickedOther || (city !== "" && city !== NOT_APPLICABLE && !cities.includes(city));
 
   return (
     <div className={wrapperClassName}>
@@ -42,10 +43,10 @@ export function ProvinceCitySelect({
           value={province}
           onChange={(p) => {
             onProvinceChange(p);
-            onCityChange("");
+            onCityChange(p === NOT_APPLICABLE ? NOT_APPLICABLE : "");
             setPickedOther(false);
           }}
-          options={PROVINCES}
+          options={PROVINCE_OPTIONS}
           placeholder="Select province"
         />
         {error?.province && <p className="text-xs text-danger">{error.province}</p>}
@@ -64,7 +65,7 @@ export function ProvinceCitySelect({
               onCityChange(c);
             }
           }}
-          options={[...cities, OTHER_CITY].map((c) => ({ value: c, label: c }))}
+          options={[...cities, OTHER_CITY, NOT_APPLICABLE].map((c) => ({ value: c, label: c }))}
           placeholder={province ? "Select city" : "Select province first"}
           disabled={!province}
         />

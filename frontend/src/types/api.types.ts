@@ -186,6 +186,8 @@ export type CreateAccountDto = {
   contactEmail?: string;
   contactPhone?: string;
   contactPhoneType?: string;
+  businessType?: string;
+  industry?: string;
   addressLine1?: string;
   addressCity?: string;
   addressState?: string;
@@ -1485,4 +1487,125 @@ export type ListContactMessagesQuery = {
   status?: ContactMessageStatus;
   search?: string;
   archived?: boolean;
+};
+
+// ─── Carriers ─────────────────────────────────────────────────────────────────
+// Independent trucking companies LLC works with (or may) — not staff.
+
+// Same stages, colours and dropdown design as the corporate customer pipeline.
+export const CARRIER_STATUSES = [
+  "prospect", "contacted", "interested", "onboarding", "active", "inactive", "lost",
+] as const;
+export type CarrierStatus = (typeof CARRIER_STATUSES)[number];
+
+export const CARRIER_STATUS_META: Record<CarrierStatus, { label: string; description: string; badge: string; dot: string }> = {
+  prospect:   { label: "Prospect",   description: "A trucking company identified as a potential carrier partner but not yet contacted.",       badge: "bg-slate-50 text-slate-700 border-slate-200",    dot: "bg-slate-400" },
+  contacted:  { label: "Contacted",  description: "LLC has reached out by email, phone, or another method.",                                   badge: "bg-sky-50 text-sky-700 border-sky-200",          dot: "bg-sky-500" },
+  interested: { label: "Interested", description: "The company has expressed interest in working with LLC but has not completed onboarding.", badge: "bg-violet-50 text-violet-700 border-violet-200", dot: "bg-violet-500" },
+  onboarding: { label: "Onboarding", description: "The company has agreed to work with LLC, and its documents and account setup are in progress.", badge: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+  active:     { label: "Active",     description: "The carrier has completed onboarding and is approved to accept suitable loads from LLC.",   badge: "bg-green-50 text-green-700 border-green-200",    dot: "bg-green-500" },
+  inactive:   { label: "Inactive",   description: "The carrier was previously active but is not currently working with LLC.",                 badge: "bg-zinc-100 text-zinc-600 border-zinc-200",      dot: "bg-zinc-400" },
+  lost:       { label: "Lost",       description: "The company has declined to work with LLC or decided not to proceed.",                      badge: "bg-red-50 text-red-700 border-red-200",          dot: "bg-red-500" },
+};
+
+export const DOCUMENT_VERIFICATION_STATUSES = ["not_reviewed", "pending", "verified", "expired", "rejected"] as const;
+export type DocumentVerificationStatus = (typeof DOCUMENT_VERIFICATION_STATUSES)[number];
+
+export const DOCUMENT_VERIFICATION_META: Record<DocumentVerificationStatus, { label: string; badge: string }> = {
+  not_reviewed: { label: "Not Reviewed",         badge: "bg-zinc-100 text-zinc-600 border-zinc-200" },
+  pending:      { label: "Pending Verification", badge: "bg-amber-50 text-amber-700 border-amber-200" },
+  verified:     { label: "Verified",             badge: "bg-green-50 text-green-700 border-green-200" },
+  expired:      { label: "Expired",              badge: "bg-red-50 text-red-700 border-red-200" },
+  rejected:     { label: "Rejected",             badge: "bg-red-100 text-red-800 border-red-300" },
+};
+
+export type CarrierRoute = {
+  id: string;
+  province: string | null; // province or US state
+  origin_city: string | null;
+  destination_city: string | null;
+  cross_border: boolean;
+  sort_order: number;
+};
+
+export type CarrierDocument = {
+  id: string;
+  document_type: string;
+  file_path: string;
+  file_name: string;
+  file_size: number | null;
+  mime_type: string | null;
+  issue_date: string | null;  // YYYY-MM-DD
+  expiry_date: string | null; // YYYY-MM-DD
+  verification_status: DocumentVerificationStatus;
+  notes: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Carrier = {
+  id: string;
+  carrier_name: string;
+  status: CarrierStatus;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_phone_type: string | null;
+  website: string | null;
+  address_line1: string | null;
+  address_city: string | null;
+  address_province: string | null;
+  address_postcode: string | null;
+  equipment_types: string[];
+  equipment_other: string | null;
+  services_offered: string[];
+  last_contacted_at: string | null; // YYYY-MM-DD
+  next_follow_up_at: string | null; // YYYY-MM-DD
+  notes: string | null;
+  created_by: string | null;
+  created_at: string; // Date Added
+  updated_at: string;
+  routes: CarrierRoute[];
+  documents: CarrierDocument[];
+};
+
+export type CarrierRouteInput = {
+  province?: string;
+  originCity?: string;
+  destinationCity?: string;
+  crossBorder: boolean;
+};
+
+// Blank strings clear a field on the server.
+export type CreateCarrierDto = {
+  carrierName: string;
+  status?: CarrierStatus;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactPhoneType?: string;
+  website?: string;
+  addressLine1?: string;
+  addressCity?: string;
+  addressProvince?: string;
+  addressPostcode?: string;
+  equipmentTypes?: string[];
+  equipmentOther?: string;
+  servicesOffered?: string[];
+  lastContactedAt?: string;
+  nextFollowUpAt?: string;
+  notes?: string;
+  /** Replaces the carrier's whole route list. */
+  routes?: CarrierRouteInput[];
+};
+
+export type UpdateCarrierDto = Partial<CreateCarrierDto>;
+
+export type CarrierDocumentInput = {
+  documentType: string;
+  issueDate?: string;
+  expiryDate?: string;
+  verificationStatus?: DocumentVerificationStatus;
+  notes?: string;
 };

@@ -23,6 +23,7 @@ import { serviceLevelsRouter } from '../modules/service-levels/service-levels.ro
 import { additionalChargesRouter } from '../modules/additional-charges/additional-charges.routes'
 import { pricingRouter } from '../modules/pricing/pricing.routes'
 import { rewardsCreditRouter } from '../modules/rewards-credit/rewards-credit.routes'
+import { carriersRouter } from '../modules/carriers/carriers.routes'
 
 export const v1Router = Router()
 
@@ -50,3 +51,4 @@ v1Router.use('/service-levels',    serviceLevelsRouter)
 v1Router.use('/additional-charges', additionalChargesRouter)
 v1Router.use('/pricing',           pricingRouter)
 v1Router.use('/rewards-credit',    rewardsCreditRouter)
+v1Router.use('/carriers',          carriersRouter)

@@ -155,6 +155,8 @@ export async function createAccount(dto: CreateAccountDto, createdBy: string) {
     contact_email:    dto.contactEmail,
     contact_phone:    dto.contactPhone,
     contact_phone_type: dto.contactPhoneType,
+    business_type:    dto.businessType,
+    industry:         dto.industry,
     address_line1:    dto.addressLine1,
     address_city:     dto.addressCity,
     address_state:    dto.addressState,
@@ -210,29 +212,29 @@ export async function updateAccount(id: string, dto: UpdateAccountDto, changedBy
   const updates: Record<string, unknown> = {}
   if (statusChanged) updates.pipeline_status = nextStatus
   if (dto.accountName     !== undefined) updates.account_name     = dto.accountName
-  if (dto.abn             !== undefined) updates.abn              = dto.abn
-  if (dto.website         !== undefined) updates.website          = dto.website
-  if (dto.contactName     !== undefined) updates.contact_name     = dto.contactName
-  if (dto.contactEmail    !== undefined) updates.contact_email    = dto.contactEmail
-  if (dto.contactPhone    !== undefined) updates.contact_phone    = dto.contactPhone
+  if (dto.abn             !== undefined) updates.abn              = blankToNull(dto.abn)
+  if (dto.website         !== undefined) updates.website          = blankToNull(dto.website)
+  if (dto.contactName     !== undefined) updates.contact_name     = blankToNull(dto.contactName)
+  if (dto.contactEmail    !== undefined) updates.contact_email    = blankToNull(dto.contactEmail)
+  if (dto.contactPhone    !== undefined) updates.contact_phone    = blankToNull(dto.contactPhone)
   if (dto.contactPhoneType !== undefined) updates.contact_phone_type = blankToNull(dto.contactPhoneType)
-  if (dto.addressLine1    !== undefined) updates.address_line1    = dto.addressLine1
-  if (dto.addressCity     !== undefined) updates.address_city     = dto.addressCity
-  if (dto.addressState    !== undefined) updates.address_state    = dto.addressState
-  if (dto.addressPostcode !== undefined) updates.address_postcode = dto.addressPostcode
-  if (dto.addressCountry  !== undefined) updates.address_country  = dto.addressCountry
-  if (dto.billingEmail          !== undefined) updates.billing_email          = dto.billingEmail
-  if (dto.accountsPayableEmail  !== undefined) updates.accounts_payable_email = dto.accountsPayableEmail
-  if (dto.billingAddress  !== undefined) updates.billing_address  = dto.billingAddress
-  if (dto.billingCity     !== undefined) updates.billing_city     = dto.billingCity
-  if (dto.billingState    !== undefined) updates.billing_state    = dto.billingState
-  if (dto.billingPostcode !== undefined) updates.billing_postcode = dto.billingPostcode
+  if (dto.addressLine1    !== undefined) updates.address_line1    = blankToNull(dto.addressLine1)
+  if (dto.addressCity     !== undefined) updates.address_city     = blankToNull(dto.addressCity)
+  if (dto.addressState    !== undefined) updates.address_state    = blankToNull(dto.addressState)
+  if (dto.addressPostcode !== undefined) updates.address_postcode = blankToNull(dto.addressPostcode)
+  if (dto.addressCountry  !== undefined) updates.address_country  = blankToNull(dto.addressCountry)
+  if (dto.billingEmail          !== undefined) updates.billing_email          = blankToNull(dto.billingEmail)
+  if (dto.accountsPayableEmail  !== undefined) updates.accounts_payable_email = blankToNull(dto.accountsPayableEmail)
+  if (dto.billingAddress  !== undefined) updates.billing_address  = blankToNull(dto.billingAddress)
+  if (dto.billingCity     !== undefined) updates.billing_city     = blankToNull(dto.billingCity)
+  if (dto.billingState    !== undefined) updates.billing_state    = blankToNull(dto.billingState)
+  if (dto.billingPostcode !== undefined) updates.billing_postcode = blankToNull(dto.billingPostcode)
   if (dto.billingCountry  !== undefined) updates.billing_country  = dto.billingCountry
   if (dto.creditLimit     !== undefined) updates.credit_limit     = dto.creditLimit
   if (dto.paymentTerms    !== undefined) updates.payment_terms    = dto.paymentTerms
   if (dto.isActive        !== undefined) updates.is_active        = dto.isActive
-  if (dto.businessType    !== undefined) updates.business_type    = dto.businessType
-  if (dto.industry        !== undefined) updates.industry         = dto.industry
+  if (dto.businessType    !== undefined) updates.business_type    = blankToNull(dto.businessType)
+  if (dto.industry        !== undefined) updates.industry         = blankToNull(dto.industry)
   if (dto.lastContactedAt    !== undefined) updates.last_contacted_at   = dto.lastContactedAt
   if (dto.nextFollowUpAt     !== undefined) updates.next_follow_up_at  = dto.nextFollowUpAt
   if (dto.assignedEmployeeId !== undefined) updates.assigned_employee_id = dto.assignedEmployeeId

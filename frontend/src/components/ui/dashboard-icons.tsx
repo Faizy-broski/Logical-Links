@@ -3,10 +3,13 @@ import { cn } from "@/lib/utils";
 
 /**
  * Logical Links dashboard icon set (client-supplied full-colour artwork).
- * Source files live in /public/dashboard-icons (transparent, 128px), cut from
- * the client's reference sheet. Each icon takes a `className` for sizing and
- * ignores colour / stroke props. `artwork` lets shared components (KpiCard)
- * tell these apart from lucide line icons and size them accordingly.
+ * Source files live in /public/dashboard-icons (transparent, 160×128), cut from
+ * the client's reference sheets and scaled to equal visual weight, so icons in
+ * one row look the same size. Served unoptimized: they are already small, and
+ * it keeps updated artwork from being held back by the image cache. Each icon
+ * takes a `className` for sizing and ignores colour / stroke props. `artwork`
+ * lets shared components (KpiCard) tell these apart from lucide line icons and
+ * size them accordingly.
  */
 export type DashboardIconProps = { className?: string };
 export type DashboardIcon = ((props: DashboardIconProps) => React.JSX.Element) & {
@@ -19,8 +22,9 @@ function make(name: string): DashboardIcon {
       src={`/dashboard-icons/${name}.png`}
       alt=""
       aria-hidden
-      width={128}
+      width={160}
       height={128}
+      unoptimized
       className={cn("inline-block shrink-0 object-contain", className)}
     />
   );
@@ -44,6 +48,11 @@ export const DashboardIcons = {
   deliveredTransit: make("delivered-transit"),
   exceptions: make("exceptions"),
   membership: make("membership"),
+
+  // Carriers
+  totalCarriers: make("total-carriers"),
+  activeCarriers: make("active-carriers"),
+  onboardingCarriers: make("onboarding-carriers"),
 
   // Roles
   ceo: make("ceo"),

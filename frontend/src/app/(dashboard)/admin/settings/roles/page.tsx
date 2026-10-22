@@ -91,6 +91,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   "Customer Management": Building2,
   "Booking Management": ClipboardList,
   "Delivery Management": Truck,
+  "Carrier Management": Truck,
   "Quotations": FileQuestion,
   "Invoices": FileText,
   "Support Tickets": LifeBuoy,

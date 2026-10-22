@@ -29,6 +29,8 @@ export const createAccountSchema = z.object({
   contactEmail:    z.string().email().optional(),
   contactPhone:    z.string().optional(),
   contactPhoneType: z.string().max(50).optional(),
+  businessType:    z.string().max(100).optional(),
+  industry:        z.string().max(100).optional(),
   addressLine1:    z.string().optional(),
   addressCity:     z.string().optional(),
   addressState:    z.string().optional(),
@@ -48,12 +50,15 @@ export const createAccountSchema = z.object({
 export const updateAccountSchema = createAccountSchema
   .omit({ billingCountry: true, creditLimit: true, paymentTerms: true })
   .extend({
+    // The admin Edit Profile sheet sends every field; '' clears a value.
+    website:              z.union([z.string().url(), z.literal('')]).optional(),
+    contactEmail:         z.union([z.string().email(), z.literal('')]).optional(),
+    billingEmail:         z.union([z.string().email(), z.literal('')]).optional(),
+    accountsPayableEmail: z.union([z.string().email(), z.literal('')]).optional(),
     billingCountry: z.string().optional(),
     creditLimit:    z.number().min(0).optional(),
     paymentTerms:   z.number().int().min(0).optional(),
     isActive:       z.boolean().optional(),
-    businessType:   z.string().max(100).optional(),
-    industry:       z.string().max(100).optional(),
     pipelineStatus: pipelineStatusSchema.optional(),
     // CRM follow-up tracking
     lastContactedAt:   z.string().max(30).nullable().optional(),

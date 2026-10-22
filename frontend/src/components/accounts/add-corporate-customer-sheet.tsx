@@ -21,12 +21,13 @@ import {
 
 import { CompanyOptionSelect } from "@/components/ui/company-option-select";
 import { ProvinceCitySelect } from "@/components/ui/province-city-select";
-import { PHONE_TYPES } from "@/lib/corporate-options";
+import { ORGANIZATION_TYPES, PHONE_TYPES } from "@/lib/corporate-options";
 
 type Props = { open: boolean; onClose: () => void };
 
 const EMPTY = {
   accountName: "",
+  industry: "",
   contactName: "",
   contactEmail: "",
   contactPhone: "",
@@ -61,6 +62,7 @@ export function AddCorporateCustomerSheet({ open, onClose }: Props) {
     const dto: CreateAccountDto = {
       accountName: form.accountName.trim(),
       pipelineStatus: status,
+      ...(form.industry && { industry: form.industry }),
       ...(form.contactName.trim() && { contactName: form.contactName.trim() }),
       ...(form.contactEmail.trim() && { contactEmail: form.contactEmail.trim() }),
       ...(form.contactPhone.trim() && { contactPhone: form.contactPhone.trim() }),
@@ -114,6 +116,11 @@ export function AddCorporateCustomerSheet({ open, onClose }: Props) {
               required
               minLength={2}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Organization type</Label>
+            <CompanyOptionSelect value={form.industry} onChange={(v) => set("industry", v)} options={ORGANIZATION_TYPES} placeholder="Select organization type" />
           </div>
 
           <div className="space-y-1.5">
