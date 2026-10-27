@@ -166,6 +166,8 @@ export async function findAll(
   }
 
   // ── Filters ───────────────────────────────────────────────────────────────
+  if (query.customerType === 'residential') q = q.not('customer_id', 'is', null)
+  if (query.customerType === 'corporate')   q = q.not('account_id', 'is', null)
   if (query.statuses)      q = q.in('status', query.statuses.split(',').map(s => s.trim()).filter(Boolean))
   else if (query.status)   q = q.eq('status', query.status)
   if (query.deliveryType)  q = q.eq('shipment_type', query.deliveryType)
@@ -181,7 +183,11 @@ export async function findAll(
   // filter-string injection via the search parameter.
   if (query.search) {
     const s = query.search.replace(/[(),]/g, '').slice(0, 100)
+    // A delivery number typed with any prefix (LLC-0081, LLCR-0081, LLCC-0081)
+    // finds the delivery whichever customer-type prefix it carries now.
+    const digits = s.match(/^LLC[RC]?-(\d+)$/i)?.[1]
     q = q.or(
+      (digits ? `load_number.ilike.%-${digits},` : '') +
       `load_number.ilike.%${s}%,` +
       `reference_number.ilike.%${s}%,` +
       `origin_city.ilike.%${s}%,` +

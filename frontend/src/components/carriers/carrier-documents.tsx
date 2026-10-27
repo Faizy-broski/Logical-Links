@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CompanyOptionSelect } from "@/components/ui/company-option-select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Section, SectionAction } from "@/components/profile/profile-kit";
 import {
   MAX_DOCUMENT_BYTES,
   openCarrierDocument,
@@ -57,51 +58,49 @@ export function CarrierDocuments({
   }).length;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-border px-6 py-4">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Documents</h3>
-          <p className="mt-0.5 text-xs text-muted">
-            Insurance, authority, safety and other compliance files. Documents expiring within {DOCUMENT_WARNING_DAYS} days are flagged.
-          </p>
-        </div>
-        {flagged > 0 && (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            {flagged} need{flagged === 1 ? "s" : ""} attention
+    <Section
+      title={`Documents${documents.length ? ` (${documents.length})` : ""}`}
+      description={
+        flagged > 0 ? (
+          <span className="inline-flex items-center gap-1 font-medium text-amber-700">
+            <AlertTriangle className="h-3 w-3" />
+            {flagged} expired or expiring within {DOCUMENT_WARNING_DAYS} days
           </span>
-        )}
-      </div>
+        ) : (
+          `Expiring documents are flagged ${DOCUMENT_WARNING_DAYS} days ahead`
+        )
+      }
+      action={canEdit && (
+        <SectionAction icon={Plus} onClick={() => setDrafts((list) => [...list, newDraft()])}>
+          {documents.length + drafts.length === 0 ? "Add document" : "Add another document"}
+        </SectionAction>
+      )}
+    >
+      {documents.length === 0 && drafts.length === 0 && (
+        <p className="text-sm text-muted">No documents uploaded yet.</p>
+      )}
 
-      <div className="space-y-3 p-6">
-        {documents.length === 0 && drafts.length === 0 && (
-          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-card-border py-8 text-center">
-            <FileText className="h-8 w-8 text-muted-light" />
-            <p className="text-sm text-muted">No documents uploaded yet.</p>
-          </div>
-        )}
+      {documents.length > 0 && (
+        <ul className="divide-y divide-card-border">
+          {documents.map((doc) => (
+            <DocumentRow key={doc.id} carrierId={carrierId} doc={doc} canEdit={canEdit} />
+          ))}
+        </ul>
+      )}
 
-        {documents.map((doc) => (
-          <DocumentRow key={doc.id} carrierId={carrierId} doc={doc} canEdit={canEdit} />
-        ))}
-
-        {drafts.map((draft) => (
-          <NewDocumentForm
-            key={draft.key}
-            carrierId={carrierId}
-            initial={draft}
-            onDone={() => setDrafts((list) => list.filter((d) => d.key !== draft.key))}
-          />
-        ))}
-
-        {canEdit && (
-          <Button type="button" variant="outline" size="sm" onClick={() => setDrafts((list) => [...list, newDraft()])} className="rounded-lg">
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
-            {documents.length + drafts.length === 0 ? "Add Document" : "Add Another Document"}
-          </Button>
-        )}
-      </div>
-    </div>
+      {drafts.length > 0 && (
+        <div className={documents.length > 0 ? "mt-4 space-y-3" : "space-y-3"}>
+          {drafts.map((draft) => (
+            <NewDocumentForm
+              key={draft.key}
+              carrierId={carrierId}
+              initial={draft}
+              onDone={() => setDrafts((list) => list.filter((d) => d.key !== draft.key))}
+            />
+          ))}
+        </div>
+      )}
+    </Section>
   );
 }
 
@@ -110,10 +109,10 @@ export function CarrierDocuments({
 function ExpiryFlag({ expiry }: { expiry: string | null }) {
   const state = expiryState(expiry);
   if (state === "expired") {
-    return <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700"><AlertTriangle className="h-3 w-3" />Expired</span>;
+    return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600"><AlertTriangle className="h-3 w-3" />Expired</span>;
   }
   if (state === "soon") {
-    return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700"><AlertTriangle className="h-3 w-3" />Expires soon</span>;
+    return <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700"><AlertTriangle className="h-3 w-3" />Expires soon</span>;
   }
   return null;
 }
@@ -147,42 +146,51 @@ function DocumentRow({ carrierId, doc, canEdit }: { carrierId: string; doc: Carr
   }
 
   if (editing) {
-    return <EditDocumentForm carrierId={carrierId} doc={doc} onDone={() => setEditing(false)} />;
+    return (
+      <li className="py-3 first:pt-0">
+        <EditDocumentForm carrierId={carrierId} doc={doc} onDone={() => setEditing(false)} />
+      </li>
+    );
   }
 
   return (
-    <div className="rounded-xl border border-card-border bg-background p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <li className="py-3.5 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{doc.document_type}</p>
-            <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${verification.badge}`}>{verification.label}</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-sm font-medium text-foreground">{doc.document_type}</p>
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+              <span className={`h-1.5 w-1.5 rounded-full ${verification.dot}`} />
+              {verification.label}
+            </span>
             <ExpiryFlag expiry={doc.expiry_date} />
           </div>
           <button
             type="button"
             onClick={open}
             disabled={opening}
-            className="mt-1 inline-flex max-w-full items-center gap-1.5 text-sm text-primary hover:underline disabled:opacity-60"
+            className="mt-1 inline-flex max-w-full items-center gap-1.5 text-sm text-foreground underline decoration-card-border underline-offset-4 hover:text-primary hover:decoration-primary disabled:opacity-60"
           >
-            {opening ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5 shrink-0" />}
+            {opening ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5 shrink-0 text-muted" />}
             <span className="truncate">{doc.file_name}</span>
-            <ExternalLink className="h-3 w-3 shrink-0" />
+            <ExternalLink className="h-3 w-3 shrink-0 text-muted" />
           </button>
           <p className="mt-1 text-xs text-muted">
             Issued {formatDay(doc.issue_date)} · Expires {formatDay(doc.expiry_date)} · Uploaded {formatDay(doc.created_at)}
           </p>
-          {doc.notes && <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{doc.notes}</p>}
+          {doc.notes && <p className="mt-1.5 whitespace-pre-wrap text-sm text-foreground">{doc.notes}</p>}
         </div>
         {canEdit && (
-          <div className="flex shrink-0 gap-1">
-            <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
-              <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setDeleteOpen(true)} className="border-red-200 text-red-600 hover:bg-red-50">
+          <div className="flex shrink-0 items-center gap-1">
+            <SectionAction icon={Pencil} onClick={() => setEditing(true)}>Edit</SectionAction>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              aria-label={`Delete ${doc.document_type}`}
+              className="-mt-0.5 inline-flex items-center rounded p-1 text-muted transition-colors hover:bg-red-50 hover:text-red-600"
+            >
               <Trash2 className="h-3.5 w-3.5" />
-              <span className="sr-only">Delete</span>
-            </Button>
+            </button>
           </div>
         )}
       </div>
@@ -196,7 +204,7 @@ function DocumentRow({ carrierId, doc, canEdit }: { carrierId: string; doc: Carr
         description={<>Delete {doc.document_type} ({doc.file_name})? The uploaded file is removed permanently.</>}
         confirmLabel="Delete"
       />
-    </div>
+    </li>
   );
 }
 
@@ -294,8 +302,8 @@ function DocumentForm({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-primary">{title}</p>
+    <div className="space-y-4 rounded-lg border border-card-border bg-background p-4">
+      <p className="text-xs font-medium text-foreground">{title}</p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">

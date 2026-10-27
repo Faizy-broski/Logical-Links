@@ -160,7 +160,8 @@ export function DataTable<TData>({
         className,
       )}
     >
-      {/* ── Card header ── */}
+      {/* ── Card header (skipped when there's nothing to show in it) ── */}
+      {(title || onSearchChange || headerActions) && (
       <div className="flex flex-col gap-3 border-b border-card-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="min-w-0 shrink-0 text-base font-semibold text-foreground">{title}</h3>
 
@@ -182,6 +183,7 @@ export function DataTable<TData>({
           {headerActions}
         </div>
       </div>
+      )}
 
       {/* ── Active filter chips ── */}
       {filterChips && filterChips.length > 0 && (

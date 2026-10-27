@@ -13,17 +13,18 @@ import {
 import { cn } from "@/lib/utils";
 import { CARRIER_STATUSES, CARRIER_STATUS_META, type CarrierStatus } from "@/types/api.types";
 
+/** Status as a coloured dot + label (no pill). */
 export function CarrierStatusBadge({ status, className }: { status: CarrierStatus; className?: string }) {
   const meta = CARRIER_STATUS_META[status];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold", meta.badge, className)}>
-      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+    <span className={cn("inline-flex items-center gap-1.5 text-sm font-medium text-foreground", className)}>
+      <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
       {meta.label}
     </span>
   );
 }
 
-// Same design as the corporate customer PipelineStatusSelect: badge trigger,
+// Same design as the corporate customer PipelineStatusSelect: compact trigger,
 // each stage listed with its short description.
 export function CarrierStatusSelect({
   value,
@@ -44,11 +45,12 @@ export function CarrierStatusSelect({
         type="button"
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center gap-2 rounded-lg border border-card-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60",
+          "inline-flex h-8 items-center gap-2 rounded-md border border-card-border bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60",
           className,
         )}
       >
-        <CarrierStatusBadge status={value} />
+        <span className={`h-2 w-2 rounded-full ${CARRIER_STATUS_META[value].dot}`} />
+        {CARRIER_STATUS_META[value].label}
         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-80 rounded-xl border border-card-border bg-card shadow-lg">

@@ -85,7 +85,7 @@ export default function Header() {
           aria-label="Go to top"
           className="focus:outline-none"
         >
-          <Image src="/logo-gold.png" alt="Logical Links" width={100} height={77} />
+          <Image src="/logo-header.png" alt="Logical Links" width={100} height={77} />
         </button>
 
         {/* Desktop nav */}

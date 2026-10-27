@@ -128,6 +128,8 @@ export const listDeliveriesSchema = z.object({
   deliveryType:  z.enum(['freight', 'last_mile']).optional(),
   accountId:     z.string().uuid().optional(),
   customerId:    z.string().uuid().optional(),
+  // Residential deliveries (customer_id set) vs corporate shipments (account_id set).
+  customerType:  z.enum(['residential', 'corporate']).optional(),
   search:        z.string().max(100).optional(),
   createdByRole: z.enum(['admin', 'corporate']).optional(),
   dateFrom:      z.string().max(30).optional(),

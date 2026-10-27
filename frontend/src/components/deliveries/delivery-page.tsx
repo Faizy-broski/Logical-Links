@@ -45,9 +45,20 @@ import { DELIVERY_STATUS_LABELS as STATUS_LABELS } from "@/types/api.types";
 
 // ── Workspace views ────────────────────────────────────────────────────────────
 
-type WorkspaceViewKey = "all" | "active" | "scheduled" | "in_progress" | "completed" | "exceptions" | "archived";
+type WorkspaceViewKey =
+  | "all" | "active" | "scheduled" | "in_progress" | "completed" | "exceptions" | "archived"
+  | "residential" | "corporate";
 
-const WORKSPACE_VIEWS: { key: WorkspaceViewKey; label: string; statuses: string | null; archived?: boolean }[] = [
+type CustomerType = NonNullable<ListDeliveriesQuery["customerType"]>;
+
+// customerType views are admin-only: customers only ever see their own deliveries.
+const WORKSPACE_VIEWS: {
+  key: WorkspaceViewKey;
+  label: string;
+  statuses: string | null;
+  archived?: boolean;
+  customerType?: CustomerType;
+}[] = [
   { key: "all",         label: "All Deliveries",      statuses: null },
   { key: "active",      label: "Active",              statuses: "pending,confirmed,assigned" },
   { key: "scheduled",   label: "Scheduled",           statuses: "confirmed" },
@@ -55,6 +66,8 @@ const WORKSPACE_VIEWS: { key: WorkspaceViewKey; label: string; statuses: string 
   { key: "completed",   label: "Completed",           statuses: "delivered" },
   { key: "exceptions",  label: "Exceptions",          statuses: "cancelled" },
   { key: "archived",    label: "Archived Deliveries", statuses: null, archived: true },
+  { key: "residential", label: "Residential Deliveries", statuses: null, customerType: "residential" },
+  { key: "corporate",   label: "Corporate Shipments",    statuses: null, customerType: "corporate" },
 ];
 
 // ── Filter defaults ────────────────────────────────────────────────────────────
@@ -122,9 +135,11 @@ export default function DeliveriesPage() {
 
   // ── Workspace view (from URL param) ───────────────────────────────────────
   const viewParam    = (searchParams.get("view") ?? "all") as WorkspaceViewKey;
-  const activeView   = WORKSPACE_VIEWS.find((v) => v.key === viewParam) ?? WORKSPACE_VIEWS[0];
+  const visibleViews = WORKSPACE_VIEWS.filter((v) => isAdmin || !v.customerType);
+  const activeView   = visibleViews.find((v) => v.key === viewParam) ?? visibleViews[0];
   const viewStatuses = activeView.statuses;
   const viewArchived = activeView.archived ?? false;
+  const viewCustomerType = activeView.customerType;
 
   function setWorkspaceView(key: WorkspaceViewKey) {
     const params = new URLSearchParams(searchParams.toString());
@@ -196,6 +211,7 @@ export default function DeliveriesPage() {
       ? { statuses: viewStatuses }
       : filters.status && { status: filters.status }),
     ...(viewArchived           && { archived: true }),
+    ...(viewCustomerType       && { customerType: viewCustomerType }),
     ...(filters.deliveryType  && { deliveryType: filters.deliveryType as "freight" | "last_mile" }),
     ...(filters.accountId     && isAdmin && { accountId: filters.accountId }),
     ...(filters.dateFrom      && { dateFrom: filters.dateFrom }),
@@ -205,7 +221,7 @@ export default function DeliveriesPage() {
     ...(sortBy                && { sortBy: sortBy as any }),
     ...(sortDir               && { sortDir }),
     ...accountScope,
-  }), [filters, debouncedSearch, page, sortBy, sortDir, isAdmin, user?.accountId, viewStatuses, viewArchived]);
+  }), [filters, debouncedSearch, page, sortBy, sortDir, isAdmin, user?.accountId, viewStatuses, viewArchived, viewCustomerType]);
 
   const { data: deliveriesRes, isLoading } = useDeliveries(deliveriesQuery);
   const { data: companiesRes } = useAccounts({ limit: 100 }, { enabled: isAdmin });
@@ -217,22 +233,31 @@ export default function DeliveriesPage() {
   const employees  = employeesRes?.data ?? [];
 
   // ── Workspace nav counts (lightweight queries — limit 1, read meta.total) ─
-  const countActive      = useDeliveries({ statuses: "pending,confirmed,assigned",              limit: 1, ...accountScope });
-  const countScheduled   = useDeliveries({ statuses: "confirmed",                               limit: 1, ...accountScope });
-  const countInProgress  = useDeliveries({ statuses: "picked_up,in_transit,out_for_delivery",  limit: 1, ...accountScope });
-  const countCompleted   = useDeliveries({ statuses: "delivered",                               limit: 1, ...accountScope });
-  const countExceptions  = useDeliveries({ statuses: "cancelled",                               limit: 1, ...accountScope });
-  const countArchived    = useDeliveries({ archived: true,                                      limit: 1, ...accountScope });
+  // Refreshed after every create / edit / status change / archive (the
+  // mutations invalidate all delivery queries) and polled every 30s so changes
+  // made by other users show up too.
+  const live = { refetchInterval: 30_000 };
+  const countAll         = useDeliveries({                                                       limit: 1, ...accountScope }, live);
+  const countActive      = useDeliveries({ statuses: "pending,confirmed,assigned",              limit: 1, ...accountScope }, live);
+  const countScheduled   = useDeliveries({ statuses: "confirmed",                               limit: 1, ...accountScope }, live);
+  const countInProgress  = useDeliveries({ statuses: "picked_up,in_transit,out_for_delivery",  limit: 1, ...accountScope }, live);
+  const countCompleted   = useDeliveries({ statuses: "delivered",                               limit: 1, ...accountScope }, live);
+  const countExceptions  = useDeliveries({ statuses: "cancelled",                               limit: 1, ...accountScope }, live);
+  const countArchived    = useDeliveries({ archived: true,                                      limit: 1, ...accountScope }, live);
+  const countResidential = useDeliveries({ customerType: "residential", limit: 1 }, { ...live, enabled: isAdmin });
+  const countCorporate   = useDeliveries({ customerType: "corporate",   limit: 1 }, { ...live, enabled: isAdmin });
 
-  const navItems: WorkspaceNavItem[] = WORKSPACE_VIEWS.map((v) => {
-    if (v.key === "all") return { key: v.key, label: v.label };
+  const navItems: WorkspaceNavItem[] = visibleViews.map((v) => {
     const countMap: Record<string, { data: any; isLoading: boolean }> = {
+      all:         countAll,
       active:      countActive,
       scheduled:   countScheduled,
       in_progress: countInProgress,
       completed:   countCompleted,
       exceptions:  countExceptions,
       archived:    countArchived,
+      residential: countResidential,
+      corporate:   countCorporate,
     };
     const q = countMap[v.key];
     return {

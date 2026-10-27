@@ -9,6 +9,12 @@ export interface AddressSuggestion {
   id: string;
   placeName: string;
   center: Coordinates;
+  /** Feature's own name — the city for a city result, the street name for an address. */
+  text?: string;
+  /** "123 Main St" for street-address results. */
+  street?: string;
+  /** Mapbox place types, e.g. ["address"] or ["place"]. */
+  placeType?: string[];
   context?: {
     city?: string;
     region?: string;
@@ -26,8 +32,20 @@ interface MapboxFeature {
   id: string;
   place_name: string;
   center: [number, number];
+  text?: string;
+  address?: string; // house number on address results
+  place_type?: string[];
   context?: MapboxContextItem[];
 }
+
+export interface SuggestionOptions {
+  /** Mapbox country filter, comma separated. Default "ca". */
+  countries?: string;
+  /** Mapbox place types, comma separated. Default: addresses, cities, postcodes, areas. */
+  types?: string;
+}
+
+const DEFAULT_TYPES = "address,place,postcode,locality,neighborhood";
 
 function parseContext(context?: MapboxContextItem[]): AddressSuggestion["context"] {
   if (!context) return undefined;
@@ -43,7 +61,11 @@ function parseContext(context?: MapboxContextItem[]): AddressSuggestion["context
 // Address-as-you-type suggestions (Mapbox Geocoding API, autocomplete=true).
 // Debouncing/cancellation of stale requests is the caller's responsibility
 // (see AddressAutocomplete) — this just does the fetch + shape the response.
-export async function fetchAddressSuggestions(query: string, limit = 5): Promise<AddressSuggestion[]> {
+export async function fetchAddressSuggestions(
+  query: string,
+  limit = 5,
+  options: SuggestionOptions = {},
+): Promise<AddressSuggestion[]> {
   const trimmed = query.trim();
   if (!MAPBOX_TOKEN || trimmed.length < 3) return [];
 
@@ -51,8 +73,8 @@ export async function fetchAddressSuggestions(query: string, limit = 5): Promise
     const q = encodeURIComponent(trimmed);
     const res = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json` +
-      `?autocomplete=true&country=ca&limit=${limit}` +
-      `&types=address,place,postcode,locality,neighborhood` +
+      `?autocomplete=true&country=${options.countries ?? "ca"}&limit=${limit}` +
+      `&types=${options.types ?? DEFAULT_TYPES}` +
       `&access_token=${MAPBOX_TOKEN}`,
     );
     if (!res.ok) return [];
@@ -62,6 +84,9 @@ export async function fetchAddressSuggestions(query: string, limit = 5): Promise
       id:        f.id,
       placeName: f.place_name,
       center:    { lng: f.center[0], lat: f.center[1] },
+      text:      f.text,
+      street:    f.place_type?.includes("address") ? [f.address, f.text].filter(Boolean).join(" ") : undefined,
+      placeType: f.place_type,
       context:   parseContext(f.context),
     }));
   } catch {

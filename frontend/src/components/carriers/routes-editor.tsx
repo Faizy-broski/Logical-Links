@@ -3,10 +3,11 @@
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { ROUTE_REGION_OPTIONS } from "@/lib/carrier-options";
+import { NORTH_AMERICA_CITY_SEARCH, ROUTE_REGION_OPTIONS, matchRegion } from "@/lib/carrier-options";
+import type { AddressSuggestion } from "@/lib/utils/geocode";
 
 export type RouteDraft = {
   key: string; // client-only row key
@@ -14,6 +15,10 @@ export type RouteDraft = {
   originCity: string;
   destinationCity: string;
   crossBorder: boolean;
+  // Countries of cities picked from suggestions (not saved) — used to set
+  // Cross-border automatically when the two ends are in different countries.
+  originCountry?: string;
+  destinationCountry?: string;
 };
 
 export function newRouteDraft(): RouteDraft {
@@ -22,9 +27,30 @@ export function newRouteDraft(): RouteDraft {
 
 // One row per operating lane (e.g. Toronto → Ottawa); "Add Another Route"
 // appends a row. Each row is saved as its own route under the carrier.
+// Origin / destination suggest cities and towns across Canada and the US.
 export function RoutesEditor({ routes, onChange }: { routes: RouteDraft[]; onChange: (next: RouteDraft[]) => void }) {
   function update(key: string, patch: Partial<RouteDraft>) {
-    onChange(routes.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+    onChange(
+      routes.map((r) => {
+        if (r.key !== key) return r;
+        const next = { ...r, ...patch };
+        if (next.originCountry && next.destinationCountry && (patch.originCountry || patch.destinationCountry)) {
+          next.crossBorder = next.originCountry !== next.destinationCountry;
+        }
+        return next;
+      }),
+    );
+  }
+
+  function pickCity(route: RouteDraft, end: "origin" | "destination", s: AddressSuggestion) {
+    const region = matchRegion(s.context?.region);
+    update(route.key, {
+      ...(end === "origin"
+        ? { originCity: s.text ?? s.placeName, originCountry: s.context?.country }
+        : { destinationCity: s.text ?? s.placeName, destinationCountry: s.context?.country }),
+      // Fill Province / State from the origin (or whichever end is picked first).
+      ...(!route.province && region ? { province: region } : {}),
+    });
   }
 
   return (
@@ -46,6 +72,32 @@ export function RoutesEditor({ routes, onChange }: { routes: RouteDraft[]; onCha
             </button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor={`origin-${route.key}`}>Origin city</Label>
+              <AddressAutocomplete
+                id={`origin-${route.key}`}
+                value={route.originCity}
+                onChange={(v) => update(route.key, { originCity: v, originCountry: undefined })}
+                onSelect={(s) => pickCity(route, "origin", s)}
+                valueOnSelect={(s) => s.text ?? s.placeName}
+                searchOptions={NORTH_AMERICA_CITY_SEARCH}
+                placeholder="Where the shipment starts"
+                className="rounded-lg"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`dest-${route.key}`}>Destination city</Label>
+              <AddressAutocomplete
+                id={`dest-${route.key}`}
+                value={route.destinationCity}
+                onChange={(v) => update(route.key, { destinationCity: v, destinationCountry: undefined })}
+                onSelect={(s) => pickCity(route, "destination", s)}
+                valueOnSelect={(s) => s.text ?? s.placeName}
+                searchOptions={NORTH_AMERICA_CITY_SEARCH}
+                placeholder="Where the shipment ends"
+                className="rounded-lg"
+              />
+            </div>
             <div className="space-y-1.5">
               <Label>Province / State</Label>
               <SearchableSelect
@@ -73,14 +125,6 @@ export function RoutesEditor({ routes, onChange }: { routes: RouteDraft[]; onCha
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`origin-${route.key}`}>Origin city</Label>
-              <Input id={`origin-${route.key}`} value={route.originCity} onChange={(e) => update(route.key, { originCity: e.target.value })} placeholder="Where the shipment starts" className="rounded-lg" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor={`dest-${route.key}`}>Destination city</Label>
-              <Input id={`dest-${route.key}`} value={route.destinationCity} onChange={(e) => update(route.key, { destinationCity: e.target.value })} placeholder="Where the shipment ends" className="rounded-lg" />
             </div>
           </div>
         </div>

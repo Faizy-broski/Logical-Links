@@ -21,7 +21,7 @@ const CASE_SELECT = `
 
 // ── Cases ─────────────────────────────────────────────────────────────────────
 
-export async function findAll(query: ListCasesQuery, createdBy?: string) {
+export async function findAll(query: ListCasesQuery, createdBy?: string, accountId?: string) {
   let q = supabase
     .from(CASES)
     .select(CASE_SELECT, { count: 'exact' })
@@ -31,6 +31,7 @@ export async function findAll(query: ListCasesQuery, createdBy?: string) {
 
   // Corporates only ever see cases they personally raised — not company-wide.
   if (createdBy) q = q.eq('created_by', createdBy)
+  if (accountId) q = q.eq('account_id', accountId)
   if (query.status) q = q.eq('status', query.status)
   if (query.search) {
     const s = query.search.replace(/[(),]/g, '').slice(0, 200)

@@ -126,12 +126,6 @@ export function KpiCard({
         className,
       )}
     >
-      {/* Ambient glow blob */}
-      <div
-        className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full opacity-60 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
-        style={{ background: `${chartColor}1a` }}
-      />
-
       {/* Header row */}
       <div className="relative flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col">

@@ -27,6 +27,7 @@ function buildQuery(params: ListDeliveriesQuery): string {
   if (params.deliveryType)  q.set("deliveryType",  params.deliveryType);
   if (params.accountId)     q.set("accountId",     params.accountId);
   if (params.customerId)    q.set("customerId",    params.customerId);
+  if (params.customerType)  q.set("customerType",  params.customerType);
   if (params.search)        q.set("search",        params.search);
   if (params.dateFrom)      q.set("dateFrom",      params.dateFrom);
   if (params.dateTo)        q.set("dateTo",        params.dateTo);
@@ -39,13 +40,17 @@ function buildQuery(params: ListDeliveriesQuery): string {
   return s ? `?${s}` : "";
 }
 
-export function useDeliveries(query: ListDeliveriesQuery = {}, options?: { enabled?: boolean }) {
+export function useDeliveries(
+  query: ListDeliveriesQuery = {},
+  options?: { enabled?: boolean; /** Poll (ms) to pick up changes made by other users. */ refetchInterval?: number },
+) {
   return useQuery({
     queryKey: KEYS.list(query),
     queryFn:  () =>
       api.get<PaginatedResponse<Delivery>>(`/api/v1/deliveries${buildQuery(query)}`),
     enabled:  options?.enabled ?? true,
     staleTime: 30_000, // 30 seconds — deliveries change frequently
+    refetchInterval: options?.refetchInterval,
   });
 }
 

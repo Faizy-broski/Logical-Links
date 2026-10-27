@@ -47,22 +47,19 @@ export function WorkspaceNavigation({
                     : "text-foreground/70 hover:bg-primary/20 hover:text-foreground"
                 )}
               >
-                <span className="truncate">{item.label}</span>
+                {/* "Label (count)" — count shown on every item, active or not */}
+                <span className="min-w-0 truncate">
+                  {item.label}
+                  {item.count !== undefined && !item.countLoading && (
+                    <span className={cn("tabular-nums", isActive ? "text-white/85" : "text-muted")}>
+                      {" "}({item.count.toLocaleString()})
+                    </span>
+                  )}
+                </span>
 
-                {item.countLoading ? (
-                  <span className="h-4 w-6 rounded bg-muted animate-pulse shrink-0" />
-                ) : item.count !== undefined ? (
-                  <span
-                    className={cn(
-                      "inline-flex items-center justify-center rounded-full text-[11px] font-medium px-1.5 min-w-[22px] h-5 shrink-0 tabular-nums",
-                      isActive
-                        ? "bg-white text-primary"
-                        : "hidden"
-                    )}
-                  >
-                    {item.count > 9999 ? "9999+" : item.count}
-                  </span>
-                ) : null}
+                {item.countLoading && (
+                  <span className="h-3 w-6 shrink-0 animate-pulse rounded bg-muted" />
+                )}
               </button>
             );
           })}

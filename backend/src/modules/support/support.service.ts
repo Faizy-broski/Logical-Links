@@ -73,7 +73,8 @@ export async function listCases(
   // personally raised. Admin manages system-wide and may additionally filter
   // to a specific user's cases (e.g. a residential customer's detail page).
   const createdBy = callerRole !== 'admin' ? callerId : query.userId
-  const { data, count, error } = await repo.findAll(query, createdBy)
+  const accountId = callerRole === 'admin' ? query.accountId : undefined
+  const { data, count, error } = await repo.findAll(query, createdBy, accountId)
   if (error) throw AppError.internal('Failed to fetch support cases', error)
 
   // Admin manages cases system-wide — surface who raised each one so cases

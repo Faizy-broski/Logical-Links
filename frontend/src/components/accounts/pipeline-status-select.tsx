@@ -16,7 +16,6 @@ import {
   CORPORATE_PORTAL_ACCESS_STATUSES,
   type CorporatePipelineStatus,
 } from "@/types/api.types";
-import { PipelineStatusBadge } from "@/components/accounts/pipeline-status-badge";
 
 export function PipelineStatusSelect({
   value,
@@ -33,9 +32,11 @@ export function PipelineStatusSelect({
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={disabled || loading}
-        className="inline-flex items-center gap-2 rounded-lg border border-card-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60"
+        aria-label={`Pipeline stage: ${CORPORATE_PIPELINE_STATUS_META[value].label}`}
+        className="inline-flex h-8 items-center gap-2 rounded-md border border-card-border bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <PipelineStatusBadge status={value} />
+        <span className={`h-2 w-2 rounded-full ${CORPORATE_PIPELINE_STATUS_META[value].dot}`} />
+        {CORPORATE_PIPELINE_STATUS_META[value].label}
         {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" /> : <ChevronDown className="h-3.5 w-3.5 text-muted" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72 rounded-xl border border-card-border bg-card shadow-lg">
@@ -55,7 +56,7 @@ export function PipelineStatusSelect({
                 <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                   {meta.label}
                   {grantsAccess && (
-                    <span className="rounded bg-green-50 px-1 text-[10px] font-semibold text-green-700">portal access</span>
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-green-700">· portal access</span>
                   )}
                 </span>
                 <span className="block text-xs text-muted">{meta.description}</span>

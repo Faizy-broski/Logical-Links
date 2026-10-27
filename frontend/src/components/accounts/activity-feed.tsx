@@ -31,14 +31,37 @@ export function ActivityFeed({
   isLoading = false,
   emptyText = "No activity yet",
   max,
+  bare = false,
 }: {
   title?: string;
   items: AccountActivity[];
   isLoading?: boolean;
   emptyText?: string;
   max?: number;
+  /** Just a slim timeline, for embedding inside a profile section. */
+  bare?: boolean;
 }) {
   const rows = max ? items.slice(0, max) : items;
+
+  if (bare) {
+    if (isLoading) return <p className="text-sm text-muted">Loading…</p>;
+    if (rows.length === 0) return <p className="text-sm text-muted">{emptyText}</p>;
+    return (
+      <ol className="ml-1 space-y-4 border-l border-card-border pl-5">
+        {rows.map((a) => (
+          <li key={a.id} className="relative">
+            <span className="absolute -left-[25px] top-1.5 h-2 w-2 rounded-full bg-primary/70 ring-4 ring-card" />
+            <p className="text-sm text-foreground">{a.description}</p>
+            <p className="mt-0.5 text-xs text-muted">
+              {shortDate(a.created_at)}
+              {a.actor_label ? ` · ${a.actor_label}` : ""}
+              {a.internal ? " · internal" : ""}
+            </p>
+          </li>
+        ))}
+      </ol>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">

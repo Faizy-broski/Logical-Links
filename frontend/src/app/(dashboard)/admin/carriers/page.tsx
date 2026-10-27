@@ -2,100 +2,29 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, ArrowRight, Eye, Mail, MoreVertical, Pencil, Phone, Plus, Trash2, Truck } from "lucide-react";
+import { ArrowRight, Plus, Truck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { KpiCard } from "@/components/deliveries/kpi-card";
 import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CarrierSheet } from "@/components/carriers/carrier-sheet";
-import { CarrierStatusBadge } from "@/components/carriers/carrier-status";
+import { StatusDot } from "@/components/profile/profile-kit";
 
-import { useCarriers, useDeleteCarrier } from "@/hooks/use-carriers";
+import { useCarriers } from "@/hooks/use-carriers";
 import { usePermission } from "@/hooks/use-permission";
 import {
   EQUIPMENT_CATEGORIES,
   EQUIPMENT_CATEGORY_NAMES,
   SERVICES_OFFERED,
   formatDay,
-  worstExpiry,
   type EquipmentCategory,
 } from "@/lib/carrier-options";
 import { CARRIER_STATUSES, CARRIER_STATUS_META, type Carrier, type CarrierStatus } from "@/types/api.types";
 
 const FILTER_CLASS =
   "h-9 rounded-lg border border-card-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary";
-
-function ActionsCell({ carrier, onEdit }: { carrier: Carrier; onEdit: (c: Carrier) => void }) {
-  const router = useRouter();
-  const canEdit = usePermission("carriers.edit");
-  const canDelete = usePermission("carriers.delete");
-  const deleteMut = useDeleteCarrier();
-  const [deleteOpen, setDeleteOpen] = useState(false);
-
-  async function handleDelete() {
-    try {
-      await deleteMut.mutateAsync(carrier.id);
-      toast.success(`${carrier.carrier_name} deleted`);
-      setDeleteOpen(false);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  }
-
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            onClick={(e) => e.stopPropagation()}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-foreground/5 hover:text-foreground"
-            aria-label={`Actions for ${carrier.carrier_name}`}
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onClick={() => router.push(`/admin/carriers/${carrier.id}`)}>
-            <Eye className="mr-2 h-4 w-4" />
-            View profile
-          </DropdownMenuItem>
-          {canEdit && (
-            <DropdownMenuItem onClick={() => onEdit(carrier)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-          )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setDeleteOpen(true)} className="text-danger focus:text-danger">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <ConfirmDialog
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
-        onConfirm={handleDelete}
-        loading={deleteMut.isPending}
-        title="Delete carrier"
-        description={<>{carrier.carrier_name} will be removed from the Carriers list.</>}
-        confirmLabel="Delete"
-      />
-    </>
-  );
-}
 
 export default function AdminCarriersPage() {
   const router = useRouter();
@@ -107,7 +36,6 @@ export default function AdminCarriersPage() {
   const [categoryFilter, setCategoryFilter] = useState<EquipmentCategory | "">("");
   const [serviceFilter, setServiceFilter] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editing, setEditing] = useState<Carrier | null>(null);
 
   const { data: res, isLoading } = useCarriers({ enabled: canView });
   const allCarriers = useMemo(() => (res?.data ?? []) as Carrier[], [res]);
@@ -140,10 +68,10 @@ export default function AdminCarriersPage() {
   const hasFilters = !!(search || statusFilter || categoryFilter || serviceFilter);
 
   function openAdd() {
-    setEditing(null);
     setSheetOpen(true);
   }
 
+  // Overview only — contact, documents and the rest live in the carrier profile.
   const columns: ColumnDef<Carrier>[] = useMemo(
     () => [
       {
@@ -153,30 +81,34 @@ export default function AdminCarriersPage() {
           const c = row.original;
           const place = [c.address_city, c.address_province].filter((v) => v && v !== "N/A").join(", ");
           return (
-            <div>
-              <p className="text-sm font-semibold text-foreground">{c.carrier_name}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{c.carrier_name}</p>
               {place && <p className="text-xs text-muted">{place}</p>}
             </div>
           );
         },
       },
       {
-        id: "contact",
-        header: "Contact",
+        id: "status",
+        header: "Status",
         cell: ({ row }) => {
-          const c = row.original;
-          if (!c.contact_name && !c.contact_phone && !c.contact_email) {
-            return <span className="text-sm italic text-muted-light">—</span>;
-          }
+          const meta = CARRIER_STATUS_META[row.original.status];
+          return <StatusDot label={meta.label} dotClass={meta.dot} className="text-sm" />;
+        },
+      },
+      {
+        id: "routes",
+        header: "Routes",
+        cell: ({ row }) => {
+          const routes = row.original.routes;
+          if (routes.length === 0) return <span className="text-sm text-muted-light">—</span>;
+          const first = routes[0];
           return (
-            <div className="space-y-0.5 text-sm">
-              {c.contact_name && <p className="font-medium text-foreground">{c.contact_name}</p>}
-              {c.contact_phone && (
-                <p className="flex items-center gap-1.5 text-xs text-muted"><Phone className="h-3 w-3 shrink-0" />{c.contact_phone}</p>
-              )}
-              {c.contact_email && (
-                <p className="flex items-center gap-1.5 text-xs text-muted"><Mail className="h-3 w-3 shrink-0" />{c.contact_email}</p>
-              )}
+            <div className="text-sm">
+              <p className="inline-flex items-center gap-1.5 text-foreground">
+                {first.origin_city || "—"} <ArrowRight className="h-3 w-3 text-muted" /> {first.destination_city || "—"}
+              </p>
+              {routes.length > 1 && <p className="text-xs text-muted">+{routes.length - 1} more</p>}
             </div>
           );
         },
@@ -186,75 +118,19 @@ export default function AdminCarriersPage() {
         header: "Equipment",
         cell: ({ row }) => {
           const types = row.original.equipment_types;
-          if (types.length === 0) return <span className="text-sm italic text-muted-light">—</span>;
+          if (types.length === 0) return <span className="text-sm text-muted-light">—</span>;
           return (
-            <div className="flex max-w-56 flex-wrap gap-1">
-              {types.slice(0, 2).map((t) => (
-                <span key={t} className="rounded-full border border-card-border bg-foreground/5 px-2 py-0.5 text-[11px] font-medium text-foreground">{t}</span>
-              ))}
-              {types.length > 2 && <span className="px-1 text-[11px] font-medium text-muted">+{types.length - 2} more</span>}
-            </div>
+            <p className="max-w-64 text-sm text-foreground">
+              {types.slice(0, 2).join(", ")}
+              {types.length > 2 && <span className="text-muted"> +{types.length - 2} more</span>}
+            </p>
           );
         },
-      },
-      {
-        id: "routes",
-        header: "Routes",
-        cell: ({ row }) => {
-          const routes = row.original.routes;
-          if (routes.length === 0) return <span className="text-sm italic text-muted-light">—</span>;
-          const first = routes[0];
-          return (
-            <div className="text-sm">
-              <p className="inline-flex items-center gap-1.5 text-foreground">
-                {first.origin_city || "—"} <ArrowRight className="h-3 w-3 text-primary" /> {first.destination_city || "—"}
-              </p>
-              {routes.length > 1 && <p className="text-xs text-muted">+{routes.length - 1} more route{routes.length > 2 ? "s" : ""}</p>}
-            </div>
-          );
-        },
-      },
-      {
-        id: "documents",
-        header: "Documents",
-        cell: ({ row }) => {
-          const docs = row.original.documents;
-          const flag = worstExpiry(docs);
-          return (
-            <div className="text-sm">
-              <p className="text-foreground">{docs.length} file{docs.length === 1 ? "" : "s"}</p>
-              {flag && (
-                <p className={`inline-flex items-center gap-1 text-xs font-semibold ${flag === "expired" ? "text-red-700" : "text-amber-700"}`}>
-                  <AlertTriangle className="h-3 w-3" />
-                  {flag === "expired" ? "Expired document" : "Expiring soon"}
-                </p>
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        id: "status",
-        header: "Status",
-        cell: ({ row }) => <CarrierStatusBadge status={row.original.status} />,
       },
       {
         id: "added",
         header: "Date Added",
-        cell: ({ row }) => <span className="text-xs text-muted">{formatDay(row.original.created_at)}</span>,
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <ActionsCell
-            carrier={row.original}
-            onEdit={(c) => {
-              setEditing(c);
-              setSheetOpen(true);
-            }}
-          />
-        ),
+        cell: ({ row }) => <span className="text-sm tabular-nums text-muted">{formatDay(row.original.created_at)}</span>,
       },
     ],
     [],
@@ -359,7 +235,7 @@ export default function AdminCarriersPage() {
         />
       </div>
 
-      <CarrierSheet open={sheetOpen} onClose={() => setSheetOpen(false)} carrier={editing} />
+      <CarrierSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
     </div>
   );
 }

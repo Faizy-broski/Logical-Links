@@ -30,6 +30,8 @@ export const listCasesQuerySchema = z.object({
   // Admin-only: view all cases raised by a specific user (e.g. a residential
   // customer's detail page). Ignored for non-admin callers.
   userId: z.string().uuid().optional(),
+  // Admin-only: every case linked to a corporate account (its detail page).
+  accountId: z.string().uuid().optional(),
 })
 
 export const attachmentUploadUrlSchema = z.object({

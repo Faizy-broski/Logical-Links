@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CompanyOptionSelect } from "@/components/ui/company-option-select";
-import { ProvinceCitySelect } from "@/components/ui/province-city-select";
+import { NorthAmericaAddressFields } from "@/components/carriers/north-america-address";
 import { MultiSelectDropdown } from "@/components/ui/multi-select-dropdown";
 import { CarrierStatusSelect } from "@/components/carriers/carrier-status";
 import { EquipmentPicker } from "@/components/carriers/equipment-picker";
@@ -180,16 +180,10 @@ export function CarrierSheet({ open, onClose, carrier }: Props) {
           </Section>
 
           <Section title="Business address">
-            <Field id="car-address" label="Street address" value={form.addressLine1} onChange={(v) => set("addressLine1", v)} className="sm:col-span-2" />
-            <ProvinceCitySelect
-              province={form.addressProvince}
-              city={form.addressCity}
-              onProvinceChange={(v) => set("addressProvince", v)}
-              onCityChange={(v) => set("addressCity", v)}
-              labelClassName="text-sm font-medium leading-none"
-              wrapperClassName="contents"
+            <NorthAmericaAddressFields
+              value={form}
+              onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
             />
-            <Field id="car-postcode" label="Postal code" value={form.addressPostcode} onChange={(v) => set("addressPostcode", v)} />
           </Section>
 
           <Block title="Equipment / truck types">
@@ -212,7 +206,7 @@ export function CarrierSheet({ open, onClose, carrier }: Props) {
             {services.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {services.map((s) => (
-                  <span key={s} className="rounded-full border border-card-border bg-foreground/5 px-2.5 py-0.5 text-xs font-medium text-foreground">{s}</span>
+                  <span key={s} className="rounded-md border border-card-border bg-foreground/5 px-2 py-0.5 text-xs font-medium text-foreground">{s}</span>
                 ))}
               </div>
             )}

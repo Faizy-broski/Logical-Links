@@ -101,7 +101,7 @@ function ChipList({ items, onRemove }: { items: string[]; onRemove: (item: strin
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item) => (
-        <span key={item} className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-primary">
+        <span key={item} className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 py-0.5 pl-2 pr-1 text-xs font-medium text-primary">
           {item}
           <button type="button" onClick={() => onRemove(item)} aria-label={`Remove ${item}`} className="rounded-full p-0.5 hover:bg-primary/15">
             <X className="h-3 w-3" />

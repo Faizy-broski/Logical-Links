@@ -536,6 +536,8 @@ export type ListDeliveriesQuery = {
   deliveryType?:  DeliveryType;
   accountId?:     string;
   customerId?:    string;
+  /** Residential deliveries vs corporate shipments (from the saved customer). */
+  customerType?:  "residential" | "corporate";
   search?:        string;
   dateFrom?:      string;
   dateTo?:        string;
@@ -1426,6 +1428,8 @@ export type ListSupportCasesQuery = {
   search?: string;
   /** Admin-only: view all cases raised by a specific user. */
   userId?: string;
+  /** Admin-only: every case linked to a corporate account. */
+  accountId?: string;
 };
 
 // ── Contact Support (public contact form) ───────────────────────────────────────
@@ -1511,12 +1515,12 @@ export const CARRIER_STATUS_META: Record<CarrierStatus, { label: string; descrip
 export const DOCUMENT_VERIFICATION_STATUSES = ["not_reviewed", "pending", "verified", "expired", "rejected"] as const;
 export type DocumentVerificationStatus = (typeof DOCUMENT_VERIFICATION_STATUSES)[number];
 
-export const DOCUMENT_VERIFICATION_META: Record<DocumentVerificationStatus, { label: string; badge: string }> = {
-  not_reviewed: { label: "Not Reviewed",         badge: "bg-zinc-100 text-zinc-600 border-zinc-200" },
-  pending:      { label: "Pending Verification", badge: "bg-amber-50 text-amber-700 border-amber-200" },
-  verified:     { label: "Verified",             badge: "bg-green-50 text-green-700 border-green-200" },
-  expired:      { label: "Expired",              badge: "bg-red-50 text-red-700 border-red-200" },
-  rejected:     { label: "Rejected",             badge: "bg-red-100 text-red-800 border-red-300" },
+export const DOCUMENT_VERIFICATION_META: Record<DocumentVerificationStatus, { label: string; badge: string; dot: string }> = {
+  not_reviewed: { label: "Not Reviewed",         badge: "bg-zinc-100 text-zinc-600 border-zinc-200",    dot: "bg-zinc-400" },
+  pending:      { label: "Pending Verification", badge: "bg-amber-50 text-amber-700 border-amber-200",  dot: "bg-amber-500" },
+  verified:     { label: "Verified",             badge: "bg-green-50 text-green-700 border-green-200",  dot: "bg-green-500" },
+  expired:      { label: "Expired",              badge: "bg-red-50 text-red-700 border-red-200",        dot: "bg-red-500" },
+  rejected:     { label: "Rejected",             badge: "bg-red-100 text-red-800 border-red-300",       dot: "bg-red-700" },
 };
 
 export type CarrierRoute = {

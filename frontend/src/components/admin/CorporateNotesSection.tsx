@@ -5,9 +5,7 @@ import { toast } from "sonner";
 import {
   PlusCircle,
   Pencil,
-  Trash2,
-  StickyNote,
-  Check,
+  Trash2,  Check,
   X,
   Loader2,
 } from "lucide-react";
@@ -23,6 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Section, SectionAction } from "@/components/profile/profile-kit";
 
 import {
   useCorporateNotes,
@@ -67,7 +66,7 @@ function NoteCard({
   const edited = wasEdited(note);
 
   return (
-    <div className="group relative rounded-xl border border-card-border bg-background px-5 py-4 transition-colors hover:border-primary/30">
+    <div className="group relative py-3.5 first:pt-0 last:pb-0">
       {/* Author + actions row */}
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -365,31 +364,17 @@ export function CorporateNotesSection({ corporateId }: { corporateId: string }) 
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-card-border px-6 py-4">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Internal Notes</h3>
-          {total > 0 && (
-            <p className="mt-0.5 text-xs text-muted">
-              {total} {total === 1 ? "note" : "notes"} — visible to admins only
-            </p>
-          )}
-        </div>
-        {!showAddForm && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => { setShowAddForm(true); setEditingNote(null); }}
-            className="h-8 rounded-lg bg-primary px-4 text-xs text-sidebar hover:bg-primary/85"
-          >
-            <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
-            Add Note
-          </Button>
-        )}
-      </div>
-
-      <div className="p-6 space-y-4">
+    <>
+    <Section
+      title="Internal notes"
+      description={total > 0 ? `${total} ${total === 1 ? "note" : "notes"} · visible to admins only` : "Visible to admins only"}
+      action={!showAddForm && (
+        <SectionAction icon={PlusCircle} onClick={() => { setShowAddForm(true); setEditingNote(null); }}>
+          Add note
+        </SectionAction>
+      )}
+    >
+      <div className="space-y-4">
         {/* Add form */}
         {showAddForm && (
           <AddNoteForm
@@ -400,16 +385,11 @@ export function CorporateNotesSection({ corporateId }: { corporateId: string }) 
 
         {/* Loading skeleton */}
         {isLoading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[1, 2].map((i) => (
-              <div key={i} className="rounded-xl border border-card-border p-5 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-7 w-7 rounded-full" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                </div>
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-40" />
                 <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
               </div>
             ))}
           </div>
@@ -417,22 +397,21 @@ export function CorporateNotesSection({ corporateId }: { corporateId: string }) 
 
         {/* Error state */}
         {isError && !isLoading && (
-          <div className="flex items-center justify-center rounded-xl border border-red-100 bg-red-50 py-8">
-            <p className="text-sm text-red-600">Failed to delivery notes. Please refresh.</p>
-          </div>
+          <p className="text-sm text-red-600">Failed to load notes. Please refresh.</p>
         )}
 
         {/* Notes list */}
         {!isLoading && !isError && notes.length > 0 && (
-          <div className="space-y-3">
+          <div className="divide-y divide-card-border">
             {notes.map((note) =>
               editingNote?.note_id === note.note_id ? (
-                <EditNoteInline
-                  key={note.note_id}
-                  note={note}
-                  corporateId={corporateId}
-                  onDone={() => setEditingNote(null)}
-                />
+                <div key={note.note_id} className="py-3.5 first:pt-0 last:pb-0">
+                  <EditNoteInline
+                    note={note}
+                    corporateId={corporateId}
+                    onDone={() => setEditingNote(null)}
+                  />
+                </div>
               ) : (
                 <NoteCard
                   key={note.note_id}
@@ -447,26 +426,10 @@ export function CorporateNotesSection({ corporateId }: { corporateId: string }) 
 
         {/* Empty state */}
         {!isLoading && !isError && notes.length === 0 && !showAddForm && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/20">
-              <StickyNote className="h-6 w-6 text-muted" />
-            </div>
-            <p className="text-sm font-medium text-foreground">No notes yet</p>
-            <p className="mt-1 text-xs text-muted">
-              No notes have been added for this company.
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setShowAddForm(true)}
-              className="mt-4 h-8 rounded-lg bg-primary px-4 text-xs text-sidebar hover:bg-primary/85"
-            >
-              <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
-              Add First Note
-            </Button>
-          </div>
+          <p className="text-sm text-muted">No notes yet.</p>
         )}
       </div>
+    </Section>
 
       {/* Delete confirmation */}
       <DeleteNoteDialog
@@ -475,6 +438,6 @@ export function CorporateNotesSection({ corporateId }: { corporateId: string }) 
         open={deletingNote !== null}
         onClose={() => setDeletingNote(null)}
       />
-    </div>
+    </>
   );
 }

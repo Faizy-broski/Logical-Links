@@ -1,6 +1,6 @@
 // Dropdown options for Admin → Carriers.
 
-import { PROVINCES } from "@/lib/corporate-options";
+import { NOT_APPLICABLE, PROVINCES } from "@/lib/corporate-options";
 
 // Equipment is picked category-first: choosing a category shows only that
 // category's equipment. Names are unique across categories, so a carrier
@@ -92,6 +92,29 @@ export const ROUTE_REGION_OPTIONS = [
   ...PROVINCES.map((p) => ({ value: p, label: p })),
   ...US_STATES.map((s) => ({ value: s, label: `${s} (US)` })),
 ];
+
+// Carrier business addresses: same list plus N/A.
+export const ADDRESS_REGION_OPTIONS = [...ROUTE_REGION_OPTIONS, { value: NOT_APPLICABLE, label: NOT_APPLICABLE }];
+
+// Mapbox search scope for carriers: Canada and the US.
+export const NORTH_AMERICA_ADDRESS_SEARCH = { countries: "ca,us", types: "address" };
+export const NORTH_AMERICA_CITY_SEARCH = { countries: "ca,us", types: "place,locality" };
+
+const fold = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Maps a geocoder region name ("Québec", "New York") onto our province/state list. */
+export function matchRegion(region: string | undefined): string | undefined {
+  if (!region) return undefined;
+  const hit = [...PROVINCES, ...US_STATES].find((r) => fold(r) === fold(region));
+  return hit ?? region;
+}
+
+/** "CA" / "US" for a province or state name; undefined if unknown. */
+export function regionCountry(region: string): "CA" | "US" | undefined {
+  if ((PROVINCES as readonly string[]).includes(region)) return "CA";
+  if ((US_STATES as readonly string[]).includes(region)) return "US";
+  return undefined;
+}
 
 // Documents within this many days of expiry are flagged.
 export const DOCUMENT_WARNING_DAYS = 30;

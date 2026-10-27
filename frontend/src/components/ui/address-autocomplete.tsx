@@ -6,7 +6,7 @@ import { Loader2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils/cn";
-import { fetchAddressSuggestions, type AddressSuggestion } from "@/lib/utils/geocode";
+import { fetchAddressSuggestions, type AddressSuggestion, type SuggestionOptions } from "@/lib/utils/geocode";
 
 interface Props {
   value: string;
@@ -20,6 +20,11 @@ interface Props {
   rows?: number;
   disabled?: boolean;
   ariaInvalid?: boolean;
+  /** Search scope — countries / place types. Defaults to Canadian addresses. */
+  searchOptions?: SuggestionOptions;
+  /** Field value to put in the box when a suggestion is picked (default: the full place name). */
+  valueOnSelect?: (suggestion: AddressSuggestion) => string;
+  id?: string;
 }
 
 interface Rect {
@@ -39,6 +44,9 @@ export function AddressAutocomplete({
   rows,
   disabled,
   ariaInvalid,
+  searchOptions,
+  valueOnSelect,
+  id,
 }: Props) {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [open, setOpen]               = useState(false);
@@ -69,7 +77,7 @@ export function AddressAutocomplete({
     debounceRef.current = setTimeout(async () => {
       const requestId = ++requestIdRef.current;
       setLoading(true);
-      const results = await fetchAddressSuggestions(trimmed);
+      const results = await fetchAddressSuggestions(trimmed, 5, searchOptions);
       if (requestId !== requestIdRef.current) return; // a newer keystroke superseded this request
       setLoading(false);
       setSuggestions(results);
@@ -116,7 +124,7 @@ export function AddressAutocomplete({
 
   function handleSelect(s: AddressSuggestion) {
     skipNextFetchRef.current = true;
-    onChange(s.placeName);
+    onChange(valueOnSelect ? valueOnSelect(s) : s.placeName);
     onSelect?.(s);
     setOpen(false);
     setSuggestions([]);
@@ -142,6 +150,7 @@ export function AddressAutocomplete({
   }
 
   const sharedProps = {
+    id,
     value,
     placeholder,
     disabled,
