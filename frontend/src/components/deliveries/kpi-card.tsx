@@ -136,13 +136,11 @@ export function KpiCard({
           <div className="mt-2 flex flex-wrap items-end gap-1.5 sm:mt-3 sm:gap-2.5">
             <span
               className={cn(
-                "text-3xl font-semibold leading-none tracking-tight sm:text-[2.25rem]",
+                // Same family as the site's paragraphs (Noto Serif — lining numerals).
+                "font-[family-name:var(--font-droid-serif)] text-3xl font-semibold leading-none tracking-tight sm:text-[2.25rem]",
                 !valueColor && "text-foreground",
               )}
-              style={{
-                fontFamily: "'Cormorant Garamond', Georgia, serif",
-                ...(valueColor ? { color: valueColor } : {}),
-              }}
+              style={valueColor ? { color: valueColor } : undefined}
             >
               {typeof value === "number" ? value.toLocaleString() : value}
             </span>
@@ -168,7 +166,7 @@ export function KpiCard({
           <Icon className="h-12 w-15 drop-shadow-sm sm:h-16 sm:w-20" />
         ) : (
           <div
-            className="flex size-10 shrink-0 items-center justify-center rounded-xl sm:size-13 sm:rounded-2xl"
+            className="flex h-12 w-15 shrink-0 items-center justify-center rounded-xl sm:h-16 sm:w-20 sm:rounded-2xl"
             style={{
               background: `${chartColor}0d`,
               border: `1px solid ${chartColor}22`,
@@ -176,7 +174,7 @@ export function KpiCard({
               boxShadow: `0 2px 8px ${chartColor}18`,
             }}
           >
-            <Icon className="h-5 w-5 sm:h-6 sm:w-6" size={20} />
+            <Icon className="h-6 w-6 sm:h-8 sm:w-8" size={24} />
           </div>
         )}
       </div>

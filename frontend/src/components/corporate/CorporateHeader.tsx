@@ -49,7 +49,7 @@ export default function CorporateHeader({
   }
 
   // Corporate customers have no employees of their own — one login per account.
-  const roleLabel = 'Company Admin'
+  const roleLabel = 'Corporate Member'
 
   return (
     <header

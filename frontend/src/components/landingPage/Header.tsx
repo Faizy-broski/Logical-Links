@@ -6,6 +6,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuoteGate } from "@/hooks/use-quote-gate";
+import { useAuthStore } from "@/store/auth.store";
+import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
 import { CONTACT_SECTION_ID, openContactForm } from "@/lib/contact-section";
 
 const nav = [
@@ -26,6 +28,11 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const requestQuote = useQuoteGate();
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
+  // Signed-in users stay on the public site and get a Dashboard link instead of
+  // Log In / Sign Up (no more forced redirect away from the homepage).
+  const loggedIn = _hasHydrated && isAuthenticated && !!user;
+  const dashboardHref = dashboardPathForRole(user?.role);
 
   const goToSection = (section: string) => {
     if (pathname === "/") {
@@ -85,7 +92,7 @@ export default function Header() {
           aria-label="Go to top"
           className="focus:outline-none"
         >
-          <Image src="/logo-header.png" alt="Logical Links" width={100} height={77} />
+          <Image src="/logo-header-v2.png" alt="Logical Links" width={100} height={77} />
         </button>
 
         {/* Desktop nav */}
@@ -112,18 +119,29 @@ export default function Header() {
             scrolled ? "gap-4 lg:gap-5" : "gap-3"
           }`}
         >
-          <a
-            href="/login"
-            className="text-sm font-medium text-black hover:text-primary transition-colors"
-          >
-            Log In
-          </a>
-          <a
-            href="/register"
-            className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-[8px] transition-colors"
-          >
-            Sign Up
-          </a>
+          {loggedIn ? (
+            <a
+              href={dashboardHref}
+              className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-[8px] transition-colors"
+            >
+              Dashboard
+            </a>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="text-sm font-medium text-black hover:text-primary transition-colors"
+              >
+                Log In
+              </a>
+              <a
+                href="/register"
+                className="px-5 py-2 text-sm font-medium border border-primary text-white bg-primary hover:bg-primary-dark hover:text-white rounded-[8px] transition-colors"
+              >
+                Sign Up
+              </a>
+            </>
+          )}
           <button
             type="button"
             onClick={() => requestQuote(goToQuoteForm)}
@@ -169,20 +187,32 @@ export default function Header() {
             ))}
 
             <div className="flex items-center gap-3 pt-2 border-t border-gray-200">
-              <a
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="flex-1 text-center text-sm font-medium text-black hover:text-primary transition-colors py-2"
-              >
-                Log In
-              </a>
-              <a
-                href="/register"
-                onClick={() => setOpen(false)}
-                className="flex-1 text-center px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-[8px] transition-colors"
-              >
-                Sign Up
-              </a>
+              {loggedIn ? (
+                <a
+                  href={dashboardHref}
+                  onClick={() => setOpen(false)}
+                  className="flex-1 text-center px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-[8px] transition-colors"
+                >
+                  Dashboard
+                </a>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="flex-1 text-center text-sm font-medium text-black hover:text-primary transition-colors py-2"
+                  >
+                    Log In
+                  </a>
+                  <a
+                    href="/register"
+                    onClick={() => setOpen(false)}
+                    className="flex-1 text-center px-4 py-2 text-sm font-medium text-primary border border-primary hover:bg-primary hover:text-white rounded-[8px] transition-colors"
+                  >
+                    Sign Up
+                  </a>
+                </>
+              )}
             </div>
 
             <button

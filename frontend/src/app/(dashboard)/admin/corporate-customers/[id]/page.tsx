@@ -20,7 +20,7 @@ import {
 } from "@/hooks/use-accounts";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useApproveUser } from "@/hooks/use-users";
-import { useAdminEmployees } from "@/hooks/use-admin-employees";
+import { useAssignableEmployees } from "@/hooks/use-deliveries";
 import { useTiers } from "@/hooks/use-tiers";
 import { usePermission } from "@/hooks/use-permission";
 import { CorporateNotesSection } from "@/components/admin/CorporateNotesSection";
@@ -478,11 +478,14 @@ function FollowUpSection({ account, canEdit }: { account: Account; canEdit: bool
   const [assignedEmployeeId, setAssignedEmployeeId] = useState(account.assigned_employee_id ?? "");
   const updateMut = useUpdateAccount(account.account_id);
 
-  const { data: employeesRes } = useAdminEmployees({ limit: 200 }, { enabled: editing });
-  const employees = (employeesRes?.data ?? []).filter((e) => e.is_active);
-  const employeeOptions = employees.map((e) => ({
+  // Lean roster of every active staff member (same list the delivery Assign
+  // dialog uses) — not the HR-gated, 100-row-capped employee management list.
+  const { data: employeesRes, isLoading: employeesLoading, isError: employeesError } =
+    useAssignableEmployees({ enabled: editing });
+  const employeeOptions = (employeesRes?.data ?? []).map((e) => ({
     value: e.id,
-    label: e.full_name ?? e.email,
+    label: e.full_name ?? "Unnamed employee",
+    description: e.admin_role ? e.admin_role.replace(/_/g, " ") : undefined,
     icon: <UserAvatar name={e.full_name} avatarUrl={e.avatar_url} size="xs" rounded="lg" />,
   }));
 
@@ -533,7 +536,13 @@ function FollowUpSection({ account, canEdit }: { account: Account; canEdit: bool
                 options={employeeOptions}
                 placeholder="Unassigned"
                 searchPlaceholder="Search employees…"
-                emptyText="No active employees"
+                emptyText={
+                  employeesLoading
+                    ? "Loading employees…"
+                    : employeesError
+                      ? "Couldn't load employees — you may need the 'assign deliveries' permission"
+                      : "No active employees"
+                }
               />
             </div>
           </div>

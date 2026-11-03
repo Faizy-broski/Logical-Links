@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, type ApiResponse } from "@/lib/api";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "@/lib/support-contact";
 
-const SUPPORT_PHONE = "437-335-6305";
-const SUPPORT_EMAIL = "logicallinkscorp@gmail.com";
 
 interface FormState {
   name: string;

@@ -4,7 +4,16 @@ import * as accountsRepo from './accounts.repository'
 import * as authRepo from '../auth/auth.repository'
 import * as notificationsService from '../notifications/notifications.service'
 import { sendEmail } from '../../services/email/email.service'
-import { approvalEmail, rejectionEmail } from '../../services/email/templates/account.templates'
+import {
+  accessPausedEmail,
+  accountFullyActiveEmail,
+  accountOnboardingEmail,
+  applicationContactedEmail,
+  applicationInterestedEmail,
+  applicationReconsideredEmail,
+  approvalEmail,
+  rejectionEmail,
+} from '../../services/email/templates/account.templates'
 import { REJECTION_REASON_META } from './rejection-reasons'
 import {
   PORTAL_ACCESS_STATUSES,
@@ -261,15 +270,36 @@ export async function updateAccount(id: string, dto: UpdateAccountDto, changedBy
     })
     const adminId = await findCompanyAdminId(id)
     if (adminId) {
+      const hadAccess = portalAccessFor(prevStatus)
       const gainedAccess = portalAccessFor(nextStatus)
-      const lostAccess = portalAccessFor(prevStatus) && !gainedAccess
-      if (gainedAccess) {
-        notifyUser(adminId, 'account_updated', 'Your account is now active', `Your company account "${accountName}" is active — you can sign in to the portal.`, id)
-        // Approval email — fires when the account reaches a portal-access stage
-        // (onboarding / active) from a stage that did not grant access.
-        sendAccountEmail(data as Record<string, unknown>, approvalEmail)
+      const lostAccess = hadAccess && !gainedAccess
+      const account = data as Record<string, unknown>
+
+      // One in-app notification + one email per scenario. Prospect is an
+      // internal stage, so the customer is not told about it.
+      if (gainedAccess && !hadAccess) {
+        // First time the account can sign in: approved (active) or approved
+        // and being set up (onboarding).
+        if (nextStatus === 'active') {
+          notifyUser(adminId, 'account_updated', 'Your account is now active', `Your company account "${accountName}" is active — you can sign in to the portal.`, id)
+          sendAccountEmail(account, approvalEmail)
+        } else {
+          notifyUser(adminId, 'account_updated', 'Your account has been approved', `Your company account "${accountName}" has been approved and is being set up — you can sign in to the portal.`, id)
+          sendAccountEmail(account, accountOnboardingEmail)
+        }
+      } else if (gainedAccess && hadAccess && nextStatus === 'active') {
+        // Onboarding -> Active: setup finished (no second "approved" email).
+        notifyUser(adminId, 'account_updated', 'Your account is now fully active', `Setup for "${accountName}" is complete and your account is fully active.`, id)
+        sendAccountEmail(account, accountFullyActiveEmail)
       } else if (lostAccess) {
         notifyUser(adminId, 'account_updated', 'Portal access paused', `Portal access for "${accountName}" was paused by an administrator.`, id)
+        sendAccountEmail(account, accessPausedEmail)
+      } else if (nextStatus === 'contacted') {
+        notifyUser(adminId, 'account_updated', 'We have been in touch', `Our team has contacted you about the application for "${accountName}".`, id)
+        sendAccountEmail(account, applicationContactedEmail)
+      } else if (nextStatus === 'interested') {
+        notifyUser(adminId, 'account_updated', 'Your application is progressing', `Your application for "${accountName}" is progressing — we will let you know the next steps.`, id)
+        sendAccountEmail(account, applicationInterestedEmail)
       }
     }
   }
@@ -647,6 +677,13 @@ export async function reconsiderAccount(id: string, adminId: string) {
     `"${account.account_name}" was moved back to pending review.`,
     'account', id, adminId,
   )
+
+  // Let the applicant know their application is being reviewed again.
+  sendAccountEmail(account as Record<string, unknown>, applicationReconsideredEmail)
+  const reopenedAdminId = await findCompanyAdminId(id)
+  if (reopenedAdminId) {
+    notifyUser(reopenedAdminId, 'account_updated', 'Your application is being reviewed again', `Your application for "${account.account_name}" has been reopened for review.`, id)
+  }
 
   return withDisplayIds(data as Record<string, unknown>)
 }

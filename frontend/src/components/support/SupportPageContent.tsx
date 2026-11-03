@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { LifeBuoy, ChevronDown, ChevronUp } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
 import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 import { SupportCaseStatusBadge } from "@/components/documents/document-status-badge";
@@ -11,44 +11,17 @@ import { CaseDetailsSheet } from "@/components/support/case-details-sheet";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { useCreateSupportCase, useSupportCases } from "@/hooks/use-support";
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from "@/lib/support-contact";
 import { takePendingSupport } from "@/lib/pending-intent";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { usePermission } from "@/hooks/use-permission";
-import { KNOWLEDGE_BASE_ARTICLES } from "@/lib/knowledge-base";
+import { KnowledgeBase } from "@/components/support/KnowledgeBase";
 import type { SupportCase } from "@/types/api.types";
 
-const SUPPORT_PHONE = "437-335-6305";
-const SUPPORT_EMAIL = "logicallinkscorp@gmail.com";
 
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function KnowledgeBaseCard({ slug, title, summary, body }: (typeof KNOWLEDGE_BASE_ARTICLES)[number]) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="overflow-hidden rounded-2xl border border-card-border bg-card shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
-      >
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="mt-0.5 text-xs text-muted">{summary}</p>
-        </div>
-        {open ? <ChevronUp className="h-4 w-4 shrink-0 text-muted" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted" />}
-      </button>
-      {open && (
-        <div className="space-y-3 border-t border-card-border px-5 py-4">
-          {body.map((paragraph, i) => (
-            <p key={`${slug}-${i}`} className="text-sm leading-relaxed text-muted">{paragraph}</p>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function SupportPageContent() {
@@ -231,14 +204,7 @@ export function SupportPageContent() {
 
         {/* Knowledge base — customer-facing help content, not shown to support staff */}
         {!isAdmin && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Knowledge Base</h2>
-            <div className="space-y-3">
-              {KNOWLEDGE_BASE_ARTICLES.map((article) => (
-                <KnowledgeBaseCard key={article.slug} {...article} />
-              ))}
-            </div>
-          </div>
+          <KnowledgeBase />
         )}
       </div>
 

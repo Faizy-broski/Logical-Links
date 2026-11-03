@@ -459,7 +459,7 @@ export default function DeliveriesPage() {
               ? "Viewing as System Admin — full access to all deliveries"
               : isResidential
                 ? "Viewing as Residential Customer — your deliveries"
-                : "Viewing as Company Admin — your company's deliveries"}
+                : "Viewing as Corporate Member — your company's deliveries"}
           </span>
         </div>
 

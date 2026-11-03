@@ -16,6 +16,12 @@ import {
 import { generateTotpSecret, buildProvisioningQrCode, verifyTotpCode } from '../../lib/totp'
 import * as authRepo from './auth.repository'
 import { logger } from '../../lib/logger'
+import { sendEmail } from '../../services/email/email.service'
+import {
+  applicationReceivedEmail,
+  residentialWelcomeEmail,
+} from '../../services/email/templates/account.templates'
+import * as notificationsService from '../notifications/notifications.service'
 import type {
   LoginDto,
   RefreshDto,
@@ -751,6 +757,29 @@ async function completeSignup(
     }
   })()
 
+  // Tell the applicant we have their application, and alert leadership that a
+  // new corporate request is waiting. Fire-and-forget: never blocks sign-up.
+  void sendEmail({ to: email, ...applicationReceivedEmail(dto.fullName) }).catch(() => undefined)
+  void notificationsService
+    .createNotification({
+      userId,
+      type: 'account_created',
+      title: 'Application received',
+      body: `We have received the corporate account application for "${dto.company}". We will notify you as it progresses.`,
+      entityType: 'account',
+      entityId: account.account_id as string,
+    })
+    .catch(() => undefined)
+  void notificationsService
+    .notifyAllAdmins(
+      'account_created',
+      'New corporate application',
+      `"${dto.company}" has applied for a corporate account.`,
+      'account',
+      account.account_id as string,
+    )
+    .catch(() => undefined)
+
   // Issue a token pair so the client can be logged in immediately after registration
   const tokens = await issueTokenPair(
     userId,
@@ -805,6 +834,17 @@ async function registerResidential(
     await rollbackAuthUser()
     throw AppError.internal('Failed to complete registration — please try again', profileUpdateError)
   }
+
+  // Welcome email + in-app notification (no approval step for residential).
+  void sendEmail({ to: email, ...residentialWelcomeEmail(dto.fullName) }).catch(() => undefined)
+  void notificationsService
+    .createNotification({
+      userId,
+      type: 'system',
+      title: 'Welcome to Logical Links',
+      body: 'Your account is ready — you can book deliveries and track them from your dashboard.',
+    })
+    .catch(() => undefined)
 
   const tokens = await issueTokenPair(userId, email, 'residential', null, null, null, context)
 

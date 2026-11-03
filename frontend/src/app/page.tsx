@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import LandingAuthRedirect from "@/components/layout/LandingAuthRedirect";
 import ScrollToHash from "@/components/layout/ScrollToHash";
 import Header from "@/components/landingPage/Header";
 import Hero from "@/components/landingPage/Hero";
@@ -21,7 +20,6 @@ import Footer from "@/components/landingPage/Footer";
 export default function LandingPage() {
   return (
     <div className="landing-page min-h-screen bg-white flex flex-col">
-      <LandingAuthRedirect />
       <ScrollToHash />
       <Header />
       <div

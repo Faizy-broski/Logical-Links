@@ -24,8 +24,8 @@ const services = [
   },
   {
     slug: "courier",
-    title: "RUSH Delivery Solutions",
-    items: ["Last-Mile Delivery", "E-Commerce Delivery", "Courier Services"],
+    title: "Last-Mile Delivery Services",
+    items: ["Courier Services", "Medical Delivery", "E-Commerce Delivery"],
     description:
       "Same-day and last-mile delivery solutions for time-sensitive retail, e-commerce, and healthcare deliveries.",
     image: "/service3.svg",
@@ -69,14 +69,14 @@ export default function Services() {
               <span className="flex items-center gap-5">
                 <span className="h-2 w-10 rounded-full bg-primary" />
                 {/* to Fit Your Business */}
-                Built Around Your Business
+                Explore Our Services
               </span>
             </h2>
 
             <p className="mt-8 max-w-2xl text-lg leading-relaxed text-white/80">
-              Explore our transportation and delivery solutions designed to
-              support businesses of all sizes. Select a category below to learn
-              more about the solution that best fits your needs.
+              Discover our range of shipping, delivery, and specialized
+              transport services. Select a category below to learn more and
+              explore the options available to you.
             </p>
           </motion.div>
 

@@ -13,6 +13,7 @@ import {
   Bell,
   User,
   LogOut,
+  Globe,
   X,
   PanelLeft,
   Circle,
@@ -295,6 +296,22 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
             />
           </div>
         )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href="/"
+              className={cn(
+                "flex w-full items-center rounded-xl text-[13px] font-medium text-zinc-400 transition-colors hover:bg-sidebar-secondary hover:text-white",
+                isExpanded ? "gap-2.5 px-3 py-2" : "justify-center px-0 py-3",
+              )}
+            >
+              <Globe className="h-4 w-4 shrink-0" />
+              {isExpanded && "Back to Website"}
+            </Link>
+          </TooltipTrigger>
+          {!isExpanded && <TooltipContent side="right">Back to Website</TooltipContent>}
+        </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <button

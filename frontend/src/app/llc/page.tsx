@@ -39,6 +39,10 @@ interface Pillar {
   id: string;
   title: string;
   image: string;
+  /** Native width/height of the image so nothing is cropped. */
+  aspect: string;
+  /** Optional cap on rendered width (e.g. to shrink an oversized image). */
+  maxWidth?: string;
   paragraphs: string[];
   items?: { title: string; description: string }[];
 }
@@ -48,36 +52,36 @@ const pillars: Pillar[] = [
     id: "mission",
     title: "Our Mission",
     image: "/mission.png",
+    aspect: "1672 / 940",
     paragraphs: [
-      "Our mission is to provide reliable, efficient, and technology-driven logistics and transportation solutions that keep what matters moving safely and efficiently.",
-      "We serve businesses, organizations, and individuals through freight, courier, medical delivery, and specialized transportation services, with a focus on safety, precision, transparency, and responsive service.",
-      "With every shipment, delivery, movement, and customer interaction, we strive to make the experience straightforward, dependable, and worthy of our customers' trust.",
+      "Our mission is to make shipping and delivery easier to manage by connecting businesses and individuals with solutions suited to their requirements. Through trusted carrier partnerships, careful planning, and responsive service, we work to meet a wide range of shipping needs with efficiency and care. We are committed to fair business practices, quality service, and lasting relationships built on trust.",
     ],
   },
   {
     id: "vision",
     title: "Our Vision",
     image: "/vision.png",
+    aspect: "3 / 2",
+    maxWidth: "85%",
     paragraphs: [
-      "Our vision is to create a more connected, efficient, and dependable future for logistics and transportation.",
-      "We aim to become a trusted partner for businesses and customers by combining technology, operational expertise, and customer-focused service to create smarter solutions for an evolving world.",
-      "As we grow, we will continue to expand our capabilities, improve our processes, and adopt new technologies while remaining grounded in the principles that define LLC: reliability, accountability, care, and service.",
+      "Our vision is to establish Logical Links as a respected Canadian logistics brand, recognized for its industry knowledge, forward-thinking approach, and ability to adapt to the changing needs of businesses and individuals. We aspire to build a company that creates lasting value through strong partnerships, continuous improvement, and smarter ways to manage shipping and delivery.",
     ],
   },
   {
     id: "values",
     title: "Our Values",
     image: "/value.png",
+    aspect: "3 / 2",
     paragraphs: [
-      "Our values shape how we operate, how we serve our customers, and how we approach every movement we manage.",
+      "Our values shape how we conduct business, serve our customers, and work with our partners.",
     ],
     items: [
-      { title: "Integrity", description: "We communicate honestly, act responsibly, and do what we say we will do." },
-      { title: "Reliability", description: "Our customers depend on us to follow through. We take that responsibility seriously and work to deliver consistently dependable service." },
-      { title: "Customer Focus", description: "Every customer has different needs. We listen, understand those needs, and build solutions around them." },
-      { title: "Innovation", description: "We embrace technology and smarter processes that improve visibility, efficiency, communication, and the overall customer experience." },
-      { title: "Excellence", description: "We take pride in our work and continually look for ways to improve our services and operations." },
-      { title: "Accountability", description: "We take ownership of our commitments, address challenges directly, and remain responsible for the service we provide." },
+      { title: "Integrity", description: "We act honestly, treat others fairly, and communicate openly in all our business dealings." },
+      { title: "Reliability", description: "We take our responsibilities seriously, follow through on our work, and strive to provide consistent service." },
+      { title: "Customer Commitment", description: "We listen to our customers, understand their requirements, and work to identify suitable solutions for their shipping and delivery needs." },
+      { title: "Innovation", description: "We embrace useful technology and new approaches that can improve our services and the way shipping requirements are managed." },
+      { title: "Excellence", description: "We uphold high standards of quality, accuracy, and professionalism in our work." },
+      { title: "Accountability", description: "We take ownership of our decisions, address challenges directly, and work toward effective resolutions." },
     ],
   },
 ];
@@ -122,43 +126,37 @@ export default function LLCPage() {
             About Us
           </h2>
           <p className="text-black leading-relaxed mb-4">
-            At LLC, we don&apos;t just provide logistics services &mdash; we
-            provide confidence in every move. We combine industry knowledge,
-            technology, and disciplined execution to deliver dependable
-            logistics and transportation solutions built around the needs of
-            our customers.
+            Logical Links is a Canadian logistics company connecting
+            businesses, organizations, and individuals with shipping and
+            delivery solutions suited to their requirements. From freight
+            brokerage and courier services to medical deliveries and
+            specialized transport, we work across a range of shipping needs,
+            recognizing that every shipment comes with its own priorities,
+            timelines, and considerations.
           </p>
           <p className="text-black leading-relaxed mb-4">
-            From freight and courier services to medical deliveries and
-            specialized transportation, every movement requires careful
-            planning, clear communication, and attention to detail. Our
-            approach is simple: understand what needs to be accomplished,
-            build the right solution, and follow through from start to
-            finish.
+            We believe effective logistics begins with understanding what needs
+            to be moved, where it needs to go, and what matters most to the
+            customer. By drawing on transportation partners, careful planning,
+            and informed decision-making, we bring together the resources
+            needed to address different shipping requirements. Our approach is
+            built around clear communication, thoughtful service, and an
+            understanding that every shipment matters to the person or
+            organization relying on it.
           </p>
           <p className="text-black leading-relaxed mb-4">
-            What sets us apart is our commitment to reliability and service.
-            We use technology to improve visibility, streamline coordination,
-            and keep our customers informed throughout the process. Whether
-            we&apos;re handling a time-sensitive delivery, coordinating
-            freight, or supporting a specialized transportation requirement,
-            we approach every job with the same level of care and
-            accountability.
+            As Logical Links grows, we are committed to building lasting
+            relationships with customers and industry partners through
+            integrity, professionalism, and responsible business practices. We
+            continue to explore ways to improve how shipping and delivery are
+            managed, including the use of technology to support communication,
+            access to information, and shipment visibility.
           </p>
-          <p className="text-black leading-relaxed mb-4">
-            We believe logistics is about more than getting something from one
-            place to another. It&apos;s about keeping businesses operating,
-            supporting essential services, and helping our customers move
-            forward with confidence.
+          <p className="text-black leading-relaxed font-semibold mb-1">
+            Driven by logic. Built on reliability. Delivered with purpose.
           </p>
-          <p className="text-black leading-relaxed mb-4">
-            With LLC, you gain more than a service provider. You gain a
-            logistics partner focused on reliability, accountability, and
-            solutions that work.
-          </p>
-          <p className="text-black leading-relaxed font-semibold">
-            Choose confidence, choose innovation, choose LLC &mdash; where
-            reliability is built into every move.
+          <p className="text-black leading-relaxed italic">
+            Choose LLC with confidence.
           </p>
 
           <Link
@@ -181,15 +179,21 @@ export default function LLCPage() {
               className="scroll-mt-28 grid gap-10 lg:grid-cols-2 lg:items-center"
             >
               <div
-                className={`relative aspect-[1.2] overflow-hidden rounded-xs ${
+                className={`relative w-full overflow-hidden rounded-xs ${
                   i % 2 === 1 ? "lg:order-2" : ""
                 }`}
+                style={{
+                  aspectRatio: pillar.aspect,
+                  maxWidth: pillar.maxWidth,
+                  marginInline: pillar.maxWidth ? "auto" : undefined,
+                }}
               >
                 <Image
                   src={pillar.image}
                   alt={pillar.title}
                   fill
-                  className="object-cover"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  className="object-contain"
                 />
               </div>
 

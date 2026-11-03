@@ -64,6 +64,31 @@ export default function Testimonials() {
       <div className="absolute right-0 bottom-0 h-full w-96 bg-primary/5 blur-3xl" />
 
       <div className="max-w-6xl relative mx-auto">
+        {/* Technology-Enabled Logistics */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="mx-auto mb-24 max-w-4xl px-6 text-center"
+        >
+          <h2 className="display-font text-4xl sm:text-6xl font-bold text-primary leading-tight mb-6">
+            Technology-Enabled Logistics
+          </h2>
+          <p className="mb-4 text-xl font-semibold text-black">
+            Smarter Tools. Greater Visibility.
+          </p>
+          <p className="text-lg leading-relaxed text-black">
+            Technology helps us make shipping and delivery information more
+            accessible and easier to manage. Our digital platform is designed to
+            support shipment visibility, streamline communication, and give
+            customers convenient access to relevant information. By combining
+            technology with responsive service and effective coordination, we
+            aim to make the shipping and delivery process clearer and more
+            manageable for businesses and individuals.
+          </p>
+        </motion.div>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}

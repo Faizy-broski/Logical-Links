@@ -40,11 +40,10 @@ export default function About() {
           client. By combining advanced technology, industry expertise, and
           responsive service, we ensure every operation is managed with
           precision, transparency, and care. */}
-          Logical Links connects businesses with practical logistics and
-          transportation solutions designed to keep operations moving. From
-          freight coordination and specialized transportation to time-sensitive
-          deliveries, we bring together the right resources, planning, and
-          support for each requirement.
+          Logical Links provides logistics solutions for businesses,
+          organizations, and individuals. Our services include freight
+          brokerage, courier services, medical deliveries, and specialized
+          transport.
         </motion.p>
 
         <motion.p
@@ -62,10 +61,9 @@ export default function About() {
           businesses move forward with confidence. At Logical Links, you're more
           than a customer - you're a valued partner, and your success drives
           everything we do. */}
-          Our focus is straightforward: make logistics easier to manage, easier
-          to understand, and dependable from start to finish. We work closely
-          with our clients to coordinate each movement efficiently while keeping
-          communication clear and service responsive.
+          We connect customers with suitable shipping and delivery solutions,
+          bringing together the right resources to meet a variety of
+          requirements.
         </motion.p>
 
         <motion.div

@@ -1,6 +1,8 @@
 "use client";
 
-import { Clock, XCircle } from "lucide-react";
+import Link from "next/link";
+import { Clock, Phone, XCircle } from "lucide-react";
+import { SUPPORT_PHONE, SUPPORT_PHONE_HREF } from "@/lib/support-contact";
 import { useAuthStore } from "@/store/auth.store";
 import { useMe } from "@/hooks/use-users";
 import { useMyProfile } from "@/hooks/use-accounts";
@@ -94,9 +96,24 @@ function PendingAccessScreen({
           </div>
         )}
 
-        <p className="text-xs text-muted">
-          Questions? Our Customer Support Team is here to help.
-        </p>
+        <div className="space-y-3 pt-1">
+          <p className="text-sm font-semibold text-foreground">Need Assistance? We&apos;re Here to Help.</p>
+          <Link
+            href="/contact-support"
+            className="inline-flex items-center justify-center rounded-[8px] bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-dark"
+          >
+            Contact Support
+          </Link>
+          <p>
+            <a
+              href={SUPPORT_PHONE_HREF}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              <Phone className="h-4 w-4" />
+              {SUPPORT_PHONE}
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

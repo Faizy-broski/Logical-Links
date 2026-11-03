@@ -15,6 +15,8 @@ import {
   CONTENT_SWATCHES_DARK_BOLD,
 } from "@/lib/utils/content-theme";
 import {
+  BASE_ACCENT_THEMES,
+  EARTH_TONE_ACCENT_THEMES,
   ACCENT_THEMES,
   ACCENT_DEFAULT_HEX,
 } from "@/lib/utils/accent-theme";
@@ -23,7 +25,10 @@ type Mode = "light" | "dark";
 type SwatchLite = { id: string; name: string; bg: string };
 
 // The accent picker reuses ModeRow, which expects `{ id, name, bg }` swatches.
-const ACCENT_SWATCHES: SwatchLite[] = ACCENT_THEMES.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
+const toSwatches = (themes: typeof ACCENT_THEMES): SwatchLite[] =>
+  themes.map((a) => ({ id: a.id, name: a.name, bg: a.primary }));
+const ACCENT_SWATCHES: SwatchLite[] = toSwatches(BASE_ACCENT_THEMES);
+const EARTH_TONE_SWATCHES: SwatchLite[] = toSwatches(EARTH_TONE_ACCENT_THEMES);
 
 // Picks black or white for the checkmark so it stays visible against any swatch.
 function iconColorFor(hex: string): string {
@@ -242,6 +247,16 @@ export function AppearanceSettings() {
             label="Neutral"
             lightSwatches={ACCENT_SWATCHES}
             darkSwatches={ACCENT_SWATCHES}
+            activeId={accentSwatchId}
+            defaultLight={ACCENT_DEFAULT_HEX}
+            defaultDark={ACCENT_DEFAULT_HEX}
+            onSelect={setAccentSwatch}
+            onReset={(m) => setAccentSwatch(m, null)}
+          />
+          <CollectionGroup
+            label="Earth tones"
+            lightSwatches={EARTH_TONE_SWATCHES}
+            darkSwatches={EARTH_TONE_SWATCHES}
             activeId={accentSwatchId}
             defaultLight={ACCENT_DEFAULT_HEX}
             defaultDark={ACCENT_DEFAULT_HEX}

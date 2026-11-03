@@ -37,7 +37,11 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [hasPendingQuote, setHasPendingQuote] = useState(false)
   useEffect(() => setHasPendingQuote(!!peekPendingQuote()), [])
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    searchParams.get('error') === 'auth_callback_failed'
+      ? 'That sign-in link is no longer valid. Please sign in again, or use Forgot password to get a new link.'
+      : null,
+  )
 
   // MFA challenge step — set once the password step reports mfaRequired.
   const [challengeToken, setChallengeToken] = useState<string | null>(null)

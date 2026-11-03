@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Clock3, AlertTriangle, Send } from 'lucide-react'
+import { ArrowUpRight, AlertTriangle } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useDeliveries } from '@/hooks/use-deliveries'
 import { useQuotations } from '@/hooks/use-quotations'
@@ -120,7 +120,7 @@ export default function CorporateDashboard() {
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground lg:text-3xl">
-              Welcome back, {user?.fullName ?? 'Company Admin'}
+              Welcome back, {user?.fullName ?? 'Corporate Member'}
             </h1>
             <p className="mt-1 text-sm text-muted">
               Your deliveries at a glance.
@@ -187,8 +187,8 @@ export default function CorporateDashboard() {
           </div>
           <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4 sm:p-5">
             <KpiCard title="Total"    value={qStats.total}    icon={DashboardIcons.quotationTotal}     chartColor="#C89B3C" isLoading={quotationsLoading} subtitle="" />
-            <KpiCard title="Draft"    value={qStats.draft}    icon={Clock3}       chartColor="#6B7280" isLoading={quotationsLoading} subtitle="" />
-            <KpiCard title="Sent"     value={qStats.sent}     icon={Send}         chartColor="#3B82F6" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Draft"    value={qStats.draft}    icon={DashboardIcons.quotationPending}       chartColor="#6B7280" isLoading={quotationsLoading} subtitle="" />
+            <KpiCard title="Sent"     value={qStats.sent}     icon={DashboardIcons.requested}         chartColor="#3B82F6" isLoading={quotationsLoading} subtitle="" />
             <KpiCard title="Accepted" value={qStats.accepted} icon={DashboardIcons.quotationAccepted} chartColor="#22C55E" isLoading={quotationsLoading} subtitle="" />
           </div>
         </div>
@@ -210,8 +210,8 @@ export default function CorporateDashboard() {
           </div>
           <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-5 sm:p-5">
             <KpiCard title="Total"   value={iStats.total}   icon={DashboardIcons.invoiceTotal}     chartColor="#C89B3C" isLoading={invoicesLoading} subtitle="" />
-            <KpiCard title="Draft"   value={iStats.draft}   icon={Clock3}       chartColor="#6B7280" isLoading={invoicesLoading} subtitle="" />
-            <KpiCard title="Sent"    value={iStats.sent}    icon={Send}         chartColor="#3B82F6" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Draft"   value={iStats.draft}   icon={DashboardIcons.invoicesDue}       chartColor="#6B7280" isLoading={invoicesLoading} subtitle="" />
+            <KpiCard title="Sent"    value={iStats.sent}    icon={DashboardIcons.invoiceUnpaid}         chartColor="#3B82F6" isLoading={invoicesLoading} subtitle="" />
             <KpiCard title="Paid"    value={iStats.paid}    icon={DashboardIcons.invoicePaid}   chartColor="#22C55E" isLoading={invoicesLoading} subtitle="" />
             <KpiCard title="Overdue" value={iStats.overdue} icon={DashboardIcons.invoiceOverdue}  chartColor="#EF4444" isLoading={invoicesLoading} subtitle="" />
           </div>

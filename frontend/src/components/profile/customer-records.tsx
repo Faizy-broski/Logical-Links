@@ -77,7 +77,7 @@ const caseColumns: ColumnDef<SupportCase>[] = [
   },
 ];
 
-export function ShipmentsSection({ owner, title = "Shipments" }: { owner: Owner; title?: string }) {
+export function ShipmentsSection({ owner, title = "Deliveries" }: { owner: Owner; title?: string }) {
   const router = useRouter();
   const [openId, setOpenId] = useState<string | null>(null);
   const { data, isLoading } = useDeliveries(
@@ -91,12 +91,13 @@ export function ShipmentsSection({ owner, title = "Shipments" }: { owner: Owner;
     <>
       <Section title={`${title}${total ? ` (${total})` : ""}`} description={total > rows.length ? `Showing the latest ${rows.length}` : undefined} flush>
         <DataTable<Delivery>
+          title=""
           columns={shipmentColumns}
           data={rows}
           isLoading={isLoading}
           onRowClick={(s) => setOpenId(s.shipment_id)}
           className={FLUSH_TABLE}
-          emptyState={<span className="text-sm text-muted">No shipments yet.</span>}
+          emptyState={<span className="text-sm text-muted">No deliveries yet.</span>}
         />
       </Section>
       <DeliveryDetailsSheet
@@ -118,8 +119,9 @@ export function SupportTicketsSection({ owner }: { owner: Owner }) {
 
   return (
     <>
-      <Section title={`Support tickets${total ? ` (${total})` : ""}`} description={total > rows.length ? `Showing the latest ${rows.length}` : undefined} flush>
+      <Section title={`Support Tickets${total ? ` (${total})` : ""}`} description={total > rows.length ? `Showing the latest ${rows.length}` : undefined} flush>
         <DataTable<SupportCase>
+          title=""
           columns={caseColumns}
           data={rows}
           isLoading={isLoading}

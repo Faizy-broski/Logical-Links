@@ -130,7 +130,6 @@ export default function ResidentialCustomerDetailPage() {
               { label: "Full name", value: customer.fullName },
               { label: "Email", value: customer.email, href: customer.email ? `mailto:${customer.email}` : undefined },
               { label: "Phone", value: customer.phone, href: customer.phone ? `tel:${customer.phone.replace(/\s+/g, "")}` : undefined },
-              { label: "Date of birth", value: customer.dateOfBirth ? formatDate(customer.dateOfBirth) : null },
             ]} />
           </Section>
 

@@ -7,23 +7,23 @@ import { motion } from "framer-motion";
 const steps = [
   {
     number: 1,
-    title: "Book Your Delivery",
+    title: "Request or Book",
     description:
-      "Simple online booking with instant quotes and flexible scheduling options to fit your timeline.",
+      "Tell us what you need to move, where it needs to go and when it needs to arrive. Corporate shipments can be submitted for a tailored quote, while eligible residential deliveries can be booked through our booking process.",
     icon: BrandIcons.bookDelivery,
   },
   {
     number: 2,
-    title: "We Pick Up",
+    title: "We Coordinate",
     description:
-      "Professional drivers collect your delivery with real-time GPS tracking from pickup to delivery.",
+      "We coordinate the transportation arrangements, confirm the details, and organize pickup according to the agreed service and schedule.",
     icon: BrandIcons.pickup,
   },
   {
     number: 3,
-    title: "Delivered with Care",
+    title: "Delivery & Updates",
     description:
-      "Secure delivery with proof of delivery confirmation and end-to-end delivery visibility.",
+      "Your shipment moves toward its destination, with status updates and delivery confirmation provided according to the service arranged.",
     icon: BrandIcons.deliveredCare,
   },
 ];
@@ -57,7 +57,7 @@ export default function HowItWorks() {
             How It Works
           </h2>
           <p className="text-lg text-black">
-            Three simple steps to streamlined logistics execution.
+            A straightforward process. Reliable transportation. Clear communication.
           </p>
         </motion.div>
 

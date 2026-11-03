@@ -382,12 +382,10 @@ import { ChevronRight, ArrowRight } from "lucide-react";
 const services = [
   { label: "Full Truckload (FTL)", href: "/services#ftl" },
   { label: "Less Than Truckload (LTL)", href: "/services#ltl" },
-  { label: "Dedicated Freight", href: "/services#dedicated" },
+  { label: "Dedicated Freight Services", href: "/services#dedicated" },
   { label: "Specialty & Heavy Transport", href: "/services#heavy" },
   { label: "Auto Transport", href: "/services#auto" },
-  { label: "RUHSH | Courier", href: "/services#courier" },
-  { label: "RUHSH | Medical", href: "/services#medics" },
-  { label: "RUHSH | E-Commerce Delivery", href: "/services#ecommerce" },
+  { label: "Last-Mile Delivery Services", href: "/services#courier" },
   { label: "Air Freight", href: "/services#air" },
   { label: "Consultancy & Advisory Services", href: "/services#consultancy" },
 ];
@@ -419,9 +417,9 @@ const socials = [
 ];
 
 const legal = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Service", href: "#" },
-  { label: "Accessibility", href: "#" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Accessibility", href: "/accessibility" },
 ];
 
 function ColumnHeading({ children }: { children: React.ReactNode }) {

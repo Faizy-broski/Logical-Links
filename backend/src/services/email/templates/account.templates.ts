@@ -102,3 +102,76 @@ export function approvalEmail(customerName: string): RenderedEmail {
     ],
   })
 }
+
+// ── Registration + application progress ───────────────────────────────────────
+// Drafted copy — to be confirmed by the client. Each is sent from the matching
+// moment in accounts.service.ts / auth.service.ts.
+
+const mail = (subject: string, name: string, lines: string[]): RenderedEmail =>
+  renderEmail({ subject, heading: subject, signOff: SIGN_OFF, paragraphs: [greeting(name), ...lines] })
+
+// Corporate sign-up submitted (pipeline stage: Interested).
+export function applicationReceivedEmail(name: string): RenderedEmail {
+  return mail('We Have Received Your Logical Links Corporate Account Application', name, [
+    'Thank you for applying for a corporate account with Logical Links.',
+    'Our team will review your details and be in touch. You will be notified by email as your application progresses, and you will be able to sign in to the customer portal once your account is activated.',
+    'If you have any questions in the meantime, please contact our support team.',
+  ])
+}
+
+// Residential sign-up completed (no approval step - they can sign in straight away).
+export function residentialWelcomeEmail(name: string): RenderedEmail {
+  return mail('Welcome to Logical Links', name, [
+    'Thank you for creating a Logical Links account.',
+    'You can now sign in to book deliveries, follow their progress, and manage your account and rewards from your dashboard.',
+    'If you have any questions, our support team is happy to help.',
+  ])
+}
+
+// Pipeline: Contacted
+export function applicationContactedEmail(name: string): RenderedEmail {
+  return mail('Update on Your Logical Links Corporate Account Application', name, [
+    'A member of the Logical Links team has been in touch regarding your corporate account application.',
+    'If we still need anything from you, we will let you know. If you would like to share additional details, please contact our support team.',
+  ])
+}
+
+// Pipeline: Interested
+export function applicationInterestedEmail(name: string): RenderedEmail {
+  return mail('Your Logical Links Corporate Account Application Is Progressing', name, [
+    'Thank you for your interest in Logical Links.',
+    'Our team is reviewing your requirements and discussing next steps. We will notify you by email once your account is approved and ready to use.',
+  ])
+}
+
+// Pipeline: Onboarding (portal access is granted while the account is set up).
+export function accountOnboardingEmail(name: string): RenderedEmail {
+  return mail('Your Logical Links Corporate Account Has Been Approved', name, [
+    'Good news! Your corporate account application with Logical Links has been approved.',
+    'Our team is now setting up your account. You can sign in to your customer portal to start exploring, and we will let you know once setup is complete.',
+  ])
+}
+
+// Pipeline: Onboarding -> Active
+export function accountFullyActiveEmail(name: string): RenderedEmail {
+  return mail('Your Logical Links Corporate Account Is Now Fully Active', name, [
+    'Your corporate account setup is complete and your account is now fully active.',
+    'You can sign in to your customer portal to request quotes, manage deliveries, and access your account information.',
+  ])
+}
+
+// Pipeline: Inactive / Lost / moved back before onboarding - portal access removed.
+export function accessPausedEmail(name: string): RenderedEmail {
+  return mail('Update on Your Logical Links Corporate Account', name, [
+    'Portal access for your Logical Links corporate account has been paused.',
+    'If you believe this is a mistake, or you would like to resume service, please contact our support team and we will be glad to help.',
+  ])
+}
+
+// A rejected application was reopened for review.
+export function applicationReconsideredEmail(name: string): RenderedEmail {
+  return mail('Your Logical Links Corporate Account Application Is Being Reviewed Again', name, [
+    'We have reopened your corporate account application for review.',
+    'Our team will be in touch, and you will be notified by email once there is an update.',
+  ])
+}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Globe, ArrowLeft, ArrowRight, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -69,7 +69,7 @@ export default function Offerings() {
               whileInView="visible"
               viewport={{ once: true, amount: 0.2 }}
             >
-              <ServiceCard {...service} />
+              <ServiceCard image={service.image} position={service.position} title={service.title} href={service.href} />
             </motion.div>
           ))}
         </div>
@@ -90,7 +90,7 @@ export default function Offerings() {
               <span className="flex items-center gap-6">
                 <span className="h-2 w-12 rounded-full bg-primary" />
                 <span className="text-black display-font text-4xl sm:text-6xl">
-                  CAN OFFER
+                  OFFER
                 </span>
               </span>
             </h2>
@@ -155,18 +155,13 @@ export default function Offerings() {
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
             <p className="text-lg leading-relaxed text-black">
-              We provide reliable transportation and logistics solutions
-              designed around the needs of your business.
-            </p>
-            <p className="mt-6 text-lg leading-relaxed text-black">
-              From freight transportation and specialized solutions to last-mile
-              delivery and shipment coordination, we manage each shipment with
-              precision, transparency, and care—from pickup to final delivery.
+              From freight brokerage and specialized transport to courier and
+              last-mile delivery, Logical Links connects businesses and
+              individuals with services suited to their logistics needs.
             </p>
 
-            <p className="mt-10 text-sm font-medium text-black">
-              Experience dependable service with{" "}
-              <span className="font-bold">LOGICAL LINKS</span>.
+            <p className="mt-10 text-base font-bold text-black">
+              Logical Links. Transport Solutions with Logic.
             </p>
           </motion.div>
         </div>
@@ -179,13 +174,11 @@ function ServiceCard({
   image,
   position,
   title,
-  id,
   href,
 }: {
   image: string;
   position: string;
   title: string;
-  id: string;
   href: string;
 }) {
   return (
@@ -201,17 +194,8 @@ function ServiceCard({
           className="object-cover transition duration-500 group-hover:scale-105"
           style={{ objectPosition: position }}
         />
-        <div className="absolute left-5 right-5 top-3 flex items-center justify-between">
-          <div className="flex p-1 items-center justify-center rounded-full border border-white/60 backdrop-blur-sm">
-            <Globe className="h-5 w-5 text-white" />
-          </div>
-          <div className="rounded-full border border-white/60 bg-black/10 px-3 py-2 text-xs text-white backdrop-blur-sm">
-            Transport
-          </div>
-        </div>
-        <div className="absolute bottom-3 left-5 right-5 flex items-end justify-between">
+        <div className="absolute bottom-3 left-5 right-5">
           <h3 className="text-2xl font-semibold text-white">{title}</h3>
-          <span className="self-start text-lg font-light text-white">{id}</span>
         </div>
       </div>
     </Link>

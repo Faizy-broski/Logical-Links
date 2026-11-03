@@ -110,7 +110,7 @@ async function notifyDeliveryStakeholders(
 
 // Every delivery lifecycle email also goes to the company inbox as a BCC-style
 // copy, since nothing else surfaces bookings there.
-const COMPANY_NOTIFICATION_EMAIL = 'logicallinkscorp@gmail.com'
+const COMPANY_NOTIFICATION_EMAIL = process.env.COMPANY_NOTIFICATION_EMAIL ?? 'logicallinkscorp@gmail.com'
 
 // ── Customer email fan-out ────────────────────────────────────────────────────
 // Resolves the customer-side email recipients for a delivery and sends each the

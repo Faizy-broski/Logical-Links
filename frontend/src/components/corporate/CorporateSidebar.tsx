@@ -15,6 +15,7 @@ import {
   Circle,
   Building2,
   LogOut,
+  Globe,
   X,
   LifeBuoy,
 } from "lucide-react";
@@ -106,7 +107,7 @@ export default function CorporateSidebar({ isOpen = false, onClose }: Props) {
     router.refresh();
   }
 
-  const roleLabel = "Company Admin";
+  const roleLabel = "Corporate Member";
 
   const { theme } = useTheme();
   const { sidebarSwatchId } = useAppearance();
@@ -163,7 +164,7 @@ export default function CorporateSidebar({ isOpen = false, onClose }: Props) {
                 Logical Links
               </h2>
               <p className="truncate text-[11px] text-zinc-500">
-                Shipping CMS
+                Corporate Portal
               </p>
             </div>
           )}
@@ -261,7 +262,7 @@ export default function CorporateSidebar({ isOpen = false, onClose }: Props) {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-semibold text-white">
-                {user?.fullName ?? "Company Admin"}
+                {user?.fullName ?? "Corporate Member"}
               </p>
               <p className="truncate text-[11px] text-zinc-400">
                 {user?.email ?? ""}
@@ -279,6 +280,22 @@ export default function CorporateSidebar({ isOpen = false, onClose }: Props) {
             />
           </div>
         )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href="/"
+              className={cn(
+                "flex w-full items-center rounded-xl text-[13px] font-medium text-zinc-400 transition-colors hover:bg-sidebar-secondary hover:text-white",
+                isExpanded ? "gap-2.5 px-3 py-2" : "justify-center px-0 py-3",
+              )}
+            >
+              <Globe className="h-4 w-4 shrink-0" />
+              {isExpanded && "Back to Website"}
+            </Link>
+          </TooltipTrigger>
+          {!isExpanded && <TooltipContent side="right">Back to Website</TooltipContent>}
+        </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>

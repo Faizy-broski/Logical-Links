@@ -94,7 +94,7 @@ export default function CorporateProfilePage() {
 
   const approved = profile?.isApproved ?? false
   // Corporate customers have no employees of their own — one login per account.
-  const roleLabel = 'Company Admin'
+  const roleLabel = 'Corporate Member'
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">

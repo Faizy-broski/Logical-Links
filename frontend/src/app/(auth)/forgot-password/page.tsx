@@ -8,7 +8,14 @@ function ForgotPasswordForm() {
   const searchParams = useSearchParams()
   const [email, setEmail]   = useState(searchParams.get('email') ?? '')
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent'>('idle')
-  const [error, setError]   = useState<string | null>(null)
+  const urlError = searchParams.get('error')
+  const [error, setError]   = useState<string | null>(
+    urlError === 'link_expired'
+      ? 'That reset link has expired or was already used. Enter your email to get a new one.'
+      : urlError === 'link_invalid'
+        ? 'That reset link is not valid. Enter your email to get a new one.'
+        : null,
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
