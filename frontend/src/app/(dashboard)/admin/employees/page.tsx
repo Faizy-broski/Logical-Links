@@ -32,7 +32,10 @@ import { KpiCard } from "@/components/deliveries/kpi-card";
 import { DashboardIcons } from "@/components/ui/dashboard-icons";
 import { DataTable } from "@/components/deliveries/deliveries-table";
 
-import { useAdminEmployees, useUpdateAdminEmployee, useDeleteAdminEmployee } from "@/hooks/use-admin-employees";
+import {
+  useAdminEmployees, useUpdateAdminEmployee, useDeleteAdminEmployee,
+  useRestoreAdminEmployee, usePurgeAdminEmployee,
+} from "@/hooks/use-admin-employees";
 import { useAdminRoles } from "@/hooks/use-admin-role-permissions";
 import { usePermission } from "@/hooks/use-permission";
 import { useAuthStore } from "@/store/auth.store";
@@ -261,9 +264,60 @@ function ActionsCell({ employee, roles }: { employee: AdminEmployee; roles: Admi
   );
 }
 
+/* Actions for a removed employee: bring them back, or free the email for good. */
+function DeletedActionsCell({ employee }: { employee: AdminEmployee }) {
+  const canDelete = usePermission("employees.delete");
+  const restoreMut = useRestoreAdminEmployee(employee.id);
+  const purgeMut = usePurgeAdminEmployee(employee.id);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const label = employee.full_name ?? employee.email;
+
+  if (!canDelete) return null;
+
+  async function restore() {
+    try {
+      await restoreMut.mutateAsync();
+      toast.success(`${label} restored`);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+  async function purge() {
+    try {
+      await purgeMut.mutateAsync();
+      toast.success("Employee permanently deleted");
+      setPurgeOpen(false);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      <Button size="sm" variant="outline" onClick={restore} disabled={restoreMut.isPending}
+        className="h-8 rounded-lg px-3 text-xs">Restore</Button>
+      <Button size="sm" variant="outline" onClick={() => setPurgeOpen(true)} disabled={purgeMut.isPending}
+        className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50">Delete permanently</Button>
+      <ConfirmDialog
+        open={purgeOpen}
+        onClose={() => setPurgeOpen(false)}
+        onConfirm={purge}
+        loading={purgeMut.isPending}
+        title="Delete permanently"
+        description={
+          <>
+            Permanently delete {label}{employee.email ? <> ({employee.email})</> : null}? Their login and personal
+            details are erased and the email address can be used again. Deliveries and history they worked on are
+            kept without their personal details. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete permanently"
+      />
+    </div>
+  );
+}
+
 export default function AdminEmployeesPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"active" | "deleted">("active");
+  const isDeletedView = view === "deleted";
 
   const canView = usePermission("employees.view");
   const canCreate = usePermission("employees.create");
@@ -274,7 +328,10 @@ export default function AdminEmployeesPage() {
   const canResetPwEmp = usePermission("employees.reset_password");
   const canShowActions = canSuspend || canManageRoles || canEditEmp || canDeleteEmp || canResetPwEmp;
 
-  const { data: res, isLoading } = useAdminEmployees({ limit: 100 }, { enabled: canView });
+  const { data: res, isLoading } = useAdminEmployees(
+    { limit: 100, ...(isDeletedView && { deleted: "true" as const }) },
+    { enabled: canView },
+  );
   const allEmployees = (res?.data ?? []) as AdminEmployee[];
 
   const { data: rolesRes } = useAdminRoles({ enabled: canView });
@@ -345,11 +402,13 @@ export default function AdminEmployeesPage() {
             <span className="text-sm text-muted-light italic">—</span>
           ),
       },
-      {
-        id: "status",
-        header: "Status",
-        cell: ({ row }) => <StatusPill active={row.original.is_active} />,
-      },
+      ...(isDeletedView
+        ? []
+        : [{
+            id: "status",
+            header: "Status",
+            cell: ({ row }: { row: { original: AdminEmployee } }) => <StatusPill active={row.original.is_active} />,
+          } as ColumnDef<AdminEmployee>]),
       {
         id: "joined",
         header: "Joined",
@@ -357,20 +416,28 @@ export default function AdminEmployeesPage() {
           <span className="text-xs text-muted">{formatDate(row.original.created_at)}</span>
         ),
       },
-      ...(canShowActions
+      ...(isDeletedView
         ? [
             {
               id: "actions",
               header: "",
-              cell: ({ row }: { row: { original: AdminEmployee } }) => (
-                <ActionsCell employee={row.original} roles={roles} />
-              ),
+              cell: ({ row }: { row: { original: AdminEmployee } }) => <DeletedActionsCell employee={row.original} />,
             } as ColumnDef<AdminEmployee>,
           ]
-        : []),
+        : canShowActions
+          ? [
+              {
+                id: "actions",
+                header: "",
+                cell: ({ row }: { row: { original: AdminEmployee } }) => (
+                  <ActionsCell employee={row.original} roles={roles} />
+                ),
+              } as ColumnDef<AdminEmployee>,
+            ]
+          : []),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canShowActions, roles],
+    [canShowActions, roles, isDeletedView],
   );
 
   if (!canView) {
@@ -395,7 +462,7 @@ export default function AdminEmployeesPage() {
               Manage Logical Links staff accounts and their roles.
             </p>
           </div>
-          {canCreate && (
+          {canCreate && !isDeletedView && (
             <Button
               onClick={() => router.push("/admin/employees/create")}
               className="shrink-0 rounded-xl bg-primary text-sidebar hover:bg-primary/85"
@@ -406,12 +473,33 @@ export default function AdminEmployeesPage() {
           )}
         </div>
 
-        {/* KPI cards */}
-        <div className="grid gap-5 sm:grid-cols-3">
-          <KpiCard title="Total Employees" value={stats.total}    icon={DashboardIcons.totalEmployees}         chartColor="#C89B3C" isLoading={isLoading} />
-          <KpiCard title="Active"          value={stats.active}   icon={DashboardIcons.employeesActive}  chartColor="#22C55E" isLoading={isLoading} />
-          <KpiCard title="Disabled"        value={stats.disabled} icon={DashboardIcons.employeeDisabled}       chartColor="#EF4444" isLoading={isLoading} />
+        <div className="inline-flex rounded-xl border border-card-border bg-card p-1">
+          {(["active", "deleted"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
+                view === v ? "bg-primary text-sidebar" : "text-muted hover:text-foreground"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
         </div>
+
+        {isDeletedView ? (
+          <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-3 text-sm text-red-700">
+            Deleted employees cannot sign in and their email stays reserved. Restore one to bring them back, or delete
+            them permanently to free the email address.
+          </div>
+        ) : (
+          /* KPI cards */
+          <div className="grid gap-5 sm:grid-cols-3">
+            <KpiCard title="Total Employees" value={stats.total}    icon={DashboardIcons.totalEmployees}         chartColor="#C89B3C" isLoading={isLoading} />
+            <KpiCard title="Active"          value={stats.active}   icon={DashboardIcons.employeesActive}  chartColor="#22C55E" isLoading={isLoading} />
+            <KpiCard title="Disabled"        value={stats.disabled} icon={DashboardIcons.employeeDisabled}       chartColor="#EF4444" isLoading={isLoading} />
+          </div>
+        )}
 
         {/* Table */}
         <DataTable<AdminEmployee>
@@ -425,8 +513,8 @@ export default function AdminEmployeesPage() {
           emptyState={
             <div className="flex flex-col items-center gap-2 py-4">
               <Users className="h-8 w-8 text-muted-light" />
-              <p className="text-sm text-muted">No employees yet.</p>
-              {canCreate && (
+              <p className="text-sm text-muted">{isDeletedView ? "No deleted employees." : "No employees yet."}</p>
+              {canCreate && !isDeletedView && (
                 <Button
                   variant="outline"
                   size="sm"

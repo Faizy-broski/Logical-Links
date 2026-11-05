@@ -1,5 +1,6 @@
 import { supabase, createAuthVerificationClient } from '../../services/supabase.service'
 import { AppError } from '../../lib/errors'
+import { deactivatedError, isDeactivatedEmail, ACCOUNT_DEACTIVATED_CODE } from '../../lib/user-lookup'
 import { env } from '../../lib/env'
 import {
   signAccessToken,
@@ -165,7 +166,7 @@ export async function login(
   }
 
   if (!profile.is_active) {
-    throw AppError.forbidden('Account has been deactivated')
+    throw deactivatedError()
   }
 
   // A Google sign-up that never finished the sign-up form (e.g. then set a
@@ -218,7 +219,7 @@ export async function mfaChallenge(
     .single()
 
   if (profileError || !profile) throw AppError.unauthorized('User not found')
-  if (!profile.is_active) throw AppError.forbidden('Account has been deactivated')
+  if (!profile.is_active) throw deactivatedError()
   if (!profile.mfa_enabled || !profile.mfa_secret) {
     throw AppError.badRequest('MFA is not enabled for this account')
   }
@@ -407,7 +408,7 @@ export async function refresh(
     .single()
 
   if (profileError || !profile) throw AppError.unauthorized('User not found')
-  if (!profile.is_active) throw AppError.forbidden('Account has been deactivated')
+  if (!profile.is_active) throw deactivatedError()
 
   const { data: authUser } = await supabase.auth.admin.getUserById(anyToken.user_id)
   const email = authUser.user?.email ?? ''
@@ -456,7 +457,7 @@ export async function getMe(userId: string) {
     .single()
 
   if (error || !data) throw AppError.notFound('User')
-  if (!data.is_active) throw AppError.forbidden('Account has been deactivated')
+  if (!data.is_active) throw deactivatedError()
 
   const { data: authUser } = await supabase.auth.admin.getUserById(userId)
   const { permissions } = await resolveAdminPermissions((data.admin_role ?? null) as AdminRole)
@@ -493,6 +494,15 @@ export async function register(
   if (error) {
     const msg = error.message.toLowerCase()
     if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('already exists')) {
+      // Say WHY when the old account was deactivated / removed, so the person
+      // knows to contact support instead of retrying or resetting a password.
+      if (await isDeactivatedEmail(dto.email)) {
+        throw new AppError(
+          409,
+          'An account with this email was deactivated. Please contact support to reactivate it.',
+          ACCOUNT_DEACTIVATED_CODE,
+        )
+      }
       throw AppError.conflict('An account with this email already exists')
     }
     throw AppError.badRequest(error.message)
@@ -539,7 +549,7 @@ export async function googleAuth(
   }
 
   if (!profile.is_active) {
-    throw AppError.forbidden('Account has been deactivated')
+    throw deactivatedError()
   }
 
   if (!profile.signup_completed) {
@@ -599,7 +609,7 @@ export async function registerGoogle(
     .single()
 
   if (error || !profile) throw AppError.unauthorized('Invalid sign-up session')
-  if (!profile.is_active) throw AppError.forbidden('Account has been deactivated')
+  if (!profile.is_active) throw deactivatedError()
   if (profile.signup_completed) {
     throw AppError.conflict('Sign-up is already complete for this account — please sign in')
   }

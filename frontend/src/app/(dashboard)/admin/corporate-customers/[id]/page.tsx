@@ -4,7 +4,7 @@ import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Building2, Pencil, PauseCircle, PowerOff, RotateCcw, Trash2, Users, XCircle,
+  ArrowLeft, Building2, Pencil, PauseCircle, PowerOff, RotateCcw, Send, Trash2, Users, XCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { getTierProgress } from "@/lib/tiers";
 import {
   useAccount, useAccountStats, useAccountActivity,
   useUpdateAccount, useDeleteAccount, useSetAccountPipelineStatus,
-  useReconsiderAccount, usePurgeAccount,
+  useReconsiderAccount, usePurgeAccount, useRestoreAccount, useSendAccountInvitation,
 } from "@/hooks/use-accounts";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useApproveUser } from "@/hooks/use-users";
@@ -25,6 +25,7 @@ import { useTiers } from "@/hooks/use-tiers";
 import { usePermission } from "@/hooks/use-permission";
 import { CorporateNotesSection } from "@/components/admin/CorporateNotesSection";
 import { ActivityFeed } from "@/components/accounts/activity-feed";
+import { InvitationStatusBadge } from "@/components/accounts/invitation-status-badge";
 import { PipelineStatusSelect } from "@/components/accounts/pipeline-status-select";
 import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
 import { EditCorporateCustomerSheet } from "@/components/accounts/edit-corporate-customer-sheet";
@@ -84,6 +85,8 @@ export default function AdminCorporateCustomerDetailPage({
   const admin = getAdmin(account?.profiles);
   const status = (account?.pipeline_status ?? "prospect") as CorporatePipelineStatus;
   const isRejected = !!account?.rejected_at;
+  // Deleted / deactivated by an admin (not a rejected application).
+  const isDeleted = !!account?.deleted_at && !isRejected;
   const isActive = status === "active" && !isRejected;
   const hasPortalAccess = CORPORATE_PORTAL_ACCESS_STATUSES.includes(status) && !isRejected;
   const displayStatus = account ? accountDisplayStatus(account) : status;
@@ -114,6 +117,9 @@ export default function AdminCorporateCustomerDetailPage({
   const deleteMut = useDeleteAccount();
   const reconsiderMut = useReconsiderAccount(id);
   const purgeMut = usePurgeAccount(id);
+  const restoreMut = useRestoreAccount(id);
+  const inviteMut = useSendAccountInvitation(id);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -174,6 +180,21 @@ export default function AdminCorporateCustomerDetailPage({
     } catch (err) { toast.error((err as Error).message); }
   };
 
+  const handleSendInvitation = async () => {
+    try {
+      await inviteMut.mutateAsync();
+      toast.success(`Invitation emailed to ${account.contact_email}`);
+      setInviteOpen(false);
+    } catch (err) { toast.error((err as Error).message); }
+  };
+
+  const handleRestore = async () => {
+    try {
+      await restoreMut.mutateAsync();
+      toast.success("Account restored");
+    } catch (err) { toast.error((err as Error).message); }
+  };
+
   const handlePurge = async () => {
     try {
       await purgeMut.mutateAsync();
@@ -181,6 +202,11 @@ export default function AdminCorporateCustomerDetailPage({
       window.location.href = "/admin/corporate-customers";
     } catch (err) { toast.error((err as Error).message); }
   };
+
+  // Admin-created customers have no login until they activate their invitation.
+  const awaitingActivation = !admin && !isRejected && !isDeleted;
+  const invitationStatus = account.invitation?.status ?? "not_sent";
+  const inviteSent = invitationStatus === "sent" || invitationStatus === "expired";
 
   const displayId = isActive ? account.customer_id : account.request_id;
   const tierProgress = tiers.length > 0 ? getTierProgress(stats?.deliveredShipments ?? 0, tiers) : null;
@@ -190,8 +216,8 @@ export default function AdminCorporateCustomerDetailPage({
   const statusMeta = CORPORATE_PIPELINE_STATUS_META[displayStatus];
 
   // Destructive / secondary actions go in the "More" menu, not a stack of buttons.
-  const moreActions: MoreAction[] = isRejected
-    ? [...(canDelete ? [{ label: "Purge now", icon: Trash2, onClick: () => setPurgeOpen(true), danger: true }] : [])]
+  const moreActions: MoreAction[] = isRejected || isDeleted
+    ? [...(canDelete ? [{ label: isDeleted ? "Delete permanently" : "Purge now", icon: Trash2, onClick: () => setPurgeOpen(true), danger: true }] : [])]
     : [
         ...(canEdit ? [{ label: "Manage portal access", icon: Users, onClick: () => setAccessOpen(true) }] : []),
         ...(canEdit && !hasPortalAccess ? [{ label: "Reject application", icon: XCircle, onClick: () => setRejectOpen(true), danger: true }] : []),
@@ -217,7 +243,13 @@ export default function AdminCorporateCustomerDetailPage({
         ]}
         actions={
           <>
-            {isRejected ? (
+            {isDeleted ? (
+              canEdit && (
+                <ActionButton icon={RotateCcw} variant="primary" onClick={handleRestore} disabled={restoreMut.isPending}>
+                  Restore
+                </ActionButton>
+              )
+            ) : isRejected ? (
               canEdit && (
                 <ActionButton icon={RotateCcw} variant="primary" onClick={handleReconsider} disabled={reconsiderMut.isPending}>
                   Reconsider
@@ -226,8 +258,18 @@ export default function AdminCorporateCustomerDetailPage({
             ) : (
               canEdit && <PipelineStatusSelect value={status} onChange={handleSetStatus} loading={statusMut.isPending} />
             )}
+            {canEdit && awaitingActivation && (
+              <ActionButton
+                icon={Send}
+                variant="primary"
+                onClick={() => setInviteOpen(true)}
+                disabled={inviteMut.isPending || !account.contact_email}
+              >
+                {inviteSent ? "Resend invitation" : "Send credentials"}
+              </ActionButton>
+            )}
             {canEdit && (
-              <ActionButton icon={Pencil} variant={isRejected ? "secondary" : "primary"} onClick={() => setEditOpen(true)}>
+              <ActionButton icon={Pencil} variant={isRejected || isDeleted || awaitingActivation ? "secondary" : "primary"} onClick={() => setEditOpen(true)}>
                 Edit profile
               </ActionButton>
             )}
@@ -245,6 +287,16 @@ export default function AdminCorporateCustomerDetailPage({
           </p>
           {account.rejection_reason && <p className="mt-1.5 text-foreground"><span className="text-muted">Reason:</span> {account.rejection_reason}</p>}
           {account.review_note && <p className="mt-0.5 text-foreground"><span className="text-muted">Internal note:</span> {account.review_note}</p>}
+        </div>
+      )}
+
+      {isDeleted && (
+        <div className="border-l-2 border-red-500 bg-red-50/60 px-4 py-3 text-sm dark:bg-red-950/20">
+          <p className="font-medium text-red-700">Account deleted {fmtDate(account.deleted_at ?? null, true)}</p>
+          <p className="mt-0.5 text-red-700/80">
+            Logins are disabled and {account.contact_email ?? "the contact email"} cannot register again. Restore the
+            account to bring it back, or delete it permanently to free the email address.
+          </p>
         </div>
       )}
 
@@ -324,6 +376,20 @@ export default function AdminCorporateCustomerDetailPage({
                 </span>
                 {admin ? "" : " · no login attached yet"}
               </p>
+              {awaitingActivation && (
+                <div className="mt-3 space-y-1.5">
+                  <InvitationStatusBadge status={invitationStatus} />
+                  <p className="text-xs text-muted">
+                    {!account.contact_email
+                      ? "Add a contact email to this account, then send credentials."
+                      : invitationStatus === "not_sent"
+                        ? `Nothing has been sent to ${account.contact_email} yet. Click Send credentials to email an activation link.`
+                        : invitationStatus === "sent"
+                          ? `Sent ${fmtDate(account.invitation?.sent_at ?? null)} · link valid until ${fmtDate(account.invitation?.expires_at ?? null)}.`
+                          : `The link sent ${fmtDate(account.invitation?.sent_at ?? null)} has expired. Resend to give them a new one.`}
+                  </p>
+                </div>
+              )}
               {lastStatusChange && (
                 <p className="mt-1 text-xs text-muted">
                   Last change {fmtDate(lastStatusChange.created_at)}
@@ -448,18 +514,35 @@ export default function AdminCorporateCustomerDetailPage({
       />
 
       <ConfirmDialog
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onConfirm={handleSendInvitation}
+        loading={inviteMut.isPending}
+        title={inviteSent ? "Resend invitation" : "Send credentials"}
+        description={
+          <>
+            Email {account.contact_name ? `${account.contact_name} (${account.contact_email})` : account.contact_email} a
+            secure link to activate the {account.account_name} account and choose their own password. The link works
+            once and expires in 7 days.{inviteSent ? " Any earlier link stops working." : ""}
+          </>
+        }
+        confirmLabel={inviteSent ? "Resend" : "Send invitation"}
+      />
+
+      <ConfirmDialog
         open={purgeOpen}
         onClose={() => setPurgeOpen(false)}
         onConfirm={handlePurge}
         loading={purgeMut.isPending}
-        title="Purge account permanently"
+        title={isDeleted ? "Delete permanently" : "Purge account permanently"}
         description={
           <>
-            Permanently delete {account.account_name} and ALL of its data now? This
-            cannot be undone.
+            Permanently delete {account.account_name} and ALL of its data now
+            (deliveries, quotations, invoices, tickets and logins)? The email address can then be
+            registered again. This cannot be undone.
           </>
         }
-        confirmLabel="Purge now"
+        confirmLabel={isDeleted ? "Delete permanently" : "Purge now"}
       />
     </div>
   );

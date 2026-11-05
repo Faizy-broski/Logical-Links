@@ -35,12 +35,13 @@ import type { SortDir } from "@/hooks/use-table-filters";
 
 import {
   useAccounts, useSetAccountPipelineStatus, useDeleteAccount,
-  useReconsiderAccount, usePurgeAccount,
+  useReconsiderAccount, usePurgeAccount, useRestoreAccount,
 } from "@/hooks/use-accounts";
 import { usePermission } from "@/hooks/use-permission";
 import { CompanyLogo } from "@/components/ui/company-logo";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { PipelineStatusBadge } from "@/components/accounts/pipeline-status-badge";
+import { InvitationStatusBadge } from "@/components/accounts/invitation-status-badge";
 import { AddCorporateCustomerSheet } from "@/components/accounts/add-corporate-customer-sheet";
 import { RejectAccountDialog } from "@/components/accounts/reject-account-dialog";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -219,6 +220,60 @@ function RejectedActionsCell({ account }: { account: Account }) {
   );
 }
 
+/* ─── Deleted-view actions ───────────────────────────────────────────────── */
+
+function DeletedActionsCell({ account }: { account: Account }) {
+  const canEdit = usePermission("customers.edit");
+  const canDelete = usePermission("customers.delete");
+  const restoreMut = useRestoreAccount(account.account_id);
+  const purgeMut = usePurgeAccount(account.account_id);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+
+  async function restore() {
+    try {
+      await restoreMut.mutateAsync();
+      toast.success(`${account.account_name} restored`);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+  async function purge() {
+    try {
+      await purgeMut.mutateAsync();
+      toast.success("Account permanently deleted");
+      setPurgeOpen(false);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      {canEdit && (
+        <Button size="sm" variant="outline" onClick={restore} disabled={restoreMut.isPending}
+          className="h-8 rounded-lg px-3 text-xs">Restore</Button>
+      )}
+      {canDelete && (
+        <Button size="sm" variant="outline" onClick={() => setPurgeOpen(true)} disabled={purgeMut.isPending}
+          className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50">Delete permanently</Button>
+      )}
+
+      <ConfirmDialog
+        open={purgeOpen}
+        onClose={() => setPurgeOpen(false)}
+        onConfirm={purge}
+        loading={purgeMut.isPending}
+        title="Delete permanently"
+        description={
+          <>
+            Permanently delete {account.account_name}
+            {account.contact_email ? <> ({account.contact_email})</> : null} and ALL of its data
+            (deliveries, quotations, invoices, tickets, logins)? The email address can then be
+            registered again. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete permanently"
+      />
+    </div>
+  );
+}
+
 /* ─── Filter defaults ────────────────────────────────────────────────────── */
 
 const FILTER_DEFAULTS = {
@@ -255,8 +310,10 @@ export default function CorporateCustomersPage() {
   const page    = parseInt(filters.page || "1", 10);
   const sortBy  = filters.sortBy  || undefined;
   const sortDir = (filters.sortDir as SortDir) || null;
-  const view    = (filters.view || "pipeline") as "pipeline" | "rejected";
+  const view    = (filters.view || "pipeline") as "pipeline" | "rejected" | "deleted";
   const isRejectedView = view === "rejected";
+  const isDeletedView  = view === "deleted";
+  const isRemovedView  = isRejectedView || isDeletedView;
 
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -271,13 +328,15 @@ export default function CorporateCustomersPage() {
     limit: 20,
     ...(isRejectedView
       ? { rejected: "true" as const }
-      : filters.pipelineStatus && { pipelineStatus: filters.pipelineStatus as CorporatePipelineStatus }),
+      : isDeletedView
+        ? { deleted: "true" as const }
+        : filters.pipelineStatus && { pipelineStatus: filters.pipelineStatus as CorporatePipelineStatus }),
     ...(debouncedSearch && { search: debouncedSearch }),
     ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
     ...(filters.dateTo   && { dateTo:   filters.dateTo }),
     ...(sortBy           && { sortBy: sortBy as any }),
     ...(sortDir          && { sortDir }),
-  }), [isRejectedView, debouncedSearch, filters.pipelineStatus, filters.dateFrom, filters.dateTo, page, sortBy, sortDir]);
+  }), [isRejectedView, isDeletedView, debouncedSearch, filters.pipelineStatus, filters.dateFrom, filters.dateTo, page, sortBy, sortDir]);
 
   const { data: res, isLoading } = useAccounts(query);
   const allAccounts = res?.data ?? [];
@@ -346,7 +405,19 @@ export default function CorporateCustomersPage() {
       {
         id: "status",
         header: () => sh("Status", "pipeline_status"),
-        cell: ({ row }) => <PipelineStatusBadge status={accountDisplayStatus(row.original)} />,
+        cell: ({ row }) => {
+          const a = row.original;
+          // Customers an admin created have no login until they activate their invitation.
+          const noLogin = !a.profiles?.some((p) => p.company_role === "company_admin");
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <PipelineStatusBadge status={accountDisplayStatus(a)} />
+              {noLogin && a.invitation && !a.rejected_at && !a.deleted_at && (
+                <InvitationStatusBadge status={a.invitation.status} />
+              )}
+            </div>
+          );
+        },
       },
       {
         id: "lastContacted",
@@ -394,6 +465,16 @@ export default function CorporateCustomersPage() {
               </span>
             ),
           }
+        : isDeletedView
+        ? {
+            id: "deletedOn",
+            header: "Deleted on",
+            cell: ({ row }) => (
+              <span className="text-xs text-red-600">
+                {row.original.deleted_at ? formatDate(row.original.deleted_at) : "—"}
+              </span>
+            ),
+          }
         : {
             id: "registered",
             header: () => sh("Registered", "created_at"),
@@ -405,11 +486,13 @@ export default function CorporateCustomersPage() {
         cell: ({ row }) =>
           isRejectedView
             ? <RejectedActionsCell account={row.original} />
-            : <ActionsCell account={row.original} />,
+            : isDeletedView
+              ? <DeletedActionsCell account={row.original} />
+              : <ActionsCell account={row.original} />,
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sortBy, sortDir, isRejectedView],
+    [sortBy, sortDir, isRejectedView, isDeletedView],
   );
 
   return (
@@ -424,7 +507,7 @@ export default function CorporateCustomersPage() {
         </div>
 
         <div className="inline-flex rounded-xl border border-card-border bg-card p-1">
-          {(["pipeline", "rejected"] as const).map((v) => (
+          {(["pipeline", "rejected", "deleted"] as const).map((v) => (
             <button
               key={v}
               onClick={() => setFilters({ view: v, page: "1" })}
@@ -437,7 +520,7 @@ export default function CorporateCustomersPage() {
           ))}
         </div>
 
-        {!isRejectedView && (
+        {!isRemovedView && (
           <div className="grid gap-5 sm:grid-cols-3">
             <KpiCard title="Total Corporate Customers" value={stats.total}      icon={DashboardIcons.corporateCustomers}    chartColor="#C89B3C" isLoading={isLoading} />
             <KpiCard title="Active"                     value={stats.active}     icon={DashboardIcons.customerActive} chartColor="#22C55E" isLoading={isLoading} />
@@ -448,6 +531,12 @@ export default function CorporateCustomersPage() {
         {isRejectedView && (
           <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-3 text-sm text-red-700">
             Rejected applications are kept for 90 days so the decision can be reversed, then permanently deleted.
+          </div>
+        )}
+        {isDeletedView && (
+          <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-3 text-sm text-red-700">
+            Deleted customers cannot sign in and their email stays reserved. Restore one to bring it back, or delete it
+            permanently to free the email address so it can register again.
           </div>
         )}
 
@@ -464,7 +553,7 @@ export default function CorporateCustomersPage() {
           totalCount={totalCount}
           page={page}
           onPageChange={(pg) => setFilter("page", String(pg))}
-          filterChips={isRejectedView ? [] : filterChips}
+          filterChips={isRemovedView ? [] : filterChips}
           emptyState={
             <div className="flex flex-col items-center gap-2 py-4">
               <Building2 className="h-8 w-8 text-muted-light" />
@@ -473,19 +562,19 @@ export default function CorporateCustomersPage() {
           }
           headerActions={
             <div className="flex items-center gap-2">
-              {!isRejectedView && canCreateCustomer && (
+              {!isRemovedView && canCreateCustomer && (
                 <Button onClick={() => setAddOpen(true)} variant="outline" className="rounded-lg border-card-border">
                   <Plus className="h-4 w-4" />
                   Add Corporate Customer
                 </Button>
               )}
-              {!isRejectedView && canCreateDelivery && (
+              {!isRemovedView && canCreateDelivery && (
                 <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
                   <Plus className="h-4 w-4" />
                   Create a Delivery
                 </Button>
               )}
-              {!isRejectedView && (
+              {!isRemovedView && (
                 <TableFilters
                   defs={FILTER_DEFS}
                   getValue={(key) => filters[key as keyof typeof FILTER_DEFAULTS] ?? ""}

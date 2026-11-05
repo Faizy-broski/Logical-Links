@@ -55,6 +55,24 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
 
 // A customer closing their own account. Corporate customers must delete the
 // whole company account instead (DELETE /accounts/me).
+export async function restore(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const customer = await usersService.restoreUser(param(req, 'id'))
+    ok(res, customer, 'Customer restored')
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function purge(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await usersService.purgeUser(param(req, 'id'))
+    ok(res, result, 'Customer permanently deleted')
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function removeMe(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     if (req.user!.role === 'corporate') {

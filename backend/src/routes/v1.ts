@@ -24,6 +24,7 @@ import { additionalChargesRouter } from '../modules/additional-charges/additiona
 import { pricingRouter } from '../modules/pricing/pricing.routes'
 import { rewardsCreditRouter } from '../modules/rewards-credit/rewards-credit.routes'
 import { carriersRouter } from '../modules/carriers/carriers.routes'
+import { invitationsRouter } from '../modules/invitations/invitations.routes'
 
 export const v1Router = Router()
 
@@ -52,3 +53,4 @@ v1Router.use('/additional-charges', additionalChargesRouter)
 v1Router.use('/pricing',           pricingRouter)
 v1Router.use('/rewards-credit',    rewardsCreditRouter)
 v1Router.use('/carriers',          carriersRouter)
+v1Router.use('/invitations',       invitationsRouter)

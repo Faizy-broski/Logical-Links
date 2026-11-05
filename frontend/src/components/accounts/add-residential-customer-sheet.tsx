@@ -72,6 +72,10 @@ export function AddResidentialCustomerSheet({ open, onClose }: Props) {
           <div className="space-y-1.5">
             <Label htmlFor="res-email">Email <span className="font-normal text-muted">(optional)</span></Label>
             <Input id="res-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="rounded-lg" />
+            <p className="text-xs text-muted">
+              The customer is not notified when you add them. With an email, open their profile and click
+              Send credentials to email them a secure link to set their password.
+            </p>
           </div>
         </div>
 

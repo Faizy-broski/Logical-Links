@@ -50,6 +50,30 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+export async function restore(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const employee = await adminEmployeesService.restoreAdminEmployee(
+      { id: req.user!.id, permissions: req.user!.permissions },
+      param(req, 'id'),
+    )
+    ok(res, employee, 'Employee restored')
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function purge(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await adminEmployeesService.purgeAdminEmployee(
+      { id: req.user!.id, permissions: req.user!.permissions },
+      param(req, 'id'),
+    )
+    ok(res, result, 'Employee permanently deleted')
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function remove(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     await adminEmployeesService.deleteAdminEmployee(

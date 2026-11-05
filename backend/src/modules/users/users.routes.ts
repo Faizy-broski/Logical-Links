@@ -73,6 +73,22 @@ usersRouter.delete(
   usersController.remove,
 )
 
+usersRouter.post(
+  '/:id/restore',
+  authMiddleware,
+  requireRole('admin'),
+  requirePermission('customers.edit'),
+  usersController.restore,
+)
+
+usersRouter.delete(
+  '/:id/permanent',
+  authMiddleware,
+  requireRole('admin'),
+  requirePermission('customers.delete'),
+  usersController.purge,
+)
+
 usersRouter.patch(
   '/:id/role',
   authMiddleware,

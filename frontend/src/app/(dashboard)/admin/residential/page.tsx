@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import { UserCircle2, Mail, Phone, Calendar, Plus } from "lucide-react";
 
@@ -13,9 +14,11 @@ import { useTableFilters } from "@/hooks/use-table-filters";
 import { AddResidentialCustomerSheet } from "@/components/accounts/add-residential-customer-sheet";
 import { CreateDeliverySheet } from "@/components/deliveries/sheets/create-delivery-sheet";
 
-import { useUsers } from "@/hooks/use-users";
+import { useUsers, useRestoreUser, usePurgeUser } from "@/hooks/use-users";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { usePermission } from "@/hooks/use-permission";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { InvitationStatusBadge } from "@/components/accounts/invitation-status-badge";
 import type { UserProfile } from "@/types/api.types";
 
 function formatDate(d: string) {
@@ -27,9 +30,63 @@ function formatDate(d: string) {
 }
 
 const FILTER_DEFAULTS = {
+  view:   "active",   // "active" | "deleted"
   search: "",
   page:   "1",
 };
+
+/* Actions for a removed customer: bring them back, or free the email for good. */
+function DeletedActionsCell({ user }: { user: UserProfile }) {
+  const canEdit = usePermission("customers.edit");
+  const canDelete = usePermission("customers.delete");
+  const restoreMut = useRestoreUser(user.id);
+  const purgeMut = usePurgeUser(user.id);
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const label = user.fullName ?? "this customer";
+
+  async function restore() {
+    try {
+      await restoreMut.mutateAsync();
+      toast.success(`${label} restored`);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+  async function purge() {
+    try {
+      await purgeMut.mutateAsync();
+      toast.success("Customer permanently deleted");
+      setPurgeOpen(false);
+    } catch (err) { toast.error((err as Error).message); }
+  }
+
+  return (
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      {canEdit && (
+        <Button size="sm" variant="outline" onClick={restore} disabled={restoreMut.isPending}
+          className="h-8 rounded-lg px-3 text-xs">Restore</Button>
+      )}
+      {canDelete && (
+        <Button size="sm" variant="outline" onClick={() => setPurgeOpen(true)} disabled={purgeMut.isPending}
+          className="h-8 rounded-lg border-red-200 px-3 text-xs text-red-600 hover:bg-red-50">Delete permanently</Button>
+      )}
+      <ConfirmDialog
+        open={purgeOpen}
+        onClose={() => setPurgeOpen(false)}
+        onConfirm={purge}
+        loading={purgeMut.isPending}
+        title="Delete permanently"
+        description={
+          <>
+            Permanently delete {label}
+            {user.email ? <> ({user.email})</> : null}? Their personal details are erased and the email
+            address can be registered again. Past deliveries and invoices are kept without personal details.
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete permanently"
+      />
+    </div>
+  );
+}
 
 export default function ResidentialCustomersPage() {
   const router = useRouter();
@@ -41,6 +98,7 @@ export default function ResidentialCustomersPage() {
 
   const { filters, setFilter } = useTableFilters(FILTER_DEFAULTS);
   const page = parseInt(filters.page || "1", 10);
+  const isDeletedView = filters.view === "deleted";
 
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -54,8 +112,9 @@ export default function ResidentialCustomersPage() {
     page,
     limit: 20,
     role: "residential",
+    ...(isDeletedView && { deleted: "true" as const }),
     ...(debouncedSearch && { search: debouncedSearch }),
-  }), [page, debouncedSearch]);
+  }), [page, debouncedSearch, isDeletedView]);
 
   const { data: res, isLoading } = useUsers(query, { enabled: canView });
   const customers   = res?.data ?? [];
@@ -82,6 +141,14 @@ export default function ResidentialCustomersPage() {
         },
       },
       {
+        id: "invitation",
+        header: "Account",
+        cell: ({ row }) =>
+          row.original.invitation && row.original.invitation.status !== "activated"
+            ? <InvitationStatusBadge status={row.original.invitation.status} />
+            : <span className="text-xs text-muted">{row.original.invitation ? "Active login" : "—"}</span>,
+      },
+      {
         id: "phone",
         header: "Phone",
         cell: ({ row }) =>
@@ -102,8 +169,15 @@ export default function ResidentialCustomersPage() {
           </span>
         ),
       },
+      ...(isDeletedView
+        ? [{
+            id: "actions",
+            header: "",
+            cell: ({ row }: { row: { original: UserProfile } }) => <DeletedActionsCell user={row.original} />,
+          } as ColumnDef<UserProfile>]
+        : []),
     ],
-    [],
+    [isDeletedView],
   );
 
   if (!canView) {
@@ -123,9 +197,30 @@ export default function ResidentialCustomersPage() {
           <p className="mt-2 text-sm text-muted">Individuals whose deliveries are managed directly, outside any shipping company.</p>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-1 max-w-xs">
-          <KpiCard title="Total Customers" value={totalCount} icon={DashboardIcons.totalCustomers} chartColor="#C89B3C" isLoading={isLoading} />
+        <div className="inline-flex rounded-xl border border-card-border bg-card p-1">
+          {(["active", "deleted"] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => { setFilter("view", v); setFilter("page", "1"); }}
+              className={`rounded-lg px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
+                (isDeletedView ? "deleted" : "active") === v ? "bg-primary text-sidebar" : "text-muted hover:text-foreground"
+              }`}
+            >
+              {v}
+            </button>
+          ))}
         </div>
+
+        {isDeletedView ? (
+          <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-3 text-sm text-red-700">
+            Deleted customers cannot sign in and their email stays reserved. Restore one to bring it back, or delete it
+            permanently to free the email address.
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-1 max-w-xs">
+            <KpiCard title="Total Customers" value={totalCount} icon={DashboardIcons.totalCustomers} chartColor="#C89B3C" isLoading={isLoading} />
+          </div>
+        )}
 
         <DataTable<UserProfile>
           title="Residential Customers"
@@ -148,13 +243,13 @@ export default function ResidentialCustomersPage() {
           }
           headerActions={
             <div className="flex items-center gap-2">
-              {canAddCustomer && (
+              {!isDeletedView && canAddCustomer && (
                 <Button variant="outline" onClick={() => setAddOpen(true)} className="rounded-lg">
                   <Plus className="h-4 w-4" />
                   Add Customer
                 </Button>
               )}
-              {canCreate && (
+              {!isDeletedView && canCreate && (
                 <Button onClick={() => setCreateOpen(true)} className="rounded-lg bg-primary text-sidebar hover:bg-primary/85">
                   <Plus className="h-4 w-4" />
                   Create a Delivery

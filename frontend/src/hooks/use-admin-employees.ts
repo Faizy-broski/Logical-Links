@@ -8,13 +8,14 @@ const KEYS = {
   detail: (id: string) => ["admin-employees", id] as const,
 };
 
-type ListQuery = { page?: number; limit?: number; role?: string };
+type ListQuery = { page?: number; limit?: number; role?: string; deleted?: "true" | "false" };
 
 export function useAdminEmployees(query: ListQuery = {}, options?: { enabled?: boolean }) {
   const params = new URLSearchParams();
   if (query.page)  params.set("page",  String(query.page));
   if (query.limit) params.set("limit", String(query.limit));
   if (query.role)  params.set("role",  query.role);
+  if (query.deleted) params.set("deleted", query.deleted);
   const qs = params.toString() ? `?${params.toString()}` : "";
 
   return useQuery({
@@ -52,6 +53,25 @@ export function useUpdateAdminEmployee(id: string) {
       qc.invalidateQueries({ queryKey: KEYS.all });
       qc.invalidateQueries({ queryKey: KEYS.detail(id) });
     },
+  });
+}
+
+// Bring a removed employee back (needs employees.delete).
+export function useRestoreAdminEmployee(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<ApiResponse<AdminEmployee>>(`/api/v1/admin/employees/${id}/restore`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+// Permanently delete a removed employee so the email can be reused (needs employees.delete).
+export function usePurgeAdminEmployee(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api.delete<ApiResponse<{ mode: "deleted" | "anonymised" }>>(`/api/v1/admin/employees/${id}/permanent`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   });
 }
 

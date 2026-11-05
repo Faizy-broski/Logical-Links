@@ -11,6 +11,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { postAuthPath } from "@/lib/pending-intent";
 import { CompanyOptionSelect } from "@/components/ui/company-option-select";
 import { ProvinceCitySelect } from "@/components/ui/province-city-select";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
+import { matchRegion } from "@/lib/carrier-options";
 import { ORGANIZATION_TYPES, PHONE_TYPES } from "@/lib/corporate-options";
 import GoogleButton, { AuthDivider } from "@/components/auth/GoogleButton";
 import {
@@ -255,7 +257,10 @@ export default function RegisterPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         // Map backend error codes to field-level errors where possible
-        if (err.status === 409 || err.code === "CONFLICT") {
+        if (err.code === "ACCOUNT_DEACTIVATED") {
+          // The email belongs to a deactivated account: tell them who can fix it.
+          setFieldErrors({ email: "This email belongs to a deactivated account. Please contact support to reactivate it." });
+        } else if (err.status === 409 || err.code === "CONFLICT") {
           if (err.message.toLowerCase().includes("email")) {
             setFieldErrors({ email: "An account with this email already exists" });
           } else if (err.message.toLowerCase().includes("company") || err.message.toLowerCase().includes("name")) {
@@ -301,7 +306,7 @@ export default function RegisterPage() {
               {googleSignup
                 ? "Just a few more details to finish creating your account"
                 : isCorporate
-                  ? "Register your company and get started as Company Admin"
+                  ? "Register your company and get started as a Corporate Member"
                   : "Sign up to book and track your own deliveries"}
             </p>
           </div>
@@ -424,7 +429,29 @@ export default function RegisterPage() {
 
                 <div>
                   <FieldLabel>Business Address</FieldLabel>
-                  <IconInput icon={MapPin} name="addressLine1" value={form.addressLine1 ?? ""} onChange={handleChange} placeholder="Street address" error={fieldErrors.addressLine1} />
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-muted" />
+                    <AddressAutocomplete
+                      value={form.addressLine1 ?? ""}
+                      onChange={(v) => setForm((p) => ({ ...p, addressLine1: v }))}
+                      valueOnSelect={(sug) => sug.street ?? sug.placeName}
+                      onSelect={(sug) =>
+                        // Picking a suggestion fills the rest of the address.
+                        setForm((p) => ({
+                          ...p,
+                          addressCity:     sug.context?.city ?? p.addressCity,
+                          addressState:    matchRegion(sug.context?.region) ?? p.addressState,
+                          addressPostcode: sug.context?.postcode ?? p.addressPostcode,
+                          addressCountry:  sug.context?.country ?? p.addressCountry,
+                        }))
+                      }
+                      placeholder="Start typing your street address"
+                      className="h-11 rounded-xl pl-12"
+                      ariaInvalid={!!fieldErrors.addressLine1}
+                    />
+                  </div>
+                  {fieldErrors.addressLine1 && <p className="mt-1 text-xs text-danger">{fieldErrors.addressLine1}</p>}
+                  <p className="mt-1 text-xs text-muted">Pick a suggestion to fill in the province, city, postcode and country.</p>
                   <ProvinceCitySelect
                     province={form.addressState ?? ""}
                     city={form.addressCity ?? ""}
@@ -455,7 +482,7 @@ export default function RegisterPage() {
                 </div>
 
                 <p className="text-xs text-muted">
-                  You&apos;ll be the company&apos;s primary contact and Company Admin. You can add
+                  You&apos;ll be the company&apos;s primary contact and Corporate Member. You can add
                   teammates and edit these details later from your company profile.
                 </p>
               </div>

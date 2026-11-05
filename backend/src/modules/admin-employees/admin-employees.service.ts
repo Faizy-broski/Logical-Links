@@ -4,6 +4,7 @@ import { logger } from '../../lib/logger'
 import * as adminEmployeesRepo from './admin-employees.repository'
 import * as adminRolesRepo from '../admin-roles/admin-roles.repository'
 import * as notificationsService from '../notifications/notifications.service'
+import { purgeOrAnonymiseProfile, type PurgeMode } from '../../lib/profile-purge'
 import type { CreateAdminEmployeeDto, UpdateAdminEmployeeDto, ListAdminEmployeesQuery } from './admin-employees.schema'
 
 // The permission that gates this whole module ('employees.view'/'create'/'edit') is
@@ -17,7 +18,7 @@ interface RequestingUser {
 
 // ── List employees ────────────────────────────────────────────────────────────
 export async function listAdminEmployees(query: ListAdminEmployeesQuery) {
-  const { data, count, error } = await adminEmployeesRepo.findAdminEmployees(query.page, query.limit, query.role)
+  const { data, count, error } = await adminEmployeesRepo.findAdminEmployees(query.page, query.limit, query.role, query.deleted === 'true')
   if (error) throw AppError.internal('Failed to fetch employees', error)
 
   const profiles = data ?? []
@@ -236,6 +237,55 @@ export async function updateAdminEmployee(requestingUser: RequestingUser, id: st
 
   const { data: authUser } = await supabase.auth.admin.getUserById(id)
   return { ...data, email: authUser.user?.email ?? '' }
+}
+
+// ── Restore / permanently delete a removed employee ───────────────────────────
+// Both are the counterpart of deleteAdminEmployee and need the same
+// 'employees.delete' permission. Neither can target the caller.
+export async function restoreAdminEmployee(requestingUser: RequestingUser, id: string) {
+  if (!requestingUser.permissions.includes('employees.delete')) {
+    throw AppError.forbidden('This action requires the "employees.delete" permission')
+  }
+  const { data: existing, error: findErr } = await adminEmployeesRepo.findDeletedEmployeeById(id)
+  if (findErr || !existing) throw AppError.notFound('Removed employee')
+  if (existing.anonymised_at) throw AppError.badRequest('This employee was permanently deleted and cannot be restored')
+
+  const { data, error } = await adminEmployeesRepo.restoreById(id)
+  if (error || !data) throw AppError.internal('Failed to restore employee', error)
+
+  void notificationsService.notifyAllAdmins(
+    'admin_employee_updated',
+    'Internal employee restored',
+    `${(existing.full_name as string | null) ?? 'An internal employee'} was restored.`,
+    'admin_employee',
+    id,
+    requestingUser.id,
+  )
+  return data
+}
+
+export async function purgeAdminEmployee(requestingUser: RequestingUser, id: string): Promise<{ mode: PurgeMode }> {
+  if (!requestingUser.permissions.includes('employees.delete')) {
+    throw AppError.forbidden('This action requires the "employees.delete" permission')
+  }
+  if (id === requestingUser.id) throw AppError.badRequest('You cannot delete your own account')
+
+  const { data: existing, error: findErr } = await adminEmployeesRepo.findDeletedEmployeeById(id)
+  if (findErr || !existing) throw AppError.notFound('Removed employee')
+  if (existing.anonymised_at) throw AppError.badRequest('This employee was already permanently deleted')
+
+  const label = (existing.full_name as string | null) ?? 'An internal employee'
+  const mode = await purgeOrAnonymiseProfile(id, 'Removed employee')
+
+  void notificationsService.notifyAllAdmins(
+    'admin_employee_updated',
+    'Internal employee permanently deleted',
+    `${label} was permanently deleted.`,
+    'admin_employee',
+    id,
+    requestingUser.id,
+  )
+  return { mode }
 }
 
 // ── Delete employee (soft) ────────────────────────────────────────────────────

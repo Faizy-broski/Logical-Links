@@ -99,6 +99,26 @@ export const CORPORATE_PIPELINE_STATUS_META: Record<
   rejected:   { label: "Rejected",    description: "Application declined. Data is retained for 90 days, then permanently deleted.", badge: "bg-red-100 text-red-800 border-red-300",        dot: "bg-red-600" },
 };
 
+// Admin-created customers: has the customer been sent (and used) their activation link?
+export type InvitationStatus = "not_sent" | "sent" | "expired" | "activated";
+
+export type InvitationState = {
+  status:      InvitationStatus;
+  sent_at:     string | null;
+  expires_at:  string | null;
+  accepted_at: string | null;
+};
+
+export const INVITATION_STATUS_META: Record<
+  InvitationStatus,
+  { label: string; description: string; badge: string; dot: string }
+> = {
+  not_sent:  { label: "Account Created – Invitation Not Sent", description: "The customer has not been told about their account yet. Click Send credentials to email them an activation link.", badge: "bg-amber-50 text-amber-800 border-amber-200", dot: "bg-amber-500" },
+  sent:      { label: "Account Created – Invitation Sent",     description: "An activation link was emailed to the customer. It can be used once.",                                           badge: "bg-sky-50 text-sky-700 border-sky-200",       dot: "bg-sky-500" },
+  expired:   { label: "Account Created – Invitation Expired",  description: "The activation link expired before it was used. Resend the invitation to give them a new one.",                 badge: "bg-red-50 text-red-700 border-red-200",       dot: "bg-red-500" },
+  activated: { label: "Account Activated",                     description: "The customer set their own password and can sign in.",                                                           badge: "bg-green-50 text-green-700 border-green-200", dot: "bg-green-500" },
+};
+
 /** The status to display for an account — "rejected" wins over the pipeline stage. */
 export function accountDisplayStatus(
   a: { pipeline_status: CorporatePipelineStatus; rejected_at?: string | null },
@@ -142,6 +162,7 @@ export type Account = {
   // Review / rejection lifecycle
   reviewed_at: string | null;
   rejected_at: string | null;
+  deleted_at?: string | null;       // set when an admin deleted / deactivated the account
   rejection_reason: string | null;
   review_note?: string | null;      // admin-only, absent on the /me response
   purge_after: string | null;
@@ -153,6 +174,8 @@ export type Account = {
   created_at: string;
   updated_at: string;
   profiles?: AccountProfile[];
+  /** Activation-link status (admin responses only). */
+  invitation?: InvitationState;
 };
 
 export type AccountActivity = {
@@ -241,6 +264,7 @@ export type ListAccountsQuery = {
   isActive?: "true" | "false";
   pipelineStatus?: CorporatePipelineStatus;
   rejected?: "true" | "false";
+  deleted?:  "true" | "false";
   dateFrom?: string;
   dateTo?:   string;
   sortBy?:   "account_name" | "is_active" | "created_at" | "pipeline_status";
@@ -266,6 +290,8 @@ export type UserProfile = {
   /** YYYY-MM-DD. Residential-only — powers the Rewards birthday bonus. */
   dateOfBirth: string | null;
   createdAt:   string;
+  /** Activation-link status for residential customers (admin responses only). */
+  invitation?: InvitationState | null;
 };
 
 // ── Admin Employees (Internal Staff) ──────────────────────────────────────────

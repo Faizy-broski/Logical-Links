@@ -158,6 +158,14 @@ accountsRouter.post(
 )
 
 accountsRouter.post(
+  '/:id/restore',
+  authMiddleware,
+  requireAdmin,
+  requirePermission('customers.edit'),
+  accountsController.restore,
+)
+
+accountsRouter.post(
   '/:id/purge',
   authMiddleware,
   requireAdmin,

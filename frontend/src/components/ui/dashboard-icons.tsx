@@ -3,9 +3,10 @@ import { cn } from "@/lib/utils";
 
 /**
  * Logical Links dashboard icon set (client-supplied full-colour artwork).
- * Source files live in /public/dashboard-icons (transparent, 160×128), cut from
- * the client's reference sheets and scaled to equal visual weight, so icons in
- * one row look the same size. Served unoptimized: they are already small, and
+ * Source files live in /public/dashboard-icons (transparent, square 128×128),
+ * cut from the client's reference sheets and scaled to equal visual weight
+ * (same artwork area, capped so wide icons such as trucks stay inside the
+ * square), so icons in one row look the same size. Served unoptimized: they are already small, and
  * it keeps updated artwork from being held back by the image cache. Each icon
  * takes a `className` for sizing and ignores colour / stroke props. `artwork`
  * lets shared components (KpiCard) tell these apart from lucide line icons and
@@ -22,7 +23,7 @@ function make(name: string): DashboardIcon {
       src={`/dashboard-icons/${name}.png`}
       alt=""
       aria-hidden
-      width={160}
+      width={128}
       height={128}
       unoptimized
       className={cn("inline-block shrink-0 object-contain", className)}

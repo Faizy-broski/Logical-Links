@@ -5,6 +5,9 @@ import * as notificationsService from '../notifications/notifications.service'
 import * as accountsService from '../accounts/accounts.service'
 import * as accountsRepo from '../accounts/accounts.repository'
 import { randomBytes, randomUUID } from 'crypto'
+import { purgeOrAnonymiseProfile, type PurgeMode } from '../../lib/profile-purge'
+import { deriveInvitationState, getProfileInvitationStates, type InvitationState } from '../invitations/invitations.state'
+import type { InvitationStateRow } from '../invitations/invitations.repository'
 import type { CreateResidentialCustomerDto, UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
 
 // Maps a raw profiles row to the camelCase shape the frontend expects.
@@ -17,9 +20,18 @@ import type { CreateResidentialCustomerDto, UpdateProfileDto, ListUsersQuery, Up
 const NO_EMAIL_DOMAIN = '@no-email.invalid'
 const isPlaceholderEmail = (email?: string | null) => !!email && email.endsWith(NO_EMAIL_DOMAIN)
 
-function formatProfile(row: Record<string, unknown>, rawEmail?: string) {
+// Invitation status for an admin-created customer. Someone who has already
+// signed in obviously has a working login, whatever the invitation rows say.
+function invitationFor(rows: InvitationStateRow[] | undefined, lastSignInAt?: string | null): InvitationState {
+  const derived = deriveInvitationState(rows)
+  if (derived.status !== 'activated' && lastSignInAt) return { ...derived, status: 'activated' }
+  return derived
+}
+
+function formatProfile(row: Record<string, unknown>, rawEmail?: string, invitation?: InvitationState) {
   const email = isPlaceholderEmail(rawEmail) ? '' : rawEmail
   return {
+    invitation:  invitation ?? null,
     hasLogin:    !isPlaceholderEmail(rawEmail),
     id:          row.id as string,
     email:       email ?? (row.email as string | undefined) ?? '',
@@ -42,7 +54,10 @@ export async function getProfile(id: string) {
   // Fetch email from auth.users (not stored in profiles)
   const { data: authUser } = await supabase.auth.admin.getUserById(id)
 
-  return formatProfile(data as Record<string, unknown>, authUser.user?.email)
+  const invitation = data.role === 'residential'
+    ? invitationFor((await getProfileInvitationStates([id])).get(id), authUser.user?.last_sign_in_at)
+    : undefined
+  return formatProfile(data as Record<string, unknown>, authUser.user?.email, invitation)
 }
 
 export async function updateProfile(id: string, dto: UpdateProfileDto) {
@@ -85,6 +100,50 @@ export async function updateProfile(id: string, dto: UpdateProfileDto) {
 // Used both by an admin (customers.delete) removing a dead customer off the
 // dashboard and by a residential customer closing their own account. Sets
 // deleted_at + is_active=false: gone from every list, login blocked, history kept.
+// Bring a removed residential customer back (login re-enabled, shows in lists again).
+export async function restoreUser(id: string) {
+  const { data: existing, error: findErr } = await usersRepo.findDeletedById(id)
+  if (findErr || !existing) throw AppError.notFound('Removed customer')
+  if (existing.role !== 'residential') throw AppError.badRequest('Only residential customers can be restored here')
+  if (existing.anonymised_at) throw AppError.badRequest('This customer was permanently deleted and cannot be restored')
+
+  const { data, error } = await usersRepo.restoreById(id)
+  if (error || !data) throw AppError.internal('Failed to restore customer', error)
+
+  void notificationsService.notifyAllAdmins(
+    'account_updated',
+    'Customer restored',
+    `${(existing.full_name as string | null) ?? 'A residential customer'} was restored.`,
+    'account',
+    id,
+  )
+  return formatProfile(data as Record<string, unknown>)
+}
+
+// Permanently delete a removed residential customer so their email can be used
+// again. The auth user is deleted outright when nothing references it; if the
+// customer has history (deliveries, invoices, tickets …) the database blocks
+// that, so the account is anonymised instead — personal data is wiped, the
+// email address is freed and the business records stay intact.
+export async function purgeUser(id: string): Promise<{ mode: PurgeMode }> {
+  const { data: existing, error: findErr } = await usersRepo.findDeletedById(id)
+  if (findErr || !existing) throw AppError.notFound('Removed customer')
+  if (existing.role !== 'residential') throw AppError.badRequest('Only residential customers can be permanently deleted here')
+  if (existing.anonymised_at) throw AppError.badRequest('This customer was already permanently deleted')
+
+  const label = (existing.full_name as string | null) ?? 'A residential customer'
+  const mode = await purgeOrAnonymiseProfile(id, 'Removed customer')
+
+  void notificationsService.notifyAllAdmins(
+    'account_updated',
+    'Customer permanently deleted',
+    mode === 'deleted' ? `${label} was permanently deleted.` : `${label} was permanently deleted (personal data removed).`,
+    'account',
+    id,
+  )
+  return { mode }
+}
+
 export async function deleteUser(id: string) {
   const { data: existing, error: findErr } = await usersRepo.findById(id)
   if (findErr || !existing) throw AppError.notFound('User')
@@ -131,15 +190,27 @@ export async function listUsers(query: ListUsersQuery) {
   // endpoints) — avoids listUsers()'s hard 1000-user cap, which silently
   // dropped emails for any tenant with more than 1000 auth users.
   const emailMap: Record<string, string> = {}
+  const lastSignInMap: Record<string, string | null> = {}
   await Promise.all(
     rows.map(async (row) => {
       const { data: authUser } = await supabase.auth.admin.getUserById(row.id as string)
       if (authUser.user?.email) emailMap[row.id as string] = authUser.user.email
+      lastSignInMap[row.id as string] = authUser.user?.last_sign_in_at ?? null
     }),
   )
 
+  const invitationRows = await getProfileInvitationStates(
+    rows.filter((r) => r.role === 'residential').map((r) => r.id as string),
+  )
+
   const users = rows.map((row) =>
-    formatProfile(row, emailMap[row.id as string]),
+    formatProfile(
+      row,
+      emailMap[row.id as string],
+      row.role === 'residential'
+        ? invitationFor(invitationRows.get(row.id as string), lastSignInMap[row.id as string])
+        : undefined,
+    ),
   )
 
   return { users, total: count ?? 0 }

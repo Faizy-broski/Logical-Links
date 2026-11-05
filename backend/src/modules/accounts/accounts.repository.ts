@@ -101,6 +101,8 @@ export async function findAll(query: ListAccountsQuery) {
   // hide rejected), filtered by pipeline stage.
   if (query.rejected === 'true') {
     q = q.not('rejected_at', 'is', null)
+  } else if (query.deleted === 'true') {
+    q = q.not('deleted_at', 'is', null).is('rejected_at', null)
   } else {
     q = q.is('deleted_at', null).is('rejected_at', null)
     if (query.pipelineStatus) q = q.eq('pipeline_status', query.pipelineStatus)
@@ -277,6 +279,15 @@ export async function findProfilesForAccount(accountId: string) {
   return supabase
     .from('profiles')
     .select('id, full_name, company_role')
+    .eq('account_id', accountId)
+}
+
+// Bring a deactivated account's logins back: clears the soft-delete marker that
+// deactivateAccount() put on every profile, re-enables them and sets approval.
+export async function restoreProfiles(accountId: string, isApproved: boolean) {
+  return supabase
+    .from('profiles')
+    .update({ deleted_at: null, is_active: true, is_approved: isApproved, updated_at: new Date().toISOString() })
     .eq('account_id', accountId)
 }
 

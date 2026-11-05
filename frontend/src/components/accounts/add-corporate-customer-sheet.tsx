@@ -155,6 +155,10 @@ export function AddCorporateCustomerSheet({ open, onClose }: Props) {
             <div className="space-y-1.5">
               <Label htmlFor="acc-contact-email">Contact email</Label>
               <Input id="acc-contact-email" type="email" value={form.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} className="rounded-lg" />
+              <p className="text-xs text-muted">
+                The customer is not notified when you add them. Open their profile and click Send credentials to
+                email them a secure activation link.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="acc-contact-phone">Contact phone</Label>

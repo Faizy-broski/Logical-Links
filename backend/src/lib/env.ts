@@ -44,6 +44,13 @@ const envSchema = z.object({
   // Resend's shared sandbox address works without domain setup for testing.
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM:     z.string().default('Logical Links <onboarding@resend.dev>'),
+
+  // Inbox that receives internal "new booking" notices (not the customer copy).
+  COMPANY_NOTIFICATION_EMAIL: z.string().email().default('logicallinkscorp@gmail.com'),
+
+  // Public URL of the website, used to build links inside emails
+  // (e.g. the account-activation link). No trailing slash.
+  FRONTEND_URL: z.string().url().default('http://localhost:3000'),
 })
 
 const parsed = envSchema.safeParse(process.env)

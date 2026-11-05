@@ -22,6 +22,8 @@ export const listUsersQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   role: z.enum(['admin', 'corporate', 'residential']).optional(),
   search: z.string().optional(),
+  // 'true' lists removed (soft-deleted) profiles so an admin can restore or permanently delete them.
+  deleted: z.enum(['true', 'false']).optional(),
 })
 
 export const updateUserRoleSchema = z.object({

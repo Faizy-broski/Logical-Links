@@ -38,6 +38,8 @@ export const listAdminEmployeesSchema = z.object({
   page:  z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   role:  z.string().min(1).optional(),
+  // 'true' lists removed employees so they can be restored or permanently deleted.
+  deleted: z.enum(['true', 'false']).optional(),
 })
 
 // ── Types ─────────────────────────────────────────────────────────────────────

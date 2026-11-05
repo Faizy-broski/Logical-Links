@@ -1,6 +1,7 @@
 import { supabase } from '../../services/supabase.service'
 import { AppError } from '../../lib/errors'
 import * as accountsRepo from './accounts.repository'
+import { attachAccountInvitations } from '../invitations/invitations.state'
 import * as authRepo from '../auth/auth.repository'
 import * as notificationsService from '../notifications/notifications.service'
 import { sendEmail } from '../../services/email/email.service'
@@ -55,7 +56,7 @@ function withDisplayIds<T extends Record<string, unknown>>(row: T): T & { reques
 }
 
 // "Shanika R. (CEO)" — actor label stored denormalized on each activity row.
-async function actorLabel(userId: string): Promise<string> {
+export async function actorLabel(userId: string): Promise<string> {
   const { data } = await supabase
     .from('profiles')
     .select('full_name, admin_role')
@@ -144,7 +145,10 @@ async function syncPortalAccess(accountId: string, status: CorporatePipelineStat
 export async function listAccounts(query: ListAccountsQuery) {
   const { data, count, error } = await accountsRepo.findAll(query)
   if (error) throw AppError.internal('Failed to fetch accounts', error)
-  return { accounts: (data ?? []).map((r) => withDisplayIds(r as Record<string, unknown>)), total: count ?? 0 }
+  const rows = (data ?? []).map((r) => withDisplayIds(r as Record<string, unknown>))
+  // Invitation status ("Invitation Sent / Not Sent / Expired") for admin-created customers.
+  const accounts = await attachAccountInvitations(rows as unknown as Array<Record<string, unknown> & { account_id: string }>)
+  return { accounts, total: count ?? 0 }
 }
 
 // Admin-only callers (routes are requireAdmin) — resolves rejected accounts too
@@ -152,7 +156,9 @@ export async function listAccounts(query: ListAccountsQuery) {
 export async function getAccount(id: string, includeDeleted = true) {
   const { data, error } = await accountsRepo.findById(id, includeDeleted)
   if (error || !data) throw AppError.notFound('Account')
-  return withDisplayIds(data as Record<string, unknown>)
+  const row = withDisplayIds(data as Record<string, unknown>)
+  const [withInvitation] = await attachAccountInvitations([row as unknown as Record<string, unknown> & { account_id: string }])
+  return withInvitation!
 }
 
 export async function createAccount(dto: CreateAccountDto, createdBy: string) {
@@ -689,10 +695,41 @@ export async function reconsiderAccount(id: string, adminId: string) {
 }
 
 // Skip the retention window and hard-delete now. Irreversible.
+// Bring back an account an admin deleted / deactivated. (Rejected applications
+// use reconsiderAccount instead — they go back to the review queue.)
+export async function restoreAccount(id: string, adminId: string) {
+  const account = await getAccount(id, true)
+  if (account.rejected_at) throw AppError.badRequest('This application was rejected — use Reconsider to reopen it')
+  if (!account.deleted_at) throw AppError.badRequest('This account is not deleted')
+
+  const status = account.pipeline_status as CorporatePipelineStatus
+  const { data, error } = await accountsRepo.lifecycleUpdate(id, { deleted_at: null, is_active: true })
+  if (error || !data) throw AppError.internal('Failed to restore account', error)
+
+  // Logins come back with the access the pipeline stage grants (Onboarding /
+  // Active = portal access; earlier stages stay pending until promoted).
+  const { error: profilesError } = await accountsRepo.restoreProfiles(id, portalAccessFor(status))
+  if (profilesError) throw AppError.internal('Account restored but its logins could not be re-enabled', profilesError)
+
+  const label = await actorLabel(adminId)
+  await logAccountActivity({
+    accountId: id, eventType: 'restored',
+    description: 'Account restored by an administrator',
+    actorId: adminId, actorLabel: label,
+  })
+  void notificationsService.notifyAllAdmins(
+    'account_updated', 'Corporate account restored',
+    `"${account.account_name}" was restored.`,
+    'account', id, adminId,
+  )
+
+  return withDisplayIds(data as Record<string, unknown>)
+}
+
 export async function purgeAccount(id: string, adminId: string) {
   const account = await getAccount(id, true)
-  if (!account.rejected_at) {
-    throw AppError.badRequest('Only a rejected account can be purged')
+  if (!account.rejected_at && !account.deleted_at) {
+    throw AppError.badRequest('Only a rejected or deleted account can be permanently deleted')
   }
   const { error } = await accountsRepo.purgeAccountRpc(id)
   if (error) throw AppError.internal('Failed to purge account', error)

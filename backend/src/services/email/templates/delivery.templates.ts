@@ -30,6 +30,32 @@ export function bookingReceivedEmail({ loadNumber }: TemplateArgs): RenderedEmai
   })
 }
 
+/**
+ * INTERNAL notice for the Logical Links inbox when a booking is submitted.
+ * This is deliberately NOT the customer's "Booking Received" copy: it tells the
+ * team who booked, what is moving and what they need to do next.
+ */
+export function bookingReceivedInternalEmail(args: {
+  loadNumber: string
+  adminUrl:   string
+  details:    [label: string, value: string][]
+}): RenderedEmail {
+  const { loadNumber, adminUrl, details } = args
+  return renderEmail({
+    subject: `New Booking Received – ${loadNumber}`,
+    heading: `New Booking Received – ${loadNumber}`,
+    paragraphs: [
+      `A new booking, ${loadNumber}, has just been submitted through the Logical Links platform. The details are below.`,
+    ],
+    details,
+    footnotes: [
+      'Action needed: please review the booking, then confirm it, prepare a quote or assign it to a driver from the admin dashboard.',
+    ],
+    cta: { label: 'Open booking in dashboard', url: adminUrl },
+    signOff: ['Logical Links Operations'],
+  })
+}
+
 export function quoteReadyEmail({ loadNumber }: TemplateArgs): RenderedEmail {
   return renderEmail({
     subject: `Your Quote Is Ready – ${loadNumber}`,

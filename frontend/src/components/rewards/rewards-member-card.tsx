@@ -27,7 +27,7 @@ export function RewardsMemberCard() {
             Rewards Member
           </p>
         </div>
-        <DashboardIcons.membership className="h-12 w-15 sm:h-16 sm:w-20" />
+        <DashboardIcons.membership className="h-14 w-14 sm:h-18 sm:w-18" />
       </div>
 
       {isLoading ? (

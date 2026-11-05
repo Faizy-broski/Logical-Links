@@ -74,6 +74,16 @@ export default function Hero() {
             alt="quote"
           />
           <RotatingTagline />
+          {/* Closing quotation mark: same glyph, rotated, kept outside the
+              fixed-height tagline box so it doesn't move while text rotates. */}
+          <Image
+            className="self-end shrink-0 rotate-180"
+            src="/quote.svg"
+            width={30}
+            height={100}
+            alt=""
+            aria-hidden="true"
+          />
         </motion.p>
 
         <motion.div

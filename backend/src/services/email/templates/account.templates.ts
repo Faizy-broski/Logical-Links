@@ -175,3 +175,33 @@ export function applicationReconsideredEmail(name: string): RenderedEmail {
     'Our team will be in touch, and you will be notified by email once there is an update.',
   ])
 }
+
+// ── Admin-created customers: invitation to activate ───────────────────────────
+// Sent when an admin/CSR clicks "Send credentials" for a customer they created
+// on the customer's behalf. Draft copy — to be approved by the client.
+export function customerInvitationEmail(args: {
+  name:          string
+  activationUrl: string
+  expiresInDays: number
+  customerType:  'corporate' | 'residential'
+}): RenderedEmail {
+  const { name, activationUrl, expiresInDays, customerType } = args
+  const subject = 'Your Logical Links account is ready to activate'
+  return renderEmail({
+    subject,
+    heading: subject,
+    signOff: SIGN_OFF,
+    paragraphs: [
+      greeting(name),
+      'A Logical Links account has been created for you by our team.',
+      `To activate it, please verify your email address and create your own password using the secure link below. For your security the link can only be used once and expires in ${expiresInDays} days.`,
+    ],
+    cta: { label: 'Activate my account', url: activationUrl },
+    footnotes: [
+      customerType === 'corporate'
+        ? 'Once activated, you can sign in at any time to access your Corporate Customer dashboard.'
+        : 'Once activated, you can sign in at any time to book and track your deliveries.',
+      'If you were not expecting this email, you can safely ignore it or contact our support team.',
+    ],
+  })
+}

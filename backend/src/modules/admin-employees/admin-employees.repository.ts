@@ -13,13 +13,17 @@ const PROFILE_SELECT = `
   updated_at
 `
 
-export async function findAdminEmployees(page: number, limit: number, role?: string) {
+export async function findAdminEmployees(page: number, limit: number, role?: string, deleted = false) {
   const offset = (page - 1) * limit
   let query = supabase
     .from('profiles')
     .select(PROFILE_SELECT, { count: 'exact' })
     .eq('role', 'admin')
-    .is('deleted_at', null)
+  // Removed employees only show in the "Deleted" view; permanently deleted
+  // (anonymised) ones never come back.
+  query = deleted
+    ? query.not('deleted_at', 'is', null).is('anonymised_at', null)
+    : query.is('deleted_at', null)
   if (role) query = query.eq('admin_role', role)
   return query
     .range(offset, offset + limit - 1)
@@ -54,6 +58,26 @@ export async function softDeleteById(id: string) {
     .update({ deleted_at: new Date().toISOString(), is_active: false })
     .eq('id', id)
     .eq('role', 'admin')
+}
+
+export async function findDeletedEmployeeById(id: string) {
+  return supabase
+    .from('profiles')
+    .select(`${PROFILE_SELECT}, deleted_at, anonymised_at`)
+    .eq('id', id)
+    .eq('role', 'admin')
+    .not('deleted_at', 'is', null)
+    .maybeSingle()
+}
+
+export async function restoreById(id: string) {
+  return supabase
+    .from('profiles')
+    .update({ deleted_at: null, is_active: true })
+    .eq('id', id)
+    .eq('role', 'admin')
+    .select(PROFILE_SELECT)
+    .single()
 }
 
 // Counts active CEOs other than `excludeId` — used to block demoting/deactivating

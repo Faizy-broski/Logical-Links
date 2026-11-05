@@ -26,6 +26,11 @@ if (!resend) {
   logger.warn('[email] RESEND_API_KEY not set — emails will be logged, not sent')
 }
 
+/** True when a real provider is configured (otherwise emails are only logged). */
+export function isEmailConfigured(): boolean {
+  return resend !== null
+}
+
 export async function sendEmail(message: EmailMessage): Promise<void> {
   if (!resend) {
     logger.info('[email] would send (no provider configured)', {

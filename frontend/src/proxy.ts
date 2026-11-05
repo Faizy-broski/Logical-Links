@@ -1,12 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { dashboardPathForRole } from '@/lib/utils/dashboard-path'
 
 const SESSION_COOKIE = "ll-session";
 
 const PROTECTED_PREFIXES = ["/admin", "/corporate", "/driver"];
 
 const AUTH_ONLY_PATHS = new Set([
-  "/",
+  // "/" is deliberately NOT listed: signed-in users must be able to browse
+  // the public website ("Back to Website") without being bounced back.
   "/login",
   "/register",
   "/forgot-password",
@@ -21,9 +23,7 @@ const AUTH_ONLY_PATHS = new Set([
  */
 
 function getDashboard(role: string | undefined): string {
-  if (role === "admin") return "/admin/dashboard";
-  if (role === "corporate") return "/corporate/dashboard";
-  return "/admin/dashboard";
+  return dashboardPathForRole(role);
 }
 
 // export async function proxy(request: NextRequest) {

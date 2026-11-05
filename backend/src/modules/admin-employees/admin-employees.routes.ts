@@ -50,3 +50,14 @@ adminEmployeesRouter.delete(
   '/:id',
   adminEmployeesController.remove,
 )
+
+// Same self-contained permission checks as delete ('employees.delete').
+adminEmployeesRouter.post(
+  '/:id/restore',
+  adminEmployeesController.restore,
+)
+
+adminEmployeesRouter.delete(
+  '/:id/permanent',
+  adminEmployeesController.purge,
+)

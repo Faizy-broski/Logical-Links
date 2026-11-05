@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse, type PaginatedResponse } from "@/lib/api";
 import type {
-  Account, AccountActivity, AccountStats, CorporatePipelineStatus,
+  Account, AccountActivity, AccountStats, CorporatePipelineStatus, InvitationState,
   CreateAccountDto, UpdateAccountDto, UpdateOwnCompanyDto, ListAccountsQuery,
 } from "@/types/api.types";
 
@@ -27,6 +27,7 @@ export function useAccounts(
   if (query.isActive !== undefined) params.set("isActive", query.isActive);
   if (query.pipelineStatus)         params.set("pipelineStatus", query.pipelineStatus);
   if (query.rejected)               params.set("rejected", query.rejected);
+  if (query.deleted)                params.set("deleted",  query.deleted);
   if (query.dateFrom)               params.set("dateFrom", query.dateFrom);
   if (query.dateTo)                 params.set("dateTo",   query.dateTo);
   if (query.sortBy)                 params.set("sortBy",   query.sortBy);
@@ -135,6 +136,31 @@ export function useReconsiderAccount(id: string) {
   return useMutation({
     mutationFn: () =>
       api.post<ApiResponse<Account>>(`/api/v1/accounts/${id}/reconsider`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+    },
+  });
+}
+
+// Email the customer a secure activation link (also used to resend). customers.edit.
+export function useSendAccountInvitation(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api.post<ApiResponse<InvitationState>>(`/api/v1/invitations/accounts/${id}/send`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      qc.invalidateQueries({ queryKey: KEYS.detail(id) });
+    },
+  });
+}
+
+export function useRestoreAccount(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api.post<ApiResponse<Account>>(`/api/v1/accounts/${id}/restore`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all });
       qc.invalidateQueries({ queryKey: KEYS.detail(id) });

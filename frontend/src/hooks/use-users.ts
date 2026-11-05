@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type ApiResponse, type PaginatedResponse } from "@/lib/api";
-import type { UserProfile } from "@/types/api.types";
+import type { InvitationState, UserProfile } from "@/types/api.types";
 
 const KEYS = {
   all:    ["users"] as const,
@@ -9,7 +9,7 @@ const KEYS = {
   me:     ["users", "me"] as const,
 };
 
-type ListQuery = { page?: number; limit?: number; role?: string };
+type ListQuery = { page?: number; limit?: number; role?: string; search?: string; deleted?: "true" | "false" };
 
 export function useUsers(
   query: ListQuery = {},
@@ -19,6 +19,8 @@ export function useUsers(
   if (query.page)  params.set("page",  String(query.page));
   if (query.limit) params.set("limit", String(query.limit));
   if (query.role)  params.set("role",  query.role);
+  if (query.search) params.set("search", query.search);
+  if (query.deleted) params.set("deleted", query.deleted);
   const qs = params.toString() ? `?${params.toString()}` : "";
 
   return useQuery({
@@ -35,6 +37,33 @@ export function useUser(id: string) {
     queryFn:  () => api.get<ApiResponse<UserProfile>>(`/api/v1/users/${id}`),
     enabled:  !!id,
     staleTime: 2 * 60_000,
+  });
+}
+
+// Email a residential customer a secure activation link (also used to resend).
+export function useSendUserInvitation(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<ApiResponse<InvitationState>>(`/api/v1/invitations/users/${id}/send`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+// Bring a removed residential customer back (customers.edit).
+export function useRestoreUser(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<ApiResponse<UserProfile>>(`/api/v1/users/${id}/restore`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  });
+}
+
+// Permanently delete a removed residential customer so the email can be reused (customers.delete).
+export function usePurgeUser(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete<ApiResponse<{ mode: "deleted" | "anonymised" }>>(`/api/v1/users/${id}/permanent`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   });
 }
 

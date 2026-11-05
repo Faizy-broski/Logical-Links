@@ -199,7 +199,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: Props) {
               <h2 className="text-[13px] font-semibold tracking-wide text-white">
                 Logical Links
               </h2>
-              <p className="text-[11px] text-zinc-500">Shipping CMS</p>
+              <p className="text-[11px] text-zinc-500">Admin Portal</p>
             </div>
           )}
         </Link>

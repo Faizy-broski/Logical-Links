@@ -93,6 +93,15 @@ export async function reconsider(req: Request, res: Response, next: NextFunction
   }
 }
 
+export async function restore(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const account = await accountsService.restoreAccount(param(req, 'id'), req.user!.id)
+    ok(res, account, 'Account restored')
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function purge(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     await accountsService.purgeAccount(param(req, 'id'), req.user!.id)

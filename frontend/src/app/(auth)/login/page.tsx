@@ -261,6 +261,12 @@ function LoginForm() {
               {errors.password && <p className="mt-2 text-xs text-danger">{errors.password}</p>}
             </div>
 
+            {!error && searchParams.get('activated') === '1' && (
+              <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                Your account is activated. Sign in with the email and password you just chose.
+              </div>
+            )}
+
             {error && (
               <div className="rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
                 {error}

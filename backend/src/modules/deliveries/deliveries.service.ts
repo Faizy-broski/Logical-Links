@@ -6,8 +6,10 @@ import * as deliveriesRepo from './deliveries.repository'
 import * as notificationsService from '../notifications/notifications.service'
 import * as rewardsCreditService from '../rewards-credit/rewards-credit.service'
 import { sendEmail } from '../../services/email/email.service'
+import { env } from '../../lib/env'
 import {
   bookingReceivedEmail,
+  bookingReceivedInternalEmail,
   STATUS_EMAIL_TEMPLATES,
   type EmailAudience,
 } from '../../services/email/templates/delivery.templates'
@@ -108,9 +110,10 @@ async function notifyDeliveryStakeholders(
   }
 }
 
-// Every delivery lifecycle email also goes to the company inbox as a BCC-style
-// copy, since nothing else surfaces bookings there.
-const COMPANY_NOTIFICATION_EMAIL = process.env.COMPANY_NOTIFICATION_EMAIL ?? 'logicallinkscorp@gmail.com'
+// The company inbox receives ONE internal "New Booking Received" email per
+// booking (see sendCompanyBookingEmail below). It never receives copies of the
+// customer-facing lifecycle emails.
+const COMPANY_NOTIFICATION_EMAIL = env.COMPANY_NOTIFICATION_EMAIL
 
 // ── Customer email fan-out ────────────────────────────────────────────────────
 // Resolves the customer-side email recipients for a delivery and sends each the
@@ -130,15 +133,121 @@ function sendDeliveryLifecycleEmail(
       const msg = build({ loadNumber, audience })
       void sendEmail({ to: email, subject: msg.subject, html: msg.html, text: msg.text }).catch(() => undefined)
     }
-
-    const companyMsg = build({ loadNumber, audience: 'corporate' })
-    void sendEmail({
-      to:      COMPANY_NOTIFICATION_EMAIL,
-      subject: companyMsg.subject,
-      html:    companyMsg.html,
-      text:    companyMsg.text,
-    }).catch(() => undefined)
   })().catch(() => undefined)
+}
+
+// ── Internal booking notice (company inbox) ───────────────────────────────────
+// Who booked, what is moving, and what to do next — not the customer's copy.
+function formatPlace(parts: Array<unknown>): string {
+  return parts
+    .map((p) => (typeof p === 'string' ? p.trim() : ''))
+    .filter((p) => p && p.toUpperCase() !== 'N/A')
+    .join(', ')
+}
+
+function formatDate(value: unknown): string {
+  if (!value || typeof value !== 'string') return ''
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? value : d.toISOString().slice(0, 10)
+}
+
+async function resolveBookingContact(delivery: DeliveryRow): Promise<{
+  customerType: string
+  name:         string
+  email:        string
+  phone:        string
+  company:      string
+}> {
+  const customerId = delivery.customer_id as string | undefined
+  const accountId  = delivery.account_id  as string | undefined
+  const createdBy  = delivery.created_by  as string | undefined
+
+  // Residential customer, or the person who submitted a corporate booking.
+  const profileId = customerId ?? createdBy
+  let name = ''
+  let phone = ''
+  let email = ''
+  if (profileId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, phone')
+      .eq('id', profileId)
+      .maybeSingle()
+    name  = (profile?.full_name as string | undefined) ?? ''
+    phone = (profile?.phone as string | undefined) ?? ''
+    try {
+      const { data } = await supabase.auth.admin.getUserById(profileId)
+      const authEmail = data.user?.email ?? ''
+      email = authEmail.endsWith('@no-email.invalid') ? '' : authEmail
+    } catch {
+      email = ''
+    }
+  }
+
+  let company = ''
+  if (accountId) {
+    const { data: account } = await supabase
+      .from('accounts')
+      .select('account_name')
+      .eq('account_id', accountId)
+      .maybeSingle()
+    company = (account?.account_name as string | undefined) ?? ''
+  }
+
+  return {
+    customerType: customerId ? 'Residential customer' : accountId ? 'Corporate customer' : 'Booked by staff',
+    name, email, phone, company,
+  }
+}
+
+function sendCompanyBookingEmail(delivery: DeliveryRow): void {
+  void (async () => {
+    const loadNumber = (delivery.load_number as string | undefined)
+      ?? (delivery.shipment_id as string | undefined)
+      ?? (delivery.id as string)
+    const contact = await resolveBookingContact(delivery)
+    const price = typeof delivery.quoted_price === 'number'
+      ? `${delivery.quoted_price.toFixed(2)} ${(delivery.currency as string | undefined) ?? ''}`.trim()
+      : ''
+    const flags = [
+      delivery.is_dangerous_goods ? 'Dangerous goods' : '',
+      delivery.requires_refrigeration ? 'Refrigeration required' : '',
+    ].filter(Boolean).join(', ')
+
+    const adminId = (delivery.shipment_id as string | undefined) ?? (delivery.id as string)
+    const msg = bookingReceivedInternalEmail({
+      loadNumber,
+      adminUrl: `${env.FRONTEND_URL.replace(/\/+$/, '')}/admin/deliveries/${adminId}`,
+      details: [
+        ['Booking', loadNumber],
+        ['Customer type', contact.customerType],
+        ['Company', contact.company],
+        ['Contact name', contact.name],
+        ['Contact email', contact.email],
+        ['Contact phone', contact.phone],
+        ['Service', [delivery.service_type, delivery.service_level].filter(Boolean).join(' · ')],
+        ['Pickup', formatPlace([delivery.origin_address, delivery.origin_city, delivery.origin_state, delivery.origin_postcode, delivery.origin_country])],
+        ['Delivery', formatPlace([delivery.destination_address, delivery.destination_city, delivery.destination_state, delivery.destination_postcode, delivery.destination_country])],
+        ['Pickup date', formatDate(delivery.estimated_pickup_date)],
+        ['Delivery date', formatDate(delivery.estimated_delivery_date ?? delivery.preferred_delivery_date)],
+        ['Cargo', (delivery.cargo_description as string | undefined) ?? ''],
+        ['Pieces', delivery.pieces != null ? String(delivery.pieces) : ''],
+        ['Weight', delivery.weight_kg != null ? `${delivery.weight_kg} kg` : ''],
+        ['Handling', flags],
+        ['Quoted price', price],
+        ['Special instructions', (delivery.special_instructions as string | undefined) ?? ''],
+      ],
+    })
+
+    await sendEmail({
+      to:      COMPANY_NOTIFICATION_EMAIL,
+      subject: msg.subject,
+      html:    msg.html,
+      text:    msg.text,
+      // Replying to the notice goes straight to the customer when we know them.
+      ...(contact.email ? { replyTo: contact.email } : {}),
+    })
+  })().catch((err) => logger.warn('Failed to send internal booking email', { error: err instanceof Error ? err.message : String(err) }))
 }
 
 async function resolveDeliveryEmailRecipients(
@@ -387,6 +496,8 @@ export async function createDelivery(
   })
   // Email: Booking Received (per the client's event matrix).
   sendDeliveryLifecycleEmail(data as DeliveryRow, bookingReceivedEmail)
+  // Internal notice for the Logical Links inbox (separate from the customer copy).
+  sendCompanyBookingEmail(data as DeliveryRow)
 
   const loadNumber = (data as DeliveryRow).load_number as string | undefined
   void notificationsService.notifyAllAdmins(

@@ -125,6 +125,8 @@ export const listAccountsQuerySchema = z.object({
   pipelineStatus: pipelineStatusSchema.optional(),
   // 'true' shows the soft-deleted rejected accounts (90-day retention window).
   rejected:  z.enum(['true', 'false']).optional(),
+  // 'true' shows accounts an admin deleted/deactivated (not rejected) so they can be restored or purged.
+  deleted:   z.enum(['true', 'false']).optional(),
   dateFrom:  z.string().max(30).optional(),
   dateTo:    z.string().max(30).optional(),
   sortBy:    z.enum(['account_name', 'is_active', 'created_at', 'pipeline_status']).optional(),
