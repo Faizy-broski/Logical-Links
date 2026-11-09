@@ -37,7 +37,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Secure, Controlled Movement", description: "Your freight is coordinated from pickup through delivery, with fewer transfers and handling points where the selected service allows." },
       { title: "Flexible Equipment", description: "Access to dry vans, reefers, flatbeds, and specialized equipment based on your shipment requirements and carrier availability." },
     ],
-    image: "/service1.svg",
+    image: "/services/ftl.jpg",
     imageHeading: "Your Full Truckload. Our Full Attention.",
     intro: "LLC connects businesses with dependable full truckload capacity through a trusted carrier network. As a freight broker, we match each shipment with suitable equipment and a carrier while coordinating the details from pickup through delivery.",
     closing: "We coordinate routing, carrier selection, pricing, shipment updates, and communication to help keep your freight moving efficiently.",
@@ -53,7 +53,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Coordinated Freight Movement", description: "We help arrange suitable carrier services based on your shipment requirements." },
       { title: "Shipment Communication", description: "Receive updates through the communication and tracking services available for your shipment." },
     ],
-    image: "/ltl.png",
+    image: "/services/ltl.jpg",
     imageHeading: "The Right Load. The Right Solution.",
     intro: "LLC connects businesses with less-than-truckload services for freight that does not require an entire truck. Through our carrier network, we help identify suitable shipping options based on shipment size, weight, destination, timing, and budget.",
     closing: "We coordinate carrier selection, routing, pricing, and communication to help make your freight arrangements easier to manage.",
@@ -69,7 +69,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Tailored Equipment Options", description: "Identify suitable equipment and carrier services for your freight." },
       { title: "Consistent Coordination", description: "Keep scheduling, carrier arrangements, and shipment communication organized." },
     ],
-    image: "/dfs.jpg",
+    image: "/services/dedicated.jpg",
     imageHeading: "Dedicated Freight. Coordinated Around Your Needs.",
     intro: "LLC connects businesses with dedicated freight solutions suited to their shipment volumes, schedules, and operational requirements. Through our carrier network, we help identify suitable arrangements for recurring shipments or specific freight movements.",
     closing: "We coordinate carrier selection, scheduling, pricing, and communication according to each customer's needs and available service options.",
@@ -85,7 +85,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Permit Coordination", description: "Coordinate applicable permit requirements with the appropriate service providers when required." },
       { title: "Specialized Carrier Options", description: "Connect with suitable carriers for specialized, oversized, or heavy freight, subject to availability." },
     ],
-    image: "/sht.jpg",
+    image: "/services/heavy.jpg",
     imageHeading: "Specialized Freight. Carefully Coordinated.",
     intro: "LLC helps businesses arrange transportation for specialized, oversized, and heavy cargo through its carrier network. Each shipment is assessed according to its dimensions, weight, destination, equipment requirements, and applicable transportation considerations.",
     closing: "We coordinate carrier selection, routing considerations, and related arrangements to help identify a suitable solution for the shipment.",
@@ -182,7 +182,7 @@ const SERVICES: ServiceDetail[] = [
       { title: "Cost Considerations", description: "Assess freight arrangements and identify potential opportunities to improve efficiency." },
       { title: "Process Improvement", description: "Explore practical approaches to improve shipment planning, coordination, and communication." },
     ],
-    image: "/adv.png",
+    image: "/services/consultancy.jpg",
     imageHeading: "Better Decisions. Smarter Logistics.",
     intro: "LLC provides logistics consultancy and advisory support to businesses seeking to better understand and manage their shipping requirements. We help assess existing arrangements, explore suitable service options, and identify practical opportunities to improve coordination and decision-making.",
     closing: "Our recommendations are guided by each organization's requirements, priorities, and operational objectives.",
@@ -357,7 +357,7 @@ export default function ServicesPage() {
                       src={active.image}
                       alt={active.navLabel}
                       fill
-                      className={active.id === "air" ? "object-contain" : "object-cover"}
+                      className={["air", "heavy", "consultancy"].includes(active.id) ? "object-contain" : "object-cover"}
                     />
                   </div>
 

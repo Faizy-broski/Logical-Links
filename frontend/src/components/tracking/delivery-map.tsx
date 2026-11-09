@@ -9,6 +9,9 @@ import { formatDate } from "@/lib/utils/format-date";
 import type { TrackingEvent } from "@/types/api.types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+// Optional custom style (e.g. mapbox://styles/<user>/<styleId>). Defaults to the
+// public Streets style, which already shows place and road labels.
+const MAPBOX_STYLE = process.env.NEXT_PUBLIC_MAPBOX_STYLE || "mapbox://styles/mapbox/streets-v12";
 
 // Cities in the seed data already carry lat/lng; anything created afterwards
 // (or without a match) is resolved here so the map still has a point to show.
@@ -85,12 +88,16 @@ export function DeliveryMap({ event }: Props) {
     if (!mapRef.current) {
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: MAPBOX_STYLE,
         center: coords,
         zoom: 10,
         attributionControl: false,
       });
       mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+      // Blank labels almost always mean a failed glyph/style request (token
+      // scopes or URL restrictions) — surface it in the console.
+      mapRef.current.on("error", (e) => console.warn("[map] Mapbox error:", e?.error?.message ?? e));
+      mapRef.current.once("load", () => mapRef.current?.resize());
     } else {
       mapRef.current.flyTo({ center: coords, zoom: 10 });
     }
