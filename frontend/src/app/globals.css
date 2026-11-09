@@ -222,3 +222,13 @@ textarea,
 select {
   max-width: 100%;
 }
+
+
+/* A light accent (Vanilla Cream, Oatmeal …) used as TEXT on a light page is
+   unreadable; DashboardShell sets --primary-text to a darker tone of the same
+   hue and flags <html data-accent-light>. Fills and borders are unaffected. */
+html[data-accent-light] .text-primary,
+html[data-accent-light] a.text-primary,
+html[data-accent-light] .hover\:text-primary:hover {
+  color: var(--primary-text);
+}

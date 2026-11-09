@@ -6,6 +6,7 @@ import * as accountsService from '../accounts/accounts.service'
 import * as accountsRepo from '../accounts/accounts.repository'
 import { randomBytes, randomUUID } from 'crypto'
 import { purgeOrAnonymiseProfile, type PurgeMode } from '../../lib/profile-purge'
+import { releaseStaleEmailHolder, blockedEmailError } from '../../lib/user-lookup'
 import { deriveInvitationState, getProfileInvitationStates, type InvitationState } from '../invitations/invitations.state'
 import type { InvitationStateRow } from '../invitations/invitations.repository'
 import type { CreateResidentialCustomerDto, UpdateProfileDto, ListUsersQuery, UpdateUserRoleDto, ApproveUserDto } from './users.schema'
@@ -325,6 +326,12 @@ export async function approveUser(id: string, dto: ApproveUserDto, adminId?: str
 // ── Admin: add a residential customer (phone bookings, no email needed) ──────
 export async function createResidentialCustomer(dto: CreateResidentialCustomerDto) {
   const email = dto.email?.trim() ? dto.email.trim() : `phone-${randomUUID()}${NO_EMAIL_DOMAIN}`
+
+  // A deleted / deactivated holder of this email must not block a new customer.
+  if (dto.email?.trim()) {
+    const holder = await releaseStaleEmailHolder(email)
+    if (holder.status === 'blocked') throw blockedEmailError(email, holder.role)
+  }
 
   const { data, error } = await supabase.auth.admin.createUser({
     email,

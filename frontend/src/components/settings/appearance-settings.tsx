@@ -20,6 +20,7 @@ import {
   ACCENT_THEMES,
   ACCENT_DEFAULT_HEX,
 } from "@/lib/utils/accent-theme";
+import { TEXT_SWATCHES_LIGHT, TEXT_SWATCHES_DARK } from "@/lib/utils/text-theme";
 
 type Mode = "light" | "dark";
 type SwatchLite = { id: string; name: string; bg: string };
@@ -168,9 +169,11 @@ export function AppearanceSettings() {
     sidebarSwatchId,
     contentSwatchId,
     accentSwatchId,
+    textSwatchId,
     setSidebarSwatch,
     setContentSwatch,
     setAccentSwatch,
+    setTextSwatch,
   } = useAppearance();
 
   const defaultSidebar = getSidebarTheme(user?.id);
@@ -231,6 +234,26 @@ export function AppearanceSettings() {
           defaultDark={defaultContentDark}
           onSelect={setContentSwatch}
           onReset={(m) => setContentSwatch(m, null)}
+        />
+      </div>
+
+      <div className="space-y-4 border-t border-card-border pt-5">
+        <div>
+          <h3 className="text-sm font-medium text-foreground">Text Color</h3>
+          <p className="mt-1 text-xs text-muted">
+            Choose the colour of body text, so wording stays readable on any
+            background colour you pick.
+          </p>
+        </div>
+        <CollectionGroup
+          label="Text"
+          lightSwatches={TEXT_SWATCHES_LIGHT}
+          darkSwatches={TEXT_SWATCHES_DARK}
+          activeId={textSwatchId}
+          defaultLight="#111827"
+          defaultDark="#edeae4"
+          onSelect={setTextSwatch}
+          onReset={(m) => setTextSwatch(m, null)}
         />
       </div>
 

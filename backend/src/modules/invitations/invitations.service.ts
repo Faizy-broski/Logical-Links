@@ -3,7 +3,7 @@ import { supabase } from '../../services/supabase.service'
 import { AppError } from '../../lib/errors'
 import { logger } from '../../lib/logger'
 import { env } from '../../lib/env'
-import { findUserByEmail } from '../../lib/user-lookup'
+import { releaseStaleEmailHolder, blockedEmailError } from '../../lib/user-lookup'
 import { sendEmail, isEmailConfigured } from '../../services/email/email.service'
 import { customerInvitationEmail } from '../../services/email/templates/account.templates'
 import * as notificationsService from '../notifications/notifications.service'
@@ -107,19 +107,26 @@ export async function sendAccountInvitation(accountId: string, adminId: string) 
   const email = ((account.contact_email as string | null) ?? '').trim().toLowerCase()
   if (!email) throw AppError.badRequest('Add a contact email address to this account before sending credentials')
 
+  // A login that already belongs to this account (e.g. a reactivated account) can
+  // be re-invited as long as its owner has never signed in; otherwise they
+  // should simply use "Forgot password".
   const { data: existingLogin } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, is_active')
     .eq('account_id', accountId)
     .eq('company_role', 'company_admin')
     .limit(1)
     .maybeSingle()
-  if (existingLogin) throw AppError.badRequest('This customer already has a login — there is nothing to activate')
-
-  const taken = await findUserByEmail(email)
-  if (taken) {
-    throw AppError.conflict(`A login with ${email} already exists. Use a different contact email or ask the customer to sign in.`)
+  if (existingLogin?.is_active) {
+    const { data: au } = await supabase.auth.admin.getUserById(existingLogin.id as string)
+    if (au.user?.last_sign_in_at) {
+      throw AppError.badRequest('This customer already has a working login. If they cannot sign in, ask them to use "Forgot password".')
+    }
   }
+
+  // A deleted / deactivated login on this email never blocks it; an active one does.
+  const holder = await releaseStaleEmailHolder(email, { accountId })
+  if (holder.status === 'blocked') throw blockedEmailError(email, holder.role)
 
   const { state, resent } = await issueAndSend({
     target:       { accountId },
@@ -253,11 +260,30 @@ async function activateCorporate(inv: invitationsRepo.InvitationRow, password: s
   if (BLOCKED_PIPELINE_STATUSES.includes(status)) {
     throw AppError.badRequest('This account is not currently active. Please contact Logical Links.')
   }
-  if (await findUserByEmail(inv.email)) {
+  const fullName = ((account.contact_name as string | null) ?? '').trim() || (account.account_name as string)
+
+  const holder = await releaseStaleEmailHolder(inv.email, { accountId })
+  if (holder.status === 'blocked') {
     throw AppError.conflict('A login with this email already exists. Please sign in instead.')
   }
 
-  const fullName = ((account.contact_name as string | null) ?? '').trim() || (account.account_name as string)
+  // Reactivated account: its own login already exists — just set the new password.
+  if (holder.status === 'same-account') {
+    const { error: pwError } = await supabase.auth.admin.updateUserById(holder.userId, { password, email_confirm: true })
+    if (pwError) throw AppError.internal('Failed to activate your account — please try again', pwError)
+    await supabase
+      .from('profiles')
+      .update({ is_active: true, deleted_at: null, is_approved: true, signup_completed: true })
+      .eq('id', holder.userId)
+    if (!accountsService.portalAccessFor(status)) {
+      await accountsService.updateAccount(accountId, { pipelineStatus: 'onboarding' }, undefined).catch(() => undefined)
+    }
+    await accountsService.logAccountActivity({
+      accountId, eventType: 'invitation_accepted',
+      description: `${fullName} activated their account`, actorLabel: fullName,
+    })
+    return
+  }
   const { data: created, error: createError } = await supabase.auth.admin.createUser({
     email:         inv.email,
     password,

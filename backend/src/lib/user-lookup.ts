@@ -1,6 +1,7 @@
 import { supabase } from '../services/supabase.service'
 import { logger } from './logger'
 import { AppError } from './errors'
+import { purgeOrAnonymiseProfile } from './profile-purge'
 
 /** Message shown whenever a deactivated / removed account tries to sign in or sign up. */
 export const DEACTIVATED_MESSAGE =
@@ -47,4 +48,46 @@ export async function findUserByEmail(email: string): Promise<UserLookup | null>
 export async function isDeactivatedEmail(email: string): Promise<boolean> {
   const found = await findUserByEmail(email)
   return !!found && (!found.isActive || !!found.deletedAt)
+}
+
+export type EmailHolderResult =
+  | { status: 'free' }
+  | { status: 'released' }                       // a deleted / deactivated holder was cleared
+  | { status: 'same-account'; userId: string }   // the login already belongs to the target account
+  | { status: 'blocked'; role: string | null }   // an active login owns the email
+
+/**
+ * Decides whether an email can be used for a new login created by an admin.
+ * A deleted / deactivated holder never blocks an email for good: its login is
+ * deleted (or anonymised when it has history, keeping the business records) so
+ * the address is free again. An ACTIVE holder always blocks, except when it is
+ * already the login of `accountId` (a reactivated account).
+ */
+export async function releaseStaleEmailHolder(
+  email: string,
+  opts: { accountId?: string } = {},
+): Promise<EmailHolderResult> {
+  const holder = await findUserByEmail(email)
+  if (!holder) return { status: 'free' }
+
+  if (opts.accountId && holder.accountId === opts.accountId) {
+    return { status: 'same-account', userId: holder.userId }
+  }
+
+  const stale = !holder.isActive || !!holder.deletedAt
+  if (!stale) return { status: 'blocked', role: holder.role }
+
+  const label = holder.role === 'admin' ? 'Removed employee' : 'Removed customer'
+  await purgeOrAnonymiseProfile(holder.userId, label)
+  return { status: 'released' }
+}
+
+export function blockedEmailError(email: string, role: string | null): AppError {
+  const who =
+    role === 'residential' ? 'an active residential customer'
+    : role === 'admin' ? 'a Logical Links employee'
+    : 'an active corporate login'
+  return AppError.conflict(
+    `${email} already belongs to ${who}. Use a different email, or delete/deactivate that account first.`,
+  )
 }

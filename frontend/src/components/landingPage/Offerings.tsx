@@ -161,7 +161,7 @@ export default function Offerings() {
             </p>
 
             <p className="mt-10 text-base font-bold text-black">
-              Logical Links. Transport Solutions with Logic.
+              Logical Links. Logistics, Connected.
             </p>
           </motion.div>
         </div>

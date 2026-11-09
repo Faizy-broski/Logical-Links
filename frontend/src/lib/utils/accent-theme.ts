@@ -82,3 +82,43 @@ export function getAccentThemeById(id: string | null | undefined): AccentTheme |
   if (!id) return undefined;
   return ACCENT_THEMES.find((t) => t.id === id);
 }
+
+// ── Contrast helpers ─────────────────────────────────────────────────────────
+// A light accent (Vanilla Cream, Oatmeal …) is fine as a fill but invisible when
+// used as TEXT on a light page. These produce a darker tone of the same hue
+// that stays readable.
+function hexToRgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function relLuminance([r, g, b]: [number, number, number]): number {
+  const f = (v: number) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+export function contrastRatio(a: string, b: string): number {
+  const ra = hexToRgb(a);
+  const rb = hexToRgb(b);
+  if (!ra || !rb) return 21;
+  const [hi, lo] = [relLuminance(ra), relLuminance(rb)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Darkens `hex` step by step until it reaches `min` contrast on `background`. */
+export function readableOn(hex: string, background: string, min = 4.5): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  let [r, g, b] = rgb;
+  let out = hex;
+  for (let i = 0; i < 30 && contrastRatio(out, background) < min; i++) {
+    r = Math.round(r * 0.9); g = Math.round(g * 0.9); b = Math.round(b * 0.9);
+    out = `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+  }
+  return out;
+}

@@ -255,8 +255,8 @@ export default function ServicesPage() {
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
             className="text-base sm:text-xl font-medium text-black max-w-xl"
           >
-            Explore our transportation and delivery solutions designed to
-            support businesses of all sizes.
+            Explore our logistics, transportation and delivery solutions
+            designed for businesses and individuals.
           </motion.p>
         </section>
       </div>
@@ -352,12 +352,12 @@ export default function ServicesPage() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  <div className="relative aspect-[1.4] overflow-hidden rounded-lg">
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-[#FBF3E5]">
                     <Image
                       src={active.image}
                       alt={active.navLabel}
                       fill
-                      className="object-cover"
+                      className={active.id === "air" ? "object-contain" : "object-cover"}
                     />
                   </div>
 

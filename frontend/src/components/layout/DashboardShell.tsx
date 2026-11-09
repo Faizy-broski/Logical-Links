@@ -12,7 +12,8 @@ import { useAuthStore } from '@/store/auth.store'
 import { useTheme } from '@/components/providers/theme-provider'
 import { useAppearance } from '@/components/providers/appearance-provider'
 import { getContentSwatchById } from '@/lib/utils/content-theme'
-import { getAccentThemeById, DEFAULT_ACCENT_ID } from '@/lib/utils/accent-theme'
+import { getAccentThemeById, DEFAULT_ACCENT_ID, contrastRatio, readableOn } from '@/lib/utils/accent-theme'
+import { getTextSwatchById } from '@/lib/utils/text-theme'
 
 interface Props {
   children: React.ReactNode
@@ -22,7 +23,7 @@ export default function DashboardShell({ children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const { theme } = useTheme()
-  const { contentSwatchId, accentSwatchId } = useAppearance()
+  const { contentSwatchId, accentSwatchId, textSwatchId } = useAppearance()
 
   const isAdmin = user?.role === 'admin'
   const isResidential = user?.role === 'residential'
@@ -54,6 +55,35 @@ export default function DashboardShell({ children }: Props) {
       for (const key of Object.keys(vars)) root.style.removeProperty(key)
     }
   }, [accent])
+
+  // Text colour (any role): overrides --foreground, with --muted derived from it.
+  const textSwatch = getTextSwatchById(theme, textSwatchId[theme])
+  useEffect(() => {
+    const root = document.documentElement
+    if (textSwatch) {
+      root.style.setProperty('--foreground', textSwatch.bg)
+      root.style.setProperty('--muted', `color-mix(in srgb, ${textSwatch.bg} 68%, var(--background))`)
+    }
+    return () => {
+      root.style.removeProperty('--foreground')
+      root.style.removeProperty('--muted')
+    }
+  }, [textSwatch])
+
+  // A light accent used as text on a light page is unreadable; give text-primary
+  // a darker tone of the same hue instead (see globals.css).
+  useEffect(() => {
+    const root = document.documentElement
+    const bg = '#ffffff'
+    if (accent && theme === 'light' && contrastRatio(accent.primary, bg) < 3) {
+      root.style.setProperty('--primary-text', readableOn(accent.primary, bg, 4.5))
+      root.setAttribute('data-accent-light', '')
+    }
+    return () => {
+      root.style.removeProperty('--primary-text')
+      root.removeAttribute('data-accent-light')
+    }
+  }, [accent, theme])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

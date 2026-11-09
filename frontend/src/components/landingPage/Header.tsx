@@ -10,10 +10,11 @@ import { useAuthStore } from "@/store/auth.store";
 import { dashboardPathForRole } from "@/lib/utils/dashboard-path";
 import { CONTACT_SECTION_ID, openContactForm } from "@/lib/contact-section";
 
-const nav = [
+// `href` items are real pages; the rest scroll to a homepage section.
+const nav: { label: string; section?: string; href?: string }[] = [
   { label: "Home", section: "hero" },
-  { label: "About", section: "about" },
-  { label: "Services", section: "services" },
+  { label: "About", href: "/llc" },
+  { label: "Services", href: "/services" },
   { label: "How It Works", section: "hiw" },
   { label: "Contact", section: CONTACT_SECTION_ID },
 ];
@@ -40,6 +41,11 @@ export default function Header() {
     } else {
       router.push(`/#${section}`);
     }
+  };
+
+  const goToNav = (item: { section?: string; href?: string }) => {
+    if (item.href) router.push(item.href);
+    else if (item.section) goToSection(item.section);
   };
 
   // Skips the "How Can We Help?" chooser and opens the quote form directly.
@@ -105,7 +111,7 @@ export default function Header() {
             <button
               key={n.label}
               type="button"
-              onClick={() => goToSection(n.section)}
+              onClick={() => goToNav(n)}
               className="text-sm font-medium text-black hover:text-primary transition-colors"
             >
               {n.label}
@@ -177,7 +183,7 @@ export default function Header() {
                 key={n.label}
                 type="button"
                 onClick={() => {
-                  goToSection(n.section);
+                  goToNav(n);
                   setOpen(false);
                 }}
                 className="text-sm font-medium text-black hover:text-primary transition-colors text-left"
