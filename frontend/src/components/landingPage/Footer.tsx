@@ -544,9 +544,11 @@ export default function Footer() {
               <li className="flex gap-3">
                 <FooterIcons.address className="h-6 w-6" />
                 <span className="text-white/70">
-                  123 Logistics Way
+                  1065 Canadian Pl
                   <br />
-                  Toronto, ON M5V 3A8
+                  Ste 201 #412
+                  <br />
+                  Mississauga, ON L4W 0C2
                 </span>
               </li>
               <li className="flex gap-3">

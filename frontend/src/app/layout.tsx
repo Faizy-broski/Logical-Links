@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Inter, EB_Garamond, Noto_Serif, Caudex } from 'next/font/google'
+import { Cormorant_Garamond, Inter, EB_Garamond, Caudex } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import { cn } from "@/lib/utils"
 import NavigationProgress from '@/components/NavigationProgress'
@@ -28,10 +29,14 @@ const ebGaramond = EB_Garamond({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const droidSerif = Noto_Serif({
-  subsets: ["latin"],
+// Self-hosted (variable weight 400-700, latin) so the production build never
+// depends on fetching Noto Serif from Google — that fetch failed on the VPS and
+// broke `next build`.
+const droidSerif = localFont({
+  src: "../fonts/NotoSerif-latin.woff2",
   variable: "--font-droid-serif",
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
 // Caudex is used for every heading and title across the app.
